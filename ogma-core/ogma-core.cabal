@@ -90,6 +90,7 @@ library
     Command.Result
     Command.ROSApp
     Command.Standalone
+    Command.XMLSpec2Copilot
 
     Data.Location
 
@@ -121,6 +122,7 @@ library
     , ogma-language-jsonspec  >= 1.5.0 && < 1.6
     , ogma-language-smv       >= 1.5.0 && < 1.6
     , ogma-spec               >= 1.5.0 && < 1.6
+    , ogma-language-xmlspec   >= 1.5.0 && < 1.6
 
   hs-source-dirs:
     src
