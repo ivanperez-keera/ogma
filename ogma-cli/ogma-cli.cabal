@@ -129,6 +129,7 @@ executable ogma
     CLI.CommandROSApp
     CLI.CommandStandalone
     CLI.CommandTop
+    CLI.CommandXMLSpec2Copilot
     CLI.Result
 
   build-depends:
