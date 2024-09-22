@@ -106,8 +106,11 @@ library
       base                    >= 4.11.0.0 && < 5
     , aeson                   >= 2.0.0.0  && < 2.2
     , bytestring
+    , directory               >= 1.3.1.0
     , filepath
+    , microstache
     , mtl
+    , text
 
     , ogma-extra              >= 1.4.1 && < 1.5
     , ogma-language-c         >= 1.4.1 && < 1.5
