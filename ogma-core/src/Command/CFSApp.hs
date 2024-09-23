@@ -48,7 +48,7 @@ module Command.CFSApp
 -- External imports
 import qualified Control.Exception       as E
 import           Control.Monad           (filterM, forM_)
-import           Data.Aeson              (Value, decode)
+import           Data.Aeson              (Value(..), decode)
 import qualified Data.ByteString.Lazy    as B
 import           Data.List               (find)
 import           Data.Text               (Text)
@@ -59,9 +59,6 @@ import           System.Directory        (createDirectoryIfMissing,
 import           System.FilePath         (makeRelative, splitFileName, (</>))
 import           Text.Microstache        (compileMustacheFile,
                                           compileMustacheText, renderMustache)
-
--- External imports: auxiliary
-import System.Directory.Extra ( copyDirectoryRecursive )
 
 -- Internal imports: auxiliary
 import Command.Result ( Result (..) )
@@ -113,7 +110,7 @@ cFSApp targetDir varNameFile varDBFile = do
 
           E.handle (return . cannotCopyTemplate) $ do
             -- Expand template
-            copyDirectoryRecursive templateDir targetDir
+            copyTemplate templateDir Null targetDir
 
             let f n o@(oVars, oIds, oInfos, oDatas) =
                   case variableMap varDB n of
