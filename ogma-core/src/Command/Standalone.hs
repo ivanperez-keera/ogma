@@ -46,6 +46,7 @@ import Data.Aeson           (decode, eitherDecode, object, (.=))
 import Data.ByteString.Lazy (fromStrict)
 import Data.Foldable        (for_)
 import Data.List            (isInfixOf, isPrefixOf, nub, (\\))
+import qualified Data.ByteString.Lazy as L
 import Data.Maybe           (fromMaybe)
 import System.Directory     (doesFileExist)
 import System.Process       (readProcess)
@@ -64,6 +65,7 @@ import Paths_ogma_core (getDataDir)
 -- Internal imports: language ASTs, transformers
 import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
                       Requirement (..), Spec (..))
+import Language.XLSXSpec.Parser  (parseXLSXSpec)
 import Language.JSONSpec.Parser (JSONFormat (..), parseJSONSpec)
 import Language.XMLSpec.Parser  (parseXMLSpec)
 
@@ -173,6 +175,10 @@ standalone' fp options (ExprPair parse replace print ids def) = do
            -> do let xmlFormat = read format
                  content <- readFile fp
                  parseXMLSpec wrapper def xmlFormat content
+           | isPrefixOf "XLSXFormat" format
+           -> do let xlsxFormat = read format
+                 content <- L.readFile fp
+                 parseXLSXSpec wrapper def xlsxFormat content
            | otherwise
            -> do let jsonFormat = read format
                  content <- B.safeReadFile fp
