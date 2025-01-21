@@ -91,6 +91,7 @@ import qualified CLI.CommandCStructs2Copilot
 import qualified CLI.CommandCStructs2MsgHandlers
 import qualified CLI.CommandDiagram
 import qualified CLI.CommandFPrimeApp
+import qualified CLI.CommandOverview
 import qualified CLI.CommandROSApp
 import qualified CLI.CommandStandalone
 
@@ -107,6 +108,7 @@ data CommandOpts =
   | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
   | CommandOptsDiagram                   CLI.CommandDiagram.CommandOpts
   | CommandOptsFPrimeApp                 CLI.CommandFPrimeApp.CommandOpts
+  | CommandOptsOverview                  CLI.CommandOverview.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
   | CommandOptsStandalone                CLI.CommandStandalone.CommandOpts
 
@@ -124,6 +126,7 @@ commandOptsParser = subparser
   <> subcommandMsgHandlers
   <> subcommandCFSApp
   <> subcommandFPrimeApp
+  <> subcommandOverview
   <> subcommandROSApp
   <> subcommandStandalone
   <> subcommandDiagram
@@ -177,6 +180,15 @@ subcommandFPrimeApp =
     (CommandOptsFPrimeApp <$> CLI.CommandFPrimeApp.commandOptsParser)
     CLI.CommandFPrimeApp.commandDesc
 
+-- | Modifier for the overviewsubcommand, linking the subcommand options and
+-- description to the command @overview@ at top level.
+subcommandOverview :: Mod CommandFields CommandOpts
+subcommandOverview =
+  subcommand
+    "overview"
+    (CommandOptsOverview <$> CLI.CommandOverview.commandOptsParser)
+    CLI.CommandOverview.commandDesc
+
 -- | Modifier for the standalone subcommand, linking the subcommand options and
 -- description to the command @standalone@ at top level.
 subcommandStandalone :: Mod CommandFields CommandOpts
@@ -225,6 +237,8 @@ command (CommandOptsCStructs2MsgHandlers c) =
   id <$> CLI.CommandCStructs2MsgHandlers.command c
 command (CommandOptsFPrimeApp c) =
   id <$> CLI.CommandFPrimeApp.command c
+command (CommandOptsOverview c) =
+  id <$> CLI.CommandOverview.command c
 command (CommandOptsROSApp c) =
   id <$> CLI.CommandROSApp.command c
 command (CommandOptsStandalone c) =
