@@ -114,6 +114,14 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      - "<https://shemesh.larc.nasa.gov/people/cam/publications/FMAS2020_3.pdf From Requirements to Autonomous Flight>", Dutle et al. 2020.
 
+data-files:          examples/fcs-2.json
+                     tests/commands-fcs-error-parsing-failed-2.json
+                     tests/commands-fcs-error-parsing-failed-1.json
+                     tests/reduced_geofence_msgs_bad.h
+                     tests/reduced_geofence_msgs.h
+                     tests/fdb-example1.json
+                     tests/commands-fcs-error-parsing-failed-3.json
+
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
 --
