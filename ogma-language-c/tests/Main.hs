@@ -33,13 +33,15 @@ module Main where
 
 -- External imports
 import Data.Either                          ( isLeft, isRight )
+import System.Filepath                      ( (</>) )
 import Test.Framework                       ( Test, defaultMainWithOpts )
 import Test.Framework.Providers.QuickCheck2 ( testProperty )
 import Test.QuickCheck                      ( Property )
 import Test.QuickCheck.Monadic              ( assert, monadicIO, run )
 
 -- Internal imports
-import qualified Language.C.ParC as C ( myLexer, pTranslationUnit )
+import qualified Language.C.ParC       as C ( myLexer, pTranslationUnit )
+import           Paths_ogma_language_c ( getDataDir )
 
 -- | Run all unit tests for the C parser.
 main :: IO ()
@@ -56,13 +58,21 @@ tests =
 -- | Test the C parser on a well-formed header file.
 propParseCOk :: Property
 propParseCOk = monadicIO $ do
-  content <- run $ readFile "tests/reduced_geofence_msgs.h"
+  -- Get the auxiliary files from the files included with the cabal package
+  dataDir <- getDataDir
+  let filePath = dataDir </> "tests/reduced_geofence_msgs.h"
+
+  content <- run $ readFile filePath
   let program = C.pTranslationUnit $ C.myLexer content
   assert (isRight program)
 
 -- | Test the C parser on an incorrect header file.
 propParseCFail :: Property
 propParseCFail = monadicIO $ do
-  content <- run $ readFile "tests/reduced_geofence_msgs_bad.h"
+  -- Get the auxiliary files from the files included with the cabal package
+  dataDir <- getDataDir
+  let filePath = dataDir </> "tests/reduced_geofence_msgs_bad.h"
+
+  content <- run $ readFile filePath
   let program = C.pTranslationUnit $ C.myLexer content
   assert (isLeft program)
