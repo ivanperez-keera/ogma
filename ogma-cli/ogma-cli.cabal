@@ -163,8 +163,12 @@ test-suite test-ogma
   main-is:
     Main.hs
 
+  other-modules:
+    Paths_ogma_cli
+
   build-depends:
       base                 >= 4.11.0.0 && < 5
+    , filepath             >= 1.4.2    && < 1.6
     , HUnit                >= 1.2.0.0  && < 1.7
     , process              >= 1.6      && < 1.7
     , test-framework       >= 0.8.2    && < 0.9

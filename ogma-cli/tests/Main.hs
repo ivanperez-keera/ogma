@@ -4,10 +4,14 @@ module Main where
 import Data.List                      ( intercalate )
 import Data.Monoid                    ( mempty )
 import System.Exit                    ( ExitCode (ExitSuccess) )
+import System.FilePath                ( (</>) )
 import System.Process                 ( readProcessWithExitCode )
 import Test.Framework                 ( Test, defaultMainWithOpts )
 import Test.Framework.Providers.HUnit ( testCase )
 import Test.HUnit                     ( assertBool )
+
+-- Internal imports
+import Paths_ogma_cli ( getDataDir )
 
 -- | Run all unit tests on Ogma.
 main :: IO ()
@@ -91,6 +95,11 @@ testCStructs2Copilot :: FilePath  -- ^ Path to a C header file with structs
                      -> Bool
                      -> IO ()
 testCStructs2Copilot file success = do
+    -- Get the auxiliary files from the files included with the cabal package
+    dataDir <- getDataDir
+    let filePath = dataDir </> file
+
+    let args = ["structs", "--header-file-name", filePath]
     (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
 
     -- True if success is expected and detected, or niether expected nor
@@ -99,7 +108,6 @@ testCStructs2Copilot file success = do
 
     assertBool errorMsg testPass
   where
-    args     = ["structs", "--header-file-name", file]
     errorMsg = "Result of processing file " ++ file ++ " failed"
 
 -- | Test standalone backend for a FCS format and SVM.
@@ -119,6 +127,11 @@ parseStandaloneFCS :: FilePath  -- ^ Path to an input file
                    -> Bool
                    -> IO ()
 parseStandaloneFCS file success = do
+    -- Get the auxiliary files from the files included with the cabal package
+    dataDir <- getDataDir
+    let filePath = dataDir </> file
+
+    let args = ["standalone", "--file-name", filePath]
     (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
 
     -- True if success is expected and detected, or niether expected nor
@@ -127,7 +140,6 @@ parseStandaloneFCS file success = do
 
     assertBool errorMsg testPass
   where
-    args     = ["standalone", "--file-name", file]
     errorMsg = "Parsing file " ++ file ++ " result unexpected."
 
 -- | Test standalone backend for FDB format and CoCoSpec.
@@ -146,11 +158,15 @@ parseStandaloneFCS file success = do
 parseStandaloneFDB :: FilePath  -- ^ Path to an input file
                    -> IO ()
 parseStandaloneFDB file = do
+    -- Get the auxiliary files from the files included with the cabal package
+    dataDir <- getDataDir
+    let filePath = dataDir </> file
+
+    let args = [ "standalone", "--file-name", filePath, "--input-format", "fdb"
+               , "--prop-format", "cocospec"]
     (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
     assertBool errorMsg (ec == ExitSuccess)
   where
-    args     = [ "standalone", "--file-name", file, "--input-format", "fdb"
-               , "--prop-format", "cocospec"]
     errorMsg = "Parsing file " ++ file ++ " failed"
 
 -- | Test ogma by running it and checking the error code.
