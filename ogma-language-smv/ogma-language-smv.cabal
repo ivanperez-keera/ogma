@@ -56,6 +56,9 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      This library contains a frontend to read SMV Boolean expressions, used by
                      the tool FRET to capture requirement specifications.
 
+data-files:          tests/smv_bad
+                     tests/smv_good
+
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
 --
