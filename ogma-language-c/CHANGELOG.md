@@ -1,5 +1,9 @@
 # Revision history for ogma-language-c
 
+## [1.X.Y] - 2025-01-25
+
+* Add auxiliary files used by tests to Cabal package.
+
 ## [1.6.0] - 2025-01-21
 
 * Version bump 1.6.0 (#208).
