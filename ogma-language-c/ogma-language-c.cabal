@@ -55,6 +55,9 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      This library contains a frontend to read C header files.
 
+data-files:          tests/reduced_geofence_msgs.h
+                     tests/reduced_geofence_msgs_bad.h
+
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
 --
