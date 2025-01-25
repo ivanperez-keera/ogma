@@ -108,8 +108,12 @@ test-suite unit-tests
   main-is:
     Main.hs
 
+  other-modules:
+    Paths_ogma_language_smv
+
   build-depends:
       base                       >= 4.11.0.0 && < 5
+    , Filepath                   >= 1.4.2    && < 1.6
     , QuickCheck                 >= 2.8.2    && < 2.16
     , test-framework             >= 0.8.2    && < 0.9
     , test-framework-quickcheck2 >= 0.3.0.4  && < 0.4

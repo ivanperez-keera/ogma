@@ -33,13 +33,15 @@ module Main where
 
 -- External imports
 import Data.Either                          ( isLeft, isRight )
+import System.Filepath                      ( (</>) )
 import Test.Framework                       ( Test, defaultMainWithOpts )
 import Test.Framework.Providers.QuickCheck2 ( testProperty )
 import Test.QuickCheck                      ( Property )
 import Test.QuickCheck.Monadic              ( assert, monadicIO, run )
 
 -- Internal imports
-import qualified Language.SMV.ParSMV as SMV ( myLexer, pBoolSpec )
+import qualified Language.SMV.ParSMV     as SMV ( myLexer, pBoolSpec )
+import           Paths_ogma_language_smv ( getDataDir )
 
 -- | Run all unit tests for the SMV parser.
 main :: IO ()
@@ -56,13 +58,21 @@ tests =
 -- | Test the SMV parser on a well-formed boolean specification.
 propParseSMVOk :: Property
 propParseSMVOk = monadicIO $ do
-  content <- run $ readFile "tests/smv_good"
+  -- Get the auxiliary files from the files included with the cabal package
+  dataDir <- getDataDir
+  let filePath = dataDir </> "tests/smv_good"
+
+  content <- run $ readFile filePath
   let program = SMV.pBoolSpec $ SMV.myLexer content
   assert (isRight program)
 
 -- | Test the SMV parser on an incorrect boolean specification.
 propParseSMVFail :: Property
 propParseSMVFail = monadicIO $ do
-  content <- run $ readFile "tests/smv_bad"
+    -- Get the auxiliary files from the files included with the cabal package
+  dataDir <- getDataDir
+  let filePath = dataDir </> "tests/smv_bad"
+
+  content <- run $ readFile filePath
   let program = SMV.pBoolSpec $ SMV.myLexer content
   assert (isLeft program)
