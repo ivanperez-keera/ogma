@@ -56,6 +56,9 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      This library contains a frontend to read CoCoSpec Boolean expressions, used by
                      the tool FRET to capture requirement specifications.
 
+data-files:          tests/cocospec_good
+                     tests/cocospec_bad
+
 -- Ogma packages should be uncurated so that only the official maintainers make
 -- changes.
 --
