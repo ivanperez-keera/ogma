@@ -33,6 +33,7 @@ module Main where
 
 -- External imports
 import Data.Either                          ( isLeft, isRight )
+import System.Filepath                      ( (</>) )
 import Test.Framework                       ( Test, defaultMainWithOpts )
 import Test.Framework.Providers.QuickCheck2 ( testProperty )
 import Test.QuickCheck                      ( Property )
@@ -41,6 +42,7 @@ import Test.QuickCheck.Monadic              ( assert, monadicIO, run )
 -- Internal imports
 import qualified Language.CoCoSpec.ParCoCoSpec as CoCoSpec ( myLexer,
                                                              pBoolSpec )
+import           Paths_ogma_language_cocospec  ( getDataDir )
 
 -- | Run all unit tests for the CoCoSpec parser.
 main :: IO ()
@@ -57,13 +59,21 @@ tests =
 -- | Test the CoCoSpec parser on a well-formed boolean specification.
 propParseCoCoSpecOk :: Property
 propParseCoCoSpecOk = monadicIO $ do
-  content <- run $ readFile "tests/cocospec_good"
+  -- Get the auxiliary files from the files included with the cabal package
+  dataDir <- getDataDir
+  let filePath = dataDir </> "tests/cocospec_good"
+
+  content <- run $ readFile filePath
   let program = CoCoSpec.pBoolSpec $ CoCoSpec.myLexer content
   assert (isRight program)
 
 -- | Test the CoCoSpec parser on an incorrect boolean specification.
 propParseCoCoSpecFail :: Property
 propParseCoCoSpecFail = monadicIO $ do
-  content <- run $ readFile "tests/cocospec_bad"
+  -- Get the auxiliary files from the files included with the cabal package
+  dataDir <- getDataDir
+  let filePath = dataDir </> "tests/cocospec_bad"
+
+  content <- run $ readFile filePath
   let program = CoCoSpec.pBoolSpec $ CoCoSpec.myLexer content
   assert (isLeft program)
