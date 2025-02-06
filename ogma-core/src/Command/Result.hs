@@ -42,6 +42,7 @@ import Data.Location ( Location )
 -- | Result of the global process
 data Result a = Success
               | Error a String Location
+  deriving (Show)
 
 -- | 'True' if the result is a success, 'False' otherwise.
 isSuccess :: Result a -> Bool

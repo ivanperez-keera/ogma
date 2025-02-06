@@ -40,3 +40,4 @@ data Location = LocationNothing                 -- ^ No location info.
               | LocationFileLine String Int     -- ^ On a line within a file.
               | LocationFileLC   String Int Int -- ^ On a line and column
                                                 --   within a file.
+  deriving Show
