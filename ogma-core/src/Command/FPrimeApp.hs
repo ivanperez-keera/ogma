@@ -97,7 +97,7 @@ command' options (ExprPair exprT) = do
     -- Open files needed to fill in details in the template.
     vs    <- parseVariablesFile varNameFile
     rs    <- parseRequirementsListFile handlersFile
-    varDB <- parseVarDBFile varDBFile
+    varDB <- parseVarDBFile' varDBFile
 
     spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
 
@@ -109,7 +109,7 @@ command' options (ExprPair exprT) = do
         monitors = fromMaybe (specExtractHandlers spec) rs
 
     let appData   = AppData variables monitors' copilotM
-        variables = mapMaybe (variableMap varDB) varNames
+        variables = mapMaybe (variableMap' varDB) varNames
         monitors' = map (\x -> Monitor x (map toUpper x)) monitors
 
     return appData
@@ -193,6 +193,23 @@ variableMap varDB varName =
       "float"    -> "F32"
       "double"   -> "F64"
       def        -> def
+
+-- | Return the variable information needed to generate declarations
+-- and subscriptions for a given variable name and variable database.
+--
+-- We map the types to the specific types needed for the variable declaration
+-- and the message subscription in ROS.
+variableMap' :: VariableDB
+             -> String
+             -> Maybe VarDecl
+variableMap' varDB varName = do
+  inputDef  <- findInput varDB varName
+  topicDef  <- findTopic varDB varName "fprime/port"
+
+  let typeVar' = fromMaybe
+                   (topicType topicDef)
+                   (toType <$> findType varDB varName "fprime/port" "C")
+  return $ VarDecl varName typeVar' (topicType topicDef)
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
