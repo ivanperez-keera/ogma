@@ -59,6 +59,10 @@ module Command.Common
     , TopicDef(..)
     , TypeDef(..)
     , OutputDef(..)
+    , findInput
+    , findConnection
+    , findTopic
+    , findType
     )
   where
 
@@ -70,7 +74,7 @@ import           Data.Aeson             (FromJSON(..), Value (Null, Object),
                                          eitherDecode, object, (.:))
 import           Data.Aeson.KeyMap      (union)
 import           Data.Aeson.Types       (prependFailure, typeMismatch)
-import           Data.List              (isInfixOf, isPrefixOf)
+import           Data.List              (find, isInfixOf, isPrefixOf)
 import           GHC.Generics           (Generic)
 import           System.Directory       (doesFileExist)
 import           System.FilePath        ((</>))
@@ -487,6 +491,32 @@ makeLeftE c (Left _)   = Left c
 makeLeftE _ (Right x)  = Right x
 
 -- Parse Variable DBs
+
+findInput :: VariableDB -> String -> Maybe InputDef
+findInput varDB inputName =
+  find (\x -> name x == inputName) (inputs varDB)
+
+findConnection :: InputDef -> String -> Maybe Connection
+findConnection inputDef connectionName =
+  find (\x -> scope x == connectionName) (connections inputDef)
+
+findTopic :: VariableDB -> String -> String -> Maybe TopicDef
+findTopic varDB scope name =
+  find (\x -> topicScope x == scope && topicTopic x == name) (topics varDB)
+
+findType :: VariableDB -> String -> String -> String -> Maybe TypeDef
+findType varDB inputName connectionName destConn = do
+  inputDef      <- findInput varDB inputName
+  connectionDef <- findConnection inputDef connectionName
+  topic         <- findTopic varDB connectionName (topic connectionDef)
+
+  let match :: TypeDef -> Bool
+      match typeDef = fromScope typeDef == connectionName
+                   && fromType typeDef == topicType topic
+                   && fromField typeDef == field connectionDef
+                   && toScope typeDef == destConn
+
+  find match (types varDB)
 
 data VariableDB = VariableDB
     { inputs  :: [InputDef]
