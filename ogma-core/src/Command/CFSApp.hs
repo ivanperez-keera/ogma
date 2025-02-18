@@ -99,7 +99,7 @@ command' options (ExprPair exprT) = do
     -- Open files needed to fill in details in the template.
     vs    <- parseVariablesFile varNameFile
     rs    <- parseRequirementsListFile handlersFile
-    varDB <- parseVarDBFile varDBFile
+    varDB <- parseVarDBFile' varDBFile
 
     spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
 
@@ -131,7 +131,7 @@ command' options (ExprPair exprT) = do
       Command.Standalone.commandLogic fp' "copilot" [] exprT spec'
 
 -- | Generate a variable substitution map for a cFS application.
-commandLogic :: [(String, String, String, String)]
+commandLogic :: VariableDB
              -> [String]
              -> [Trigger]
              -> Maybe Command.Standalone.AppData
@@ -144,7 +144,7 @@ commandLogic varDB varNames handlers copilotM =
     (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
 
     f n o@(oVars, oIds, oInfos, oDatas) =
-      case variableMap varDB n of
+      case variableMap' varDB n of
         Nothing -> o
         Just (vars, ids, infos, datas) ->
           (vars : oVars, ids : oIds, infos : oInfos, datas : oDatas)
@@ -200,6 +200,25 @@ variableMap varDB varName =
                 -> (VarDecl, String, MsgInfo, MsgData)
     csvToVarMap (nm, ty, mid, mn) =
       (VarDecl nm ty, mid, MsgInfo mid mn, MsgData mn nm ty)
+
+-- | Return the variable information needed to generate declarations
+-- and subscriptions for a given variable name and variable database.
+--
+-- We map the types to the specific types needed for the variable declaration
+-- and the message subscription in ROS.
+variableMap' :: VariableDB
+             -> String
+             -> Maybe (VarDecl, MsgInfoId, MsgInfo, MsgData)
+variableMap' varDB varName = do
+  inputDef  <- findInput varDB varName
+  mid       <- topic <$> findConnection inputDef "cfs"
+  topicDef  <- findTopic varDB "cfs" mid
+  let typeVar' = fromMaybe
+                   (topicType topicDef)
+                   (toType <$> findType varDB varName "cfs" "C")
+  let mn = "Process" ++ mid
+  return (VarDecl varName typeVar', mid, MsgInfo mid mn, MsgData mn varName typeVar')
+
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
