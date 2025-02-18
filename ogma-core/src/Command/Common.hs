@@ -39,6 +39,7 @@ module Command.Common
     , parseVariablesFile
     , parseRequirementsListFile
     , parseVarDBFile
+    , parseVarDBFile'
     , parseTemplateVarsFile
     , checkArguments
     , specExtractExternalVariables
@@ -71,7 +72,8 @@ import qualified Control.Exception      as E
 import           Control.Monad.Except   (ExceptT (..), runExceptT, throwError)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (FromJSON(..), Value (Null, Object),
-                                         eitherDecode, object, (.:))
+                                         eitherDecode, eitherDecodeFileStrict,
+                                         object, (.:))
 import           Data.Aeson.KeyMap      (union)
 import           Data.Aeson.Types       (prependFailure, typeMismatch)
 import           Data.List              (find, isInfixOf, isPrefixOf)
@@ -201,6 +203,13 @@ parseVarDBFile Nothing   = return []
 parseVarDBFile (Just fn) =
   ExceptT $ makeLeftE (cannotOpenDB fn) <$>
     (E.try $ fmap read <$> lines <$> readFile fn)
+
+parseVarDBFile' :: Maybe FilePath
+                -> ExceptT ErrorTriplet IO VariableDB
+parseVarDBFile' Nothing   = return emptyVariableDB
+parseVarDBFile' (Just fn) =
+  ExceptT $ makeLeftE' (cannotOpenDB fn) <$>
+    (eitherDecodeFileStrict fn)
 
 -- | Process a JSON file with additional template variables to make available
 -- during template expansion.
@@ -490,6 +499,11 @@ makeLeftE :: c -> Either E.SomeException b -> Either c b
 makeLeftE c (Left _)   = Left c
 makeLeftE _ (Right x)  = Right x
 
+-- | Replace the left Exception in an Either.
+makeLeftE' :: c -> Either a b -> Either c b
+makeLeftE' c (Left _)   = Left c
+makeLeftE' _ (Right x)  = Right x
+
 -- Parse Variable DBs
 
 findInput :: VariableDB -> String -> Maybe InputDef
@@ -527,6 +541,9 @@ data VariableDB = VariableDB
   deriving (Generic, Show)
 
 instance FromJSON VariableDB
+
+emptyVariableDB :: VariableDB
+emptyVariableDB = VariableDB [] [] [] []
 
 data InputDef = InputDef
     { name        :: String
