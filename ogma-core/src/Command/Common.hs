@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE OverloadedStrings         #-}
@@ -59,10 +60,12 @@ module Command.Common
 import qualified Control.Exception      as E
 import           Control.Monad.Except   (ExceptT (..), runExceptT, throwError)
 import           Control.Monad.IO.Class (liftIO)
-import           Data.Aeson             (Value (Null, Object), eitherDecode,
-                                         object)
+import           Data.Aeson             (FromJSON(..), Value (Null, Object),
+                                         eitherDecode, object, (.:))
 import           Data.Aeson.KeyMap      (union)
+import           Data.Aeson.Types       (prependFailure, typeMismatch)
 import           Data.List              (isInfixOf, isPrefixOf)
+import           GHC.Generics           (Generic)
 import           System.Directory       (doesFileExist)
 import           System.FilePath        ((</>))
 import           System.Process         (readProcess)
@@ -476,3 +479,126 @@ mergeObjects _           _           = error "The values passed are not objects"
 makeLeftE :: c -> Either E.SomeException b -> Either c b
 makeLeftE c (Left _)   = Left c
 makeLeftE _ (Right x)  = Right x
+
+-- Parse Variable DBs
+
+data VariableDB = VariableDB
+    { inputs  :: [InputDef]
+    , topics  :: [TopicDef]
+    , types   :: [TypeDef]
+    , outputs :: [OutputDef]
+    }
+  deriving (Generic, Show)
+
+instance FromJSON VariableDB
+
+data InputDef = InputDef
+    { name        :: String
+    , connections :: [ Connection ]
+    }
+  deriving (Generic, Show)
+
+instance FromJSON InputDef
+
+data Connection = Connection
+    { scope :: String
+    , topic :: String
+    , field :: Maybe String
+    }
+  deriving (Generic, Show)
+
+instance FromJSON Connection
+
+data TopicDef = TopicDef
+    { topicScope :: String
+    , topicTopic :: String
+    , topicType  :: String
+    }
+  deriving (Show)
+
+instance FromJSON TopicDef where
+  parseJSON (Object v) = TopicDef
+    <$> v .: "scope"
+    <*> v .: "topic"
+    <*> v .: "type"
+  parseJSON invalid =
+    prependFailure "parsing topic definition failed: "
+      (typeMismatch "Object" invalid)
+
+data TypeDef = TypeDef
+    { fromScope :: String
+    , fromType  :: String
+    , fromField :: Maybe String
+    , toScope   :: String
+    , toType    :: String
+    }
+  deriving (Generic, Show)
+
+instance FromJSON TypeDef
+
+data OutputDef = OutputDef
+    { outputName :: String
+    , outputType :: Maybe String
+    }
+  deriving (Show)
+
+instance FromJSON OutputDef where
+  parseJSON (Object v) = OutputDef
+    <$> v .: "name"
+    <*> v .: "type"
+
+  parseJSON invalid =
+    prependFailure "parsing output definition failed: "
+      (typeMismatch "Object" invalid)
+
+--  { "inputs":
+--     [ { "name": "variable1"
+--       , "type": "double"
+--       , "connections":
+--          [ { "scope": "cfs"
+--            , "topic": "MY_APP_MSG_ID"
+--            }
+--          , { "scope": "ros/message"
+--            , "topic": "/some_app/topic"
+--            }
+--          ]
+--       }
+--     ]
+-- , "topics":
+--     [ { "scope": "cfs"
+--       , "topic": "MY_APP_MSG_ID"
+--       , "type":  "my_app_msg_t"
+--       }
+--     , { "scope": "ros/message"
+--       , "topic": "/some_app/topic"
+--       , "type":  "std_msgs::msg::Float64"
+--       }
+--     ]
+-- , "type_mappings":
+--     [ { "scope1": "cfs"
+--       , "type1":  "my_app_msg_t"
+--       , "field1": "data_field"
+--       , "scope2": "C"
+--       , "type2":  "double"
+--       }
+--     , { "scope1": "ros/message"
+--       , "type1":  "std_msgs::msg::Float64"
+--       , "field1": "data"
+--       , "scope2": "C"
+--       , "type2":  "double"
+--       }
+--     , { "scope1": "ros/variable"
+--       , "type1":  "std::int64_t"
+--       , "field1": "data"
+--       , "scope2": "C"
+--       , "type2":  "int64_t"
+--       }
+--     ]
+-- , "outputs":
+--     [ { "name": "output1"
+--       , "type": "double"
+--       }
+--     , { "name": "output2"
+--       }
+--     ]
+-- }
