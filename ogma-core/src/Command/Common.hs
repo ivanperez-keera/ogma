@@ -53,6 +53,12 @@ module Command.Common
     , makeLeftE
     , mergeObjects
     , locateTemplateDir
+    , VariableDB(..)
+    , InputDef(..)
+    , Connection(..)
+    , TopicDef(..)
+    , TypeDef(..)
+    , OutputDef(..)
     )
   where
 
