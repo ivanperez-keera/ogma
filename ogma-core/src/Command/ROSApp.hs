@@ -99,7 +99,7 @@ command' options (ExprPair exprT) = do
     -- Open files needed to fill in details in the template.
     vs    <- parseVariablesFile varNameFile
     rs    <- parseRequirementsListFile handlersFile
-    varDB <- parseVarDBFile varDBFile
+    varDB <- parseVarDBFile' varDBFile
 
     spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
 
@@ -111,7 +111,7 @@ command' options (ExprPair exprT) = do
         monitors = fromMaybe (specExtractHandlers spec) rs
 
     let appData   = AppData variables monitors copilotM
-        variables = mapMaybe (variableMap varDB) varNames
+        variables = mapMaybe (variableMap' varDB) varNames
 
     return appData
 
@@ -211,6 +211,59 @@ variableMap varDB varName =
       "float"    -> "std_msgs::msg::Float32"
       "double"   -> "std_msgs::msg::Float64"
       def        -> def
+
+variableMap' :: VariableDB
+             -> String
+             -> Maybe VarDecl
+variableMap' varDB varName = do
+  inputDef  <- findInput varDB varName
+  mid       <- topic <$> findConnection inputDef "ros/message"
+  typeVar'  <- toType <$> findType varDB varName "ros/variable" "C"
+  typeMsg'  <- toType <$> findType varDB varName "ros/message" "C"
+  return $ VarDecl varName typeVar' mid typeMsg'
+
+    -- csvToVarMap <$> find (sameName varName) varDB
+
+  where
+
+    -- -- True if the given variable and db entry have the same name
+    -- sameName :: String
+    --          -> (String, String, String, String)
+    --          -> Bool
+    -- sameName n (vn, _, _, _) = n == vn
+
+    -- -- Convert a DB row into Variable info needed to generate the ROS file
+    -- -- csvToVarMap :: (String, String, String, String)
+    -- --             -> VarDecl
+    -- csvToVarMap (nm, ty, mid, mn) = VarDecl nm (typeVar ty) mid (typeMsg ty)
+
+    typeVar ty = case ty of
+      "uint8_t"  -> "std::uint8_t"
+      "uint16_t" -> "std::uint16_t"
+      "uint32_t" -> "std::uint32_t"
+      "uint64_t" -> "std::uint64_t"
+      "int8_t"   -> "std::int8_t"
+      "int16_t"  -> "std::int16_t"
+      "int32_t"  -> "std::int32_t"
+      "int64_t"  -> "std::int64_t"
+      "float"    -> "float"
+      "double"   -> "double"
+      def        -> def
+
+    typeMsg ty = case ty of
+      "bool"     -> "std_msgs::msg::Bool"
+      "uint8_t"  -> "std_msgs::msg::UInt8"
+      "uint16_t" -> "std_msgs::msg::UInt16"
+      "uint32_t" -> "std_msgs::msg::UInt32"
+      "uint64_t" -> "std_msgs::msg::UInt64"
+      "int8_t"   -> "std_msgs::msg::Int8"
+      "int16_t"  -> "std_msgs::msg::Int16"
+      "int32_t"  -> "std_msgs::msg::Int32"
+      "int64_t"  -> "std_msgs::msg::Int64"
+      "float"    -> "std_msgs::msg::Float32"
+      "double"   -> "std_msgs::msg::Float64"
+      def        -> def
+
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
