@@ -203,13 +203,13 @@ variableMap' :: VariableDB
              -> String
              -> Maybe VarDecl
 variableMap' varDB varName = do
-  inputDef  <- findInput varDB varName
-  topicDef  <- findTopic varDB varName "fprime/port"
+  inputDef     <- findInput varDB varName
+  inputDefType <- inputType inputDef
+  let typeDef = findType varDB varName "fprime/port" "C"
 
-  let typeVar' = fromMaybe
-                   (topicType topicDef)
-                   (toType <$> findType varDB varName "fprime/port" "C")
-  return $ VarDecl varName typeVar' (topicType topicDef)
+  portType <- maybe (inputType inputDef) (Just . fromType) typeDef
+
+  return $ VarDecl varName inputDefType portType
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
