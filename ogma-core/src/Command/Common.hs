@@ -78,6 +78,7 @@ import           Data.Aeson             (FromJSON(..), Value (Null, Object),
 import           Data.Aeson.KeyMap      (union)
 import           Data.Aeson.Types       (prependFailure, typeMismatch)
 import           Data.List              (find, isInfixOf, isPrefixOf)
+import           Data.Maybe             (isNothing)
 import           GHC.Generics           (Generic)
 import           System.Directory       (doesFileExist)
 import           System.FilePath        ((</>))
@@ -537,15 +538,42 @@ findTopic varDB scope name =
 
 findType :: VariableDB -> String -> String -> String -> Maybe TypeDef
 findType varDB inputName connectionName destConn = do
-  inputDef      <- findInput varDB inputName
-  connectionDef <- findConnection inputDef connectionName
-  topic         <- findTopic varDB connectionName (topic connectionDef)
+  inputDef <- findInput varDB inputName
+  let connectionDef :: Maybe Connection
+      connectionDef = findConnection inputDef connectionName
+
+      connectionField :: Maybe String
+      connectionField = field =<< connectionDef
+
+      connectionTopic :: Maybe String
+      connectionTopic = topic <$> connectionDef
+
+      topicDef :: Maybe TopicDef
+      topicDef = findTopic varDB connectionName =<< connectionTopic
+
+      ty :: Maybe String
+      ty = topicType <$> topicDef
 
   let match :: TypeDef -> Bool
-      match typeDef = fromScope typeDef == connectionName
-                   && fromType typeDef == topicType topic
-                   && fromField typeDef == field connectionDef
-                   && toScope typeDef == destConn
+      match typeDef =
+        case (inputType inputDef, ty) of
+          (Just x, Nothing) ->
+             fromScope typeDef == connectionName
+               && fromField typeDef == connectionField
+               && toScope typeDef == destConn
+               && toType typeDef == x
+          (Just x, Just ty') ->
+             fromScope typeDef == connectionName
+               && fromType typeDef == ty'
+               && fromField typeDef == connectionField
+               && toScope typeDef == destConn
+               && toType typeDef == x
+          (_     , Just ty') ->
+             fromScope typeDef == connectionName
+               && fromType typeDef == ty'
+               && fromField typeDef == connectionField
+               && toScope typeDef == destConn
+          (Nothing, Nothing) -> False
 
   find match (types varDB)
 
@@ -570,8 +598,13 @@ mergeInput :: Monad m
 mergeInput []     i = return [i]
 mergeInput (x:xs) i
   | name x == name i
+    && (  isNothing (inputType x)
+       || isNothing (inputType i)
+       || inputType x == inputType i
+       )
   = do cs <- mergeConnections (connections x) (connections i)
-       return $ InputDef (name x) cs : xs
+       return $
+         InputDef (name x) (mergeMaybe (inputType x) (inputType i)) cs : xs
 
   | otherwise
   = do xs' <- mergeInput xs i
@@ -666,6 +699,12 @@ mergeOutput (x:xs) o
   = do xs' <- mergeOutput xs o
        return (x : xs')
 
+mergeMaybe :: Maybe a -> Maybe a -> Maybe a
+mergeMaybe Nothing x = x
+mergeMaybe x Nothing = x
+mergeMaybe x _       = x
+
+
 data VariableDB = VariableDB
     { inputs  :: [InputDef]
     , topics  :: [TopicDef]
@@ -681,6 +720,7 @@ emptyVariableDB = VariableDB [] [] [] []
 
 data InputDef = InputDef
     { name        :: String
+    , inputType   :: Maybe String
     , connections :: [ Connection ]
     }
   deriving (Eq, Generic, Show)
@@ -737,55 +777,3 @@ instance FromJSON OutputDef where
   parseJSON invalid =
     prependFailure "parsing output definition failed: "
       (typeMismatch "Object" invalid)
-
---  { "inputs":
---     [ { "name": "variable1"
---       , "type": "double"
---       , "connections":
---          [ { "scope": "cfs"
---            , "topic": "MY_APP_MSG_ID"
---            }
---          , { "scope": "ros/message"
---            , "topic": "/some_app/topic"
---            }
---          ]
---       }
---     ]
--- , "topics":
---     [ { "scope": "cfs"
---       , "topic": "MY_APP_MSG_ID"
---       , "type":  "my_app_msg_t"
---       }
---     , { "scope": "ros/message"
---       , "topic": "/some_app/topic"
---       , "type":  "std_msgs::msg::Float64"
---       }
---     ]
--- , "type_mappings":
---     [ { "scope1": "cfs"
---       , "type1":  "my_app_msg_t"
---       , "field1": "data_field"
---       , "scope2": "C"
---       , "type2":  "double"
---       }
---     , { "scope1": "ros/message"
---       , "type1":  "std_msgs::msg::Float64"
---       , "field1": "data"
---       , "scope2": "C"
---       , "type2":  "double"
---       }
---     , { "scope1": "ros/variable"
---       , "type1":  "std::int64_t"
---       , "field1": "data"
---       , "scope2": "C"
---       , "type2":  "int64_t"
---       }
---     ]
--- , "outputs":
---     [ { "name": "output1"
---       , "type": "double"
---       }
---     , { "name": "output2"
---       }
---     ]
--- }
