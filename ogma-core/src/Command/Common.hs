@@ -40,6 +40,7 @@ module Command.Common
     , parseRequirementsListFile
     , parseVarDBFile
     , parseVarDBFile'
+    , openVarDBFiles
     , parseTemplateVarsFile
     , checkArguments
     , specExtractExternalVariables
@@ -203,6 +204,22 @@ parseVarDBFile Nothing   = return []
 parseVarDBFile (Just fn) =
   ExceptT $ makeLeftE (cannotOpenDB fn) <$>
     (E.try $ fmap read <$> lines <$> readFile fn)
+
+openVarDBFiles :: [FilePath]
+               -> ExceptT ErrorTriplet IO VariableDB
+openVarDBFiles files = do
+  dataDir <- liftIO $ getDataDir
+  let defaultDB = dataDir </> "variable-db.json"
+  openVarDBFiles' emptyVariableDB (files ++ [defaultDB])
+
+openVarDBFiles' :: VariableDB
+                -> [FilePath]
+                -> ExceptT ErrorTriplet IO VariableDB
+openVarDBFiles' acc []     = return acc
+openVarDBFiles' acc (x:xs) = do
+  file <- parseVarDBFile' (Just x)
+  acc' <- mergeVariableDB acc file
+  openVarDBFiles' acc' xs
 
 parseVarDBFile' :: Maybe FilePath
                 -> ExceptT ErrorTriplet IO VariableDB
@@ -532,6 +549,123 @@ findType varDB inputName connectionName destConn = do
 
   find match (types varDB)
 
+mergeVariableDB :: Monad m
+                => VariableDB -> VariableDB -> ExceptT ErrorTriplet m VariableDB
+mergeVariableDB varDB1 varDB2 = do
+  inputs' <- mergeInputs (inputs varDB1)    (inputs varDB2)
+  topics' <- mergeTopics (topics varDB1)    (topics varDB2)
+  types'  <- mergeTypes  (types varDB1)     (types varDB2)
+  outputs' <- mergeOutputs (outputs varDB1) (outputs varDB2)
+  return $ VariableDB inputs' topics' types' outputs'
+
+mergeInputs :: Monad m
+            => [InputDef] -> [InputDef] -> ExceptT ErrorTriplet m [InputDef]
+mergeInputs inputs []     = return inputs
+mergeInputs inputs (x:xs) = do
+  inputs' <- mergeInput inputs x
+  mergeInputs inputs' xs
+
+mergeInput :: Monad m
+           => [InputDef] -> InputDef -> ExceptT ErrorTriplet m [InputDef]
+mergeInput []     i = return [i]
+mergeInput (x:xs) i
+  | name x == name i
+  = do cs <- mergeConnections (connections x) (connections i)
+       return $ InputDef (name x) cs : xs
+
+  | otherwise
+  = do xs' <- mergeInput xs i
+       return $ x : xs'
+
+mergeConnections :: Monad m
+                 => [Connection] -> [Connection] -> ExceptT ErrorTriplet m [Connection]
+mergeConnections cs []     = return cs
+mergeConnections cs (x:xs) = do
+  cs' <- mergeConnection cs x
+  mergeConnections cs' xs
+
+mergeConnection ::  Monad m
+                => [Connection] -> Connection -> ExceptT ErrorTriplet m [Connection]
+mergeConnection []     c = return [c]
+mergeConnection (x:xs) c
+  | x == c
+  = return $ x : xs
+
+  | scope x == scope c
+  = throwError $
+      ErrorTriplet 1 "Cannot merge different connections with the same scope" LocationNothing
+
+  | otherwise
+  = do cs' <- mergeConnection xs c
+       return (x : cs')
+
+mergeTopics :: Monad m
+            => [TopicDef] -> [TopicDef] -> ExceptT ErrorTriplet m [TopicDef]
+mergeTopics ts [] = return ts
+mergeTopics ts (x:xs) = do
+  ts' <- mergeTopic ts x
+  mergeTopics ts' xs
+
+mergeTopic :: Monad m
+           => [TopicDef] -> TopicDef -> ExceptT ErrorTriplet m [TopicDef]
+mergeTopic []     c = return [c]
+mergeTopic (x:xs) c
+  | x == c
+  = return $ x : xs
+
+  | topicScope x == topicScope c && topicTopic x == topicTopic c
+  = throwError $
+      ErrorTriplet 1 "Cannot merge topics with same scope and different types" LocationNothing
+
+  | otherwise
+  = do ts' <- mergeTopic xs c
+       return (x : ts')
+
+mergeTypes :: Monad m
+           => [TypeDef] -> [TypeDef] -> ExceptT ErrorTriplet m [TypeDef]
+mergeTypes ts [] = return ts
+mergeTypes ts (x:xs) = do
+  ts' <- mergeType ts x
+  mergeTypes ts' xs
+
+mergeType :: Monad m
+           => [TypeDef] -> TypeDef -> ExceptT ErrorTriplet m [TypeDef]
+mergeType []     c = return [c]
+mergeType (x:xs) c
+  | x == c
+  = return $ x : xs
+
+  | fromScope x == fromScope c && fromType x == fromType c &&
+    toScope x == toScope c
+  = throwError $
+      ErrorTriplet 1 "Cannot merge types with same scopes and from type" LocationNothing
+
+  | otherwise
+  = do ts' <- mergeType xs c
+       return (x : ts')
+
+mergeOutputs :: Monad m
+             => [OutputDef] -> [OutputDef] -> ExceptT ErrorTriplet m [OutputDef]
+mergeOutputs ts [] = return ts
+mergeOutputs ts (x:xs) = do
+  ts' <- mergeOutput ts x
+  mergeOutputs ts' xs
+
+mergeOutput :: Monad m
+            => [OutputDef] -> OutputDef -> ExceptT ErrorTriplet m [OutputDef]
+mergeOutput []     o = return [o]
+mergeOutput (x:xs) o
+  | x == o
+  = return $ x : xs
+
+  | outputName x == outputName o
+  = throwError $
+      ErrorTriplet 1 "Cannot merge outputs with the same name and different args" LocationNothing
+
+  | otherwise
+  = do xs' <- mergeOutput xs o
+       return (x : xs')
+
 data VariableDB = VariableDB
     { inputs  :: [InputDef]
     , topics  :: [TopicDef]
@@ -549,7 +683,7 @@ data InputDef = InputDef
     { name        :: String
     , connections :: [ Connection ]
     }
-  deriving (Generic, Show)
+  deriving (Eq, Generic, Show)
 
 instance FromJSON InputDef
 
@@ -558,7 +692,7 @@ data Connection = Connection
     , topic :: String
     , field :: Maybe String
     }
-  deriving (Generic, Show)
+  deriving (Eq, Generic, Show)
 
 instance FromJSON Connection
 
@@ -567,7 +701,7 @@ data TopicDef = TopicDef
     , topicTopic :: String
     , topicType  :: String
     }
-  deriving (Show)
+  deriving (Eq, Show)
 
 instance FromJSON TopicDef where
   parseJSON (Object v) = TopicDef
@@ -585,7 +719,7 @@ data TypeDef = TypeDef
     , toScope   :: String
     , toType    :: String
     }
-  deriving (Generic, Show)
+  deriving (Eq, Generic, Show)
 
 instance FromJSON TypeDef
 
@@ -593,7 +727,7 @@ data OutputDef = OutputDef
     { outputName :: String
     , outputType :: Maybe String
     }
-  deriving (Show)
+  deriving (Eq, Show)
 
 instance FromJSON OutputDef where
   parseJSON (Object v) = OutputDef
