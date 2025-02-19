@@ -51,7 +51,7 @@ import           Control.Monad.Except   ( ExceptT(..), liftEither )
 import           Data.Aeson             ( ToJSON, toJSON )
 import           Data.Char              ( toUpper )
 import           Data.List              ( find )
-import           Data.Maybe             ( fromMaybe, mapMaybe )
+import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
 -- External imports: auxiliary
@@ -97,7 +97,7 @@ command' options (ExprPair exprT) = do
     -- Open files needed to fill in details in the template.
     vs    <- parseVariablesFile varNameFile
     rs    <- parseRequirementsListFile handlersFile
-    varDB <- parseVarDBFile' varDBFile
+    varDB <- openVarDBFiles varDBFile
 
     spec  <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
 
@@ -118,7 +118,7 @@ command' options (ExprPair exprT) = do
 
     fp             = commandInputFile options
     varNameFile    = commandVariables options
-    varDBFile      = commandVariableDB options
+    varDBFile      = maybeToList $ commandVariableDB options
     handlersFile   = commandHandlers options
     formatName     = commandFormat options
     propFormatName = commandPropFormat options
