@@ -56,6 +56,9 @@ import           Data.Aeson           (ToJSON (..))
 import           Data.List            (find)
 import           Data.Maybe           (fromMaybe, mapMaybe, maybeToList)
 import           GHC.Generics         (Generic)
+import           Debug.Trace
+import           Text.Pretty.Simple
+import           Data.Text.Lazy (unpack)
 
 -- External imports: auxiliary
 import System.Directory.Extra (copyTemplate)
@@ -170,15 +173,23 @@ variableMap' :: VariableDB
              -> String
              -> Maybe VarDecl
 variableMap' varDB varName = do
-  inputDef  <- findInput varDB varName
+  trace ("**** Variable map for " ++ varName) (return ())
+  inputDef <- findInput varDB varName
+  trace (unpack $ pShow inputDef) (return ())
   mid <- topic <$> findConnection inputDef "ros/message"
-  topicDef  <- findTopic varDB "cfs" mid
-  let typeVar' = fromMaybe
-                   (topicType topicDef)
-                   (toType <$> findType varDB varName "ros/variable" "C")
+  trace (unpack $ pShow mid) (return ())
+  topicDef  <- findTopic varDB "ros/message" mid
+  trace (unpack $ pShow topicDef) (return ())
+  typeVar' <- maybe
+                (inputType inputDef)
+                (Just . toType)
+                (findType varDB varName "ros/variable" "C")
+  trace (unpack $ pShow typeVar') (return ())
   let typeMsg' = fromMaybe
                    (topicType topicDef)
-                   (toType <$> findType varDB varName "ros/message" "C")
+                   (fromType <$> findType varDB varName "ros/message" "C")
+  trace (unpack $ pShow typeMsg') (return ())
+  trace ("**** End of variable map for " ++ varName) (return ())
   return $ VarDecl varName typeVar' mid typeMsg'
 
 -- | The declaration of a variable in C, with a given type and name.

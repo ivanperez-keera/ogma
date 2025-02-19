@@ -83,6 +83,7 @@ import           GHC.Generics           (Generic)
 import           System.Directory       (doesFileExist)
 import           System.FilePath        ((</>))
 import           System.Process         (readProcess)
+import           Text.Pretty.Simple
 
 -- External imports: auxiliary
 import Data.ByteString.Extra as B (safeReadFile)
@@ -136,12 +137,17 @@ parseInputFile fp formatName propFormatName propVia exprT =
     -- not.
     exists  <- doesFileExist formatName
     dataDir <- getDataDir
-    let formatFile
+
+    let propFormatName'
+          | propFormatName == "literal" = ""
+          | otherwise                   = "_" ++ propFormatName
+
+        formatFile
           | isInfixOf "/" formatName || exists
           = formatName
           | otherwise
           = dataDir </> "data" </> "formats" </>
-               (formatName ++ "_" ++ propFormatName)
+               (formatName ++ propFormatName')
     formatMissing <- not <$> doesFileExist formatFile
 
     if formatMissing
@@ -210,8 +216,10 @@ openVarDBFiles :: [FilePath]
                -> ExceptT ErrorTriplet IO VariableDB
 openVarDBFiles files = do
   dataDir <- liftIO $ getDataDir
-  let defaultDB = dataDir </> "variable-db.json"
-  openVarDBFiles' emptyVariableDB (files ++ [defaultDB])
+  let defaultDB = dataDir </> "data" </> "variable-db.json"
+  v <- openVarDBFiles' emptyVariableDB (files ++ [defaultDB])
+  liftIO $ pPrint v
+  return v
 
 openVarDBFiles' :: VariableDB
                 -> [FilePath]
