@@ -110,6 +110,7 @@ library
     Command.Report
     Command.Result
     Command.ROSApp
+    Command.Search
     Command.Standalone
 
     Data.Location
