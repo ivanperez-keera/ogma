@@ -51,7 +51,7 @@ jobs:
         ogma diagram --target-dir demo \
                      --prop-format literal \
                      --mode calculate \
-                     --file-format dot \
+                     --input-format dot \
                      --file-name ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot
         cd demo/
         cabal v1-sandbox init --sandbox=$PWD/../.cabal-sandbox
