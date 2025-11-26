@@ -48,7 +48,7 @@ jobs:
 
     - name: Generate and enable app from diagram
       run: |
-        ogma diagram --app-target-dir demo \
+        ogma diagram --target-dir demo \
                      --prop-format literal \
                      --mode calculate \
                      --file-format dot \
