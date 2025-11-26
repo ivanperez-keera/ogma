@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2025-11-26
+
+* Add CI job to test diagram backend.
+
 ## [1.11.0] - 2025-11-21
 
 * Version bump 1.11.0 (#325).
