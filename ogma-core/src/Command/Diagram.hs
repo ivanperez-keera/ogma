@@ -31,7 +31,7 @@ module Command.Diagram
 
 -- External imports
 import           Control.Exception                 as E
-import           Control.Monad                     (when)
+import           Control.Monad                     (when, void)
 import           Data.Aeson                        (object, (.=))
 import           Data.ByteString.Lazy              (toStrict)
 import qualified Data.ByteString.Lazy              as B
@@ -55,7 +55,7 @@ import qualified Data.Text.Lazy                    as LT
 import           Data.Void                         (Void)
 import           System.FilePath                   ((</>))
 import           Text.Megaparsec                   (ErrorFancy (ErrorFail),
-                                                    ParsecT, empty,
+                                                    ParsecT, choice, empty,
                                                     errorBundlePretty,
                                                     fancyFailure, many,
                                                     manyTill, noneOf, parse,
@@ -339,6 +339,7 @@ pDiagram :: ExprPair -> MermaidParser Diagram
 pDiagram  exprP =
       pGraphDiagram exprP
   <|> pStateDiagram exprP
+  <|> pSequenceDiagram exprP
 
 -- | Parser for a mermaid diagram.
 --
@@ -405,6 +406,51 @@ pStateTransition ep@(ExprPair { _exprParse = parseProp }) = do
   _ <- newline
 
   pure $ (from, exprPairShow ep edge, to)
+
+-- | Parser for Mermaid diagrams of type sequenceDiagram.
+pSequenceDiagram :: ExprPair -> MermaidParser Diagram
+pSequenceDiagram exprPair = do
+  spaces
+  _ <- string "sequenceDiagram"
+  spaces
+
+  conditions <- many (pSequenceTransition exprPair)
+  let transitions = zipWith (\t idx -> (idx, t, idx + 1)) conditions [0..]
+
+  pure $ Diagram transitions
+
+-- | Parser for a connection, message or transition in a sequence diagram.
+--
+-- This parser depends on an auxiliary parser for the expressions associated to
+-- the connections or messages between elements.
+pSequenceTransition :: ExprPair -> MermaidParser String
+pSequenceTransition ep@(ExprPair { _exprParse = parseProp }) = do
+  spaces
+  stateFrom <- many digitChar
+  spaces
+  pSequenceArrow
+  spaces
+  stateTo <- many digitChar
+  spaces
+  _ <- char ':'
+  spaces
+  edge <- many (noneOf ("\n" :: [Char]))
+
+  let x = parseProp edge
+  when (isLeft x) $ fancyFailure $ Set.singleton $
+    ErrorFail $ "Edge property has incorrect format: " ++ show edge
+
+  _ <- newline
+
+  pure (exprPairShow ep edge)
+
+-- | Parser for arrow in sequence diagram.
+pSequenceArrow :: MermaidParser ()
+pSequenceArrow = void $ choice
+  [ string "->>"
+  , string "-->>"
+  , string "-)"
+  ]
 
 -- | Consume spaces
 spaces :: MermaidParser ()
