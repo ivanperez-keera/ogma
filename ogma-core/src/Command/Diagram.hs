@@ -58,7 +58,8 @@ import           Text.Megaparsec                   (ErrorFancy (ErrorFail),
                                                     ParsecT, empty,
                                                     errorBundlePretty,
                                                     fancyFailure, many,
-                                                    manyTill, noneOf, parse)
+                                                    manyTill, noneOf, parse,
+                                                    (<|>))
 import           Text.Megaparsec.Char              (alphaNumChar, char,
                                                     digitChar, newline, space1,
                                                     string)
@@ -333,17 +334,23 @@ parseDiagramMermaid txtDia exprP =
 -- | Type for parser for memaid diagrams.
 type MermaidParser = ParsecT Void Text Identity
 
+-- | Parser for mermaid diagrams.
+pDiagram :: ExprPair -> MermaidParser Diagram
+pDiagram  exprP =
+      pGraphDiagram exprP
+  <|> pStateDiagram exprP
+
 -- | Parser for a mermaid diagram.
 --
 -- This parser depends on an auxiliary parser for the expressions associated to
 -- the edges or connections between states.
-pDiagram :: ExprPair -> MermaidParser Diagram
-pDiagram exprP = do
+pGraphDiagram :: ExprPair -> MermaidParser Diagram
+pGraphDiagram exprP = do
   _ <- string "graph" <* spaces
   _name <- T.pack <$> manyTill alphaNumChar (char ';')
   _ <- newline
 
-  transitions <- many (pTransition exprP)
+  transitions <- many (pGraphTransition exprP)
 
   pure $ Diagram transitions
 
@@ -351,8 +358,8 @@ pDiagram exprP = do
 --
 -- This parser depends on an auxiliary parser for the expressions associated to
 -- the edges or connections between states.
-pTransition :: ExprPair -> MermaidParser (Int, String, Int)
-pTransition ep@(ExprPair { _exprParse = parseProp }) = do
+pGraphTransition :: ExprPair -> MermaidParser (Int, String, Int)
+pGraphTransition ep@(ExprPair { _exprParse = parseProp }) = do
   _ <- spaces
   stateFrom <- many digitChar
   _ <- string "-->|"
@@ -367,6 +374,37 @@ pTransition ep@(ExprPair { _exprParse = parseProp }) = do
   _ <- char ';'
   _ <- newline
   return (read stateFrom, exprPairShow ep edge, read stateTo)
+
+-- | Parser for Mermaid diagrams of type stateDiagram-v2.
+pStateDiagram :: ExprPair -> MermaidParser Diagram
+pStateDiagram exprPair = do
+  _ <- string "stateDiagram-v2" <* spaces
+
+  transitions <- many (pStateTransition exprPair)
+
+  pure $ Diagram transitions
+
+-- | Parser for transition label in stateDiagram-v2 mermaid diagram.
+pStateTransition :: ExprPair -> MermaidParser (Int, String, Int)
+pStateTransition ep@(ExprPair { _exprParse = parseProp }) = do
+  _ <- spaces
+  from <- read <$> many digitChar
+  _ <- spaces
+  string "-->"
+  _ <- spaces
+  to <- read <$> many digitChar
+  _ <- spaces
+  _ <- char ':'
+  _ <- spaces
+  edge <- many (noneOf ("\n" :: [Char]))
+
+  let x = parseProp edge
+  when (isLeft x) $ fancyFailure $ Set.singleton $
+    ErrorFail $ "Edge property has incorrect format: " ++ show edge
+
+  _ <- newline
+
+  pure $ (from, exprPairShow ep edge, to)
 
 -- | Consume spaces
 spaces :: MermaidParser ()
