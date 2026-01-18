@@ -52,7 +52,7 @@ message is sent out to indicate that a trigger fired.
 An invocation of Ogma's cFS backend may look like the following:
 
 ```sh
-$ ogma cfs --app-target-dir demo \
+$ ogma cfs --target-dir demo \
            --input-file ogma-cli/examples/cfs-001-hello-ogma/expressions.json \
            --input-format ogma-cli/examples/cfs-001-hello-ogma/json-format.cfg \
            --prop-format literal \
@@ -228,7 +228,7 @@ To generate the cFS application from the source files listed above, we invoke
 `ogma` with the following arguments:
 
 ```sh
-$ ogma cfs --app-target-dir demo \
+$ ogma cfs --target-dir demo \
            --input-file ogma-cli/examples/cfs-001-hello-ogma/expressions.json \
            --input-format ogma-cli/examples/cfs-001-hello-ogma/json-format.cfg \
            --prop-format literal \
