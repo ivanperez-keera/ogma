@@ -305,7 +305,7 @@ ROS applications are generated using the Ogma command `ros`, which receives
 five main arguments:
 - `--target-dir DIR`: location where the ROS application files must be
   stored.
-- `--app-template-dir DIR`: location of the ROS application template to use.
+- `--template-dir DIR`: location of the ROS application template to use.
 - `--variable-file FILENAME`: a file containing a list of variables that must
 be made available to the monitor.
 - `--variable-db FILENAME`: a file containing a database of known variables,
@@ -417,12 +417,12 @@ package. It's possible to customize the output by providing a directory with a
 set of files with a ROS package template, which Ogma will use instead.
 
 To choose this feature, one must call Ogma's `ros` command with the argument
-`--app-template-dir DIR`, where `DIR` is the path to a directory containing a
-ROS 2 package template. For example, assuming that the directory `my_template`
+`--template-dir DIR`, where `DIR` is the path to a directory containing a ROS 2
+package template. For example, assuming that the directory `my_template`
 contains a custom ROS package template, one can execute:
 
 ```
-$ ogma ros --app-template-dir my_template/ --handlers filename --variable-file variables --variable-db ros-variable-db.json --target-dir ros_demo
+$ ogma ros --template-dir my_template/ --handlers filename --variable-file variables --variable-db ros-variable-db.json --target-dir ros_demo
 ```
 
 Ogma will copy the files in that directory to the target path, filling in
