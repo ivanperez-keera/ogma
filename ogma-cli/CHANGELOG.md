@@ -1,8 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2025-11-26
+## [1.X.Y] - 2025-01-18
 
 * Add CI job to test diagram backend (#332).
+* Standardize argument names across commands (#334).
 
 ## [1.11.0] - 2025-11-21
 
