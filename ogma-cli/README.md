@@ -130,7 +130,7 @@ the following arguments:
 - `--input-file FILENAME`: location of the specification or source file for
   which a cFS application is being generated.
 - `--target-dir DIR`: location where the cFS application files must be stored.
-- `--app-template-dir DIR`: location of the cFS application template to use.
+- `--template-dir DIR`: location of the cFS application template to use.
 - `--variable-file FILENAME`: a file containing a list of variables to monitor
 in the cFS application.
 - `--variable-db FILENAME`: a file containing a database of known variables,
@@ -227,12 +227,12 @@ with a set of files with a cFS application template, which Ogma will use
 instead.
 
 To choose this feature, one must call Ogma's `cfs` command with the argument
-`--app-template-dir DIR`, where `DIR` is the path to a directory containing a
-cFS application template. For example, assuming that the directory
-`my_template` contains a custom cFS application template, one can execute:
+`--template-dir DIR`, where `DIR` is the path to a directory containing a cFS
+application template. For example, assuming that the directory `my_template`
+contains a custom cFS application template, one can execute:
 
 ```
-$ ogma cfs --app-template-dir my_template/ --variable-db examples/cfs-variable-db.json --variable-file examples/cfs-variables
+$ ogma cfs --template-dir my_template/ --variable-db examples/cfs-variable-db.json --variable-file examples/cfs-variables
 ```
 
 Ogma will copy the files in that directory to the target path, filling in
