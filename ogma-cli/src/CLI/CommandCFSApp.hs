@@ -112,7 +112,7 @@ commandOptsParser = CommandOpts
         )
   <*> optional
         ( strOption
-            (  long "app-template-dir"
+            (  long "template-dir"
             <> metavar "DIR"
             <> help strCFSAppTemplateDirArgDesc
             )
