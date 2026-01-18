@@ -749,7 +749,7 @@ typedef struct {
 Ogma can generate that code automatically with the `structs` subcommand:
 
 ```haskell
-$ ogma structs --header-file-name examples/point.h
+$ ogma structs --input-file examples/point.h
 data Point = Point
   { pX :: Field "x" Double
   , pY :: Field "y" Double
