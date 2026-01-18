@@ -47,7 +47,7 @@ import qualified Command.Diagram
 data CommandOpts = CommandOpts
   { diagramTargetDir   :: FilePath
   , diagramTemplateDir :: Maybe FilePath
-  , diagramFileName    :: FilePath
+  , diagramInputFile   :: FilePath
   , diagramFormat      :: String
   , diagramPropFormat  :: String
   , diagramTarget      :: String
@@ -91,7 +91,7 @@ command c
              , Command.Diagram.diagramStateVar    = diagramStateVar c
              , Command.Diagram.diagramInputVar    = diagramInputVar c
              }
-       diagram (diagramFileName c) internalCommandOpts
+       diagram (diagramInputFile c) internalCommandOpts
   where
     diagramFormatP     = parseDiagramFormat (diagramFormat c)
     diagramModeP       = parseDiagramMode (diagramMode c)
@@ -144,9 +144,9 @@ commandOptsParser = CommandOpts
             )
         )
   <*> strOption
-        (  long "file-name"
+        (  long "input-file"
         <> metavar "FILENAME"
-        <> help strDiagramFilenameDesc
+        <> help strDiagramInputFileDesc
         )
   <*> strOption
         (  long "input-format"
@@ -201,9 +201,9 @@ strDiagramTargetDirDesc = "Target directory"
 strDiagramTemplateDirArgDesc :: String
 strDiagramTemplateDirArgDesc = "Directory holding target source template"
 
--- | Filename flag description.
-strDiagramFilenameDesc :: String
-strDiagramFilenameDesc = "File with diagram source"
+-- | Input file flag description.
+strDiagramInputFileDesc :: String
+strDiagramInputFileDesc = "File with diagram source"
 
 -- | Format flag description.
 strDiagramFormatDesc :: String
