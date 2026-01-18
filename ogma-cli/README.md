@@ -475,7 +475,7 @@ for F' component generation is considered preliminary.
 F' components are generated using the Ogma command `fprime`, which receives
 five main arguments:
 - `--target-dir DIR`: location where the F' application files must be stored.
-- `--app-template-dir DIR`: directory holding F' component source template.
+- `--template-dir DIR`: directory holding F' component source template.
 - `--variable-file FILENAME`: a file containing a list of variables that must
 be made available to the monitor.
 - `--variable-db FILENAME`: a file containing a database of known variables,
@@ -563,12 +563,12 @@ component. It's possible to customize the output by providing a directory with
 a set of files with an F' component template, which Ogma will use instead.
 
 To choose this feature, one must call Ogma's `fprime` command with the argument
-`--app-template-dir DIR`, where `DIR` is the path to a directory containing an
-F' component specification template. For example, assuming that the directory
+`--template-dir DIR`, where `DIR` is the path to a directory containing an F'
+component specification template. For example, assuming that the directory
 `my_template` contains a custom F' component template, one can execute:
 
 ```
-$ ogma fprime --app-template-dir my_template/ --handlers filename --variable-file variables --variable-db fprime-variable-db.json --target-dir fprime_demo
+$ ogma fprime --template-dir my_template/ --handlers filename --variable-file variables --variable-db fprime-variable-db.json --target-dir fprime_demo
 ```
 
 Ogma will copy the files in that directory to the target path, filling in
