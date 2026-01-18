@@ -49,7 +49,7 @@ import qualified Command.Overview
 
 -- | Options to generate an overview from the input specification(s).
 data CommandOpts = CommandOpts
-  { overviewFileName    :: FilePath
+  { overviewInputFile   :: FilePath
   , overviewFormat      :: String
   , overviewPropFormat  :: String
   , overviewPropVia     :: Maybe String
@@ -59,7 +59,7 @@ data CommandOpts = CommandOpts
 command :: CommandOpts -> IO (Result ErrorCode)
 command c = do
     (mOutput, result) <-
-      Command.Overview.command (overviewFileName c) internalCommandOpts
+      Command.Overview.command (overviewInputFile c) internalCommandOpts
 
     case (mOutput, outputString) of
       (Just output, Right template) ->
@@ -93,9 +93,9 @@ commandDesc = "Generate an overview of the input specification(s)"
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> strOption
-        (  long "file-name"
+        (  long "input-file"
         <> metavar "FILENAME"
-        <> help strOverviewFilenameDesc
+        <> help strOverviewInputFileDesc
         )
   <*> strOption
         (  long "input-format"
@@ -121,9 +121,9 @@ commandOptsParser = CommandOpts
             )
         )
 
--- | Filename flag description.
-strOverviewFilenameDesc :: String
-strOverviewFilenameDesc = "File with properties or requirements"
+-- | Input file flag description.
+strOverviewInputFileDesc :: String
+strOverviewInputFileDesc = "File with properties or requirements"
 
 -- | Format flag description.
 strOverviewFormatDesc :: String
