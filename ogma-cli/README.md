@@ -631,7 +631,7 @@ files generated.
   code being generated. See the files under `ogma-core/templates/diagram/`, as
 well as other commands supporting template customization, to understand how to
 customize the template.
-- `--file-name FILENAME`: File with the diagram being transformed.
+- `--input-file FILENAME`: File with the diagram being transformed.
 - `-f,--input-format FORMAT_NAME`: Name of the input format. See below for
   details.
 - `-p,--prop-format FORMAT_NAME`: Format for the boolean properties or
