@@ -127,7 +127,7 @@ parseStandaloneFCS file success = do
 
     assertBool errorMsg testPass
   where
-    args     = ["standalone", "--file-name", file]
+    args     = ["standalone", "--input-file", file]
     errorMsg = "Parsing file " ++ file ++ " result unexpected."
 
 -- | Test standalone backend for FDB format and Lustre.
@@ -149,7 +149,7 @@ parseStandaloneFDB file = do
     (ec, _out, _err) <- readProcessWithExitCode "ogma" args ""
     assertBool errorMsg (ec == ExitSuccess)
   where
-    args     = [ "standalone", "--file-name", file, "--input-format", "fdb"
+    args     = [ "standalone", "--input-file", file, "--input-format", "fdb"
                , "--prop-format", "lustre"]
     errorMsg = "Parsing file " ++ file ++ " failed"
 
