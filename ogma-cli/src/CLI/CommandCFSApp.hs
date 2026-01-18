@@ -104,7 +104,7 @@ commandOptsParser = CommandOpts
             )
         )
   <*> strOption
-        (  long "app-target-dir"
+        (  long "target-dir"
         <> metavar "DIR"
         <> showDefault
         <> value "copilot-cfs-demo"
