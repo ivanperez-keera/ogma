@@ -52,7 +52,7 @@ jobs:
                      --prop-format literal \
                      --mode calculate \
                      --input-format dot \
-                     --file-name ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot
+                     --input-file ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot
         cd demo/
         cabal v1-sandbox init --sandbox=$PWD/../.cabal-sandbox
         cabal v1-exec -- runhaskell Copilot.hs
