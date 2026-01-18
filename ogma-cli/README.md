@@ -129,8 +129,7 @@ cFS applications are generated using the Ogma command `cfs`, which accepts
 the following arguments:
 - `--input-file FILENAME`: location of the specification or source file for
   which a cFS application is being generated.
-- `--app-target-dir DIR`: location where the cFS application files must be
-  stored.
+- `--target-dir DIR`: location where the cFS application files must be stored.
 - `--app-template-dir DIR`: location of the cFS application template to use.
 - `--variable-file FILENAME`: a file containing a list of variables to monitor
 in the cFS application.
