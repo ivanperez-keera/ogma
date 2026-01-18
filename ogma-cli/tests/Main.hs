@@ -99,7 +99,7 @@ testCStructs2Copilot file success = do
 
     assertBool errorMsg testPass
   where
-    args     = ["structs", "--header-file-name", file]
+    args     = ["structs", "--input-file", file]
     errorMsg = "Result of processing file " ++ file ++ " failed"
 
 -- | Test standalone backend for a FCS format and SVM.
