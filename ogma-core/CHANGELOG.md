@@ -1,7 +1,8 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-01-15
+## [1.12.0] - 2026-01-21
 
+* Version bump 1.12.0 (#336).
 * Add support for state machine mermaid diagrams (#328).
 * Add support for sequence diagrams in Mermaid (#330).
 
