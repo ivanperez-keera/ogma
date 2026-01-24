@@ -6,6 +6,7 @@
 * Make example file consistent with associated tutorial (#343).
 * Add syntax information to code blocks in tutorials (#345).
 * Update installation instructions for Linux, Mac (#347).
+* Fix incorrect arguments to `diagram` command in tutorial (#349).
 
 ## [1.12.0] - 2026-01-21
 
