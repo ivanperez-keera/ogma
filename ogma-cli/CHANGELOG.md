@@ -5,6 +5,7 @@
 * Fix grammatical errors in ROS 2 tutorial (#341).
 * Make example file consistent with associated tutorial (#343).
 * Add syntax information to code blocks in tutorials (#345).
+* Update installation instructions for Linux, Mac (#347).
 
 ## [1.12.0] - 2026-01-21
 
