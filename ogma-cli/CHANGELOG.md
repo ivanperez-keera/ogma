@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2026-01-24
 
 * Fix grammatical errors in ROS 2 tutorial (#341).
+* Make example file consistent with associated tutorial (#343).
 
 ## [1.12.0] - 2026-01-21
 
