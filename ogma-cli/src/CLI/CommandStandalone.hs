@@ -48,7 +48,7 @@ data CommandOpts = CommandOpts
   { standaloneTargetDir    :: FilePath
   , standaloneTemplateDir  :: Maybe FilePath
   , standaloneConditionExpr  :: Maybe String
-  , standaloneFileName     :: Maybe FilePath
+  , standaloneInputFile    :: Maybe FilePath
   , standaloneFormat       :: String
   , standalonePropFormat   :: String
   , standaloneTypes        :: [String]
@@ -65,7 +65,7 @@ command c =
     internalCommandOpts :: Command.Standalone.CommandOptions
     internalCommandOpts = Command.Standalone.CommandOptions
       { Command.Standalone.commandConditionExpr = standaloneConditionExpr c
-      , Command.Standalone.commandInputFile   = standaloneFileName c
+      , Command.Standalone.commandInputFile   = standaloneInputFile c
       , Command.Standalone.commandTargetDir   = standaloneTargetDir c
       , Command.Standalone.commandTemplateDir = standaloneTemplateDir c
       , Command.Standalone.commandFormat      = standaloneFormat c
@@ -119,9 +119,9 @@ commandOptsParser = CommandOpts
         )
   <*> optional
         ( strOption
-          (  long "file-name"
+          (  long "input-file"
           <> metavar "FILENAME"
-          <> help strStandaloneFilenameDesc
+          <> help strStandaloneInputFileDesc
           )
         )
   <*> strOption
@@ -182,9 +182,9 @@ strStandaloneConditionExprDesc :: String
 strStandaloneConditionExprDesc =
   "Condition upon which the monitor will fire or notify"
 
--- | Filename flag description.
-strStandaloneFilenameDesc :: String
-strStandaloneFilenameDesc = "File with properties or requirements"
+-- | Input file flag description.
+strStandaloneInputFileDesc :: String
+strStandaloneInputFileDesc = "File with properties or requirements"
 
 -- | Format flag description.
 strStandaloneFormatDesc :: String

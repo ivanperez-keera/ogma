@@ -49,7 +49,7 @@ message is sent out to indicate that a trigger fired.
 An invocation of Ogma's ROS 2 backend may look like the following:
 
 ```sh
-$ ogma ros --app-target-dir demo \
+$ ogma ros --target-dir demo \
            --input-file expressions.json \
            --input-format json-format.cfg \
            --prop-format literal \
@@ -195,7 +195,7 @@ To generate the ROS 2 application from the source files listed above, we invoke
 `ogma` with the following arguments:
 
 ```sh
-$ ogma ros --app-target-dir demo \
+$ ogma ros --target-dir demo \
            --input-file expressions.json \
            --input-format json-format.cfg \
            --prop-format literal \
