@@ -53,7 +53,7 @@ jobs:
         git clone --recursive -b v6.7.0a https://github.com/nasa/cfs.git
 
         # Generate cFS app with Ogma
-        ogma cfs --target-dir cfs/apps/copilot \
+        ogma cfs --target-dir cfs/apps/ \
                  --input-file ogma-cli/examples/cfs-001-hello-ogma/expressions.json \
                  --input-format ogma-cli/examples/cfs-001-hello-ogma/json-format.cfg \
                  --prop-format literal \
