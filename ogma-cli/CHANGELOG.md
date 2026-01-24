@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2026-01-24
+
+* Fix grammatical errors in ROS 2 tutorial (#341).
+
 ## [1.12.0] - 2026-01-21
 
 * Version bump 1.12.0 (#336).
