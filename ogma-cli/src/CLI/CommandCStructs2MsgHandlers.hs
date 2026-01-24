@@ -42,14 +42,14 @@ import Command.CStructs2MsgHandlers ( ErrorCode, cstructs2MsgHandlers )
 
 -- | Options to generate message handlers from C struct definitions.
 newtype CommandOpts = CommandOpts
-  { msgHandlersFileName :: FilePath }
+  { msgHandlersInputFile :: FilePath }
 
 -- | Generate C methods that process NASA Core Flight System messages dealing
 -- with the structs defined in a header file.
 --
 -- This is just an uncurried version of "Command.CStructs2MsgHandlers".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c = cstructs2MsgHandlers (msgHandlersFileName c)
+command c = cstructs2MsgHandlers (msgHandlersInputFile c)
 
 -- * CLI
 
@@ -62,11 +62,11 @@ commandDesc = "Generate message handlers from C structs"
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> strOption
-        (  long "header-file-name"
+        (  long "input-file"
         <> metavar "FILENAME"
-        <> help strMsgHandlersHeaderArgDesc
+        <> help strMsgHandlersInputFileArgDesc
         )
 
 -- | Argument C header file to handler generation command
-strMsgHandlersHeaderArgDesc :: String
-strMsgHandlersHeaderArgDesc = "C header file with struct definitions"
+strMsgHandlersInputFileArgDesc :: String
+strMsgHandlersInputFileArgDesc = "C header file with struct definitions"

@@ -54,7 +54,7 @@ An invocation of Ogma's diagram backend may look like the following:
 ```sh
 $ ogma diagram --app-target-dir demo \
                --mode calculate \
-               --file-name ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot \
+               --input-file ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot \
                --file-format dot \
                --prop-format literal
 ```
@@ -199,7 +199,7 @@ $ ogma diagram --app-target-dir demo \
                --prop-format literal \
                --mode calculate \
                --file-format dot \
-               --file-name ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot
+               --input-file ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot
 ```
 
 We specify the mode of operation `calculate`, which instructs Ogma to generate

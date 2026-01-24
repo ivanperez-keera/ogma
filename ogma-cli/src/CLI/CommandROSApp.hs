@@ -115,7 +115,7 @@ commandOptsParser = CommandOpts
             )
         )
   <*> strOption
-        (  long "app-target-dir"
+        (  long "target-dir"
         <> metavar "DIR"
         <> showDefault
         <> value "ros"
@@ -123,7 +123,7 @@ commandOptsParser = CommandOpts
         )
   <*> optional
         ( strOption
-            (  long "app-template-dir"
+            (  long "template-dir"
             <> metavar "DIR"
             <> help strROSAppTemplateDirArgDesc
             )
