@@ -260,11 +260,11 @@ typedef struct sample_msg {
 The call to `ogma` above creates a `demo` directory that contains several files
 and directories, including:
 
-- A `fsw` directory, where the main generated package is defined.
+- A `copilot` directory, where the main generated package is defined.
   Specifically, the expressions used for triggers and outputs are specified in
-  a file `fsw/src/Properties.hs`, and the cFS application that subscribes to data
-  sources, runs the logic, and publishes results is implemented in a file
-  `fsw/src/copilot_cfs.c`.
+  a file `copilot/fsw/src/Properties.hs`, and the cFS application that
+  subscribes to data sources, runs the logic, and publishes results is
+  implemented in a file `copilot/fsw/src/copilot_cfs.c`.
 
 # Building the cFS application
 <sup>[(Back to top)](#table-of-contents)</sup>
@@ -278,7 +278,7 @@ Assuming a clean, new installation:
 
 ```sh
 $ git clone --recursive -b v6.7.0a git@github.com:nasa/cfs.git
-$ mv demo cfs/apps/copilot
+$ mv demo/copilot cfs/apps/copilot
 $ cp ogma-cli/examples/cfs-001-hello-ogma/extra.h cfs/apps/copilot/fsw/src/
 ```
 
