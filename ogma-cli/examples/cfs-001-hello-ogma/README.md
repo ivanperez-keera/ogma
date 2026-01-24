@@ -144,7 +144,7 @@ to indicate the file format being used. The file
 JSONPath expressions to describe the structure of the source JSON file,
 `expressions.json`:
 
-```
+```haskell
 JSONFormat
    { specInternalVars          = Just "..internal_variables[*]"
    , specInternalVarId         = ".name"
@@ -284,7 +284,7 @@ $ cp ogma-cli/examples/cfs-001-hello-ogma/extra.h cfs/apps/copilot/fsw/src/
 
 Next, we copy the default definitions and `Makefile` provided with cFS:
 
-```
+```sh
 $ cd cfs
 $ cp cfe/cmake/Makefile.sample Makefile
 $ cp -r cfe/cmake/sample_defs .
@@ -294,7 +294,7 @@ Because of how cFS applications work, we edit the file
 `sample_defs/targets.cmake` and add `copilot` to the list of applications
 compiled for `cpu1`. The setting of `TGT1_APPLIST` reads as follows:
 
-```
+```C
 SET(TGT1_APPLIST sample_app sample_lib ci_lab to_lab sch_lab copilot)
 ```
 
@@ -303,12 +303,12 @@ executed upon starting cFS by modifying the file
 `sample_defs/cpu1_cfe_es_startup.scr` and adding the following to the head of
 the file (before the first `!` character):
 
-```
+```csv
 CFE_APP, /cf/copilot_cfs.so, COPILOT_AppMain, COPILOT_APP, 50, 16384, 0x0, 0;
 ```
 
 To compile the application, run:
-```
+```sh
 $ make SIMULATION=native prep
 $ make install
 ```
@@ -321,14 +321,14 @@ the command-line interface tool for cFS, `cmdUtil`, and observing the output
 of the cFS application.
 
 First, compile `cmdUtil` as follows:
-```
+```sh
 $ make -C tools/cFS-GroundSystem/Subsystems/cmdUtil/
 ```
 
 Now, in one terminal, we launch the cFS application. Note that we need to do so
 as root:
 
-```
+```sh
 $ cd build/exe/cpu1
 $ sudo ./core-cpu1
 ```
@@ -336,7 +336,7 @@ $ sudo ./core-cpu1
 In another terminal, we send a command to the cFS instance. The tool `cmdUtil`
 should print the binary message sent to cFS:
 
-```
+```sh
 $ tools/cFS-GroundSystem/Subsystems/cmdUtil/cmdUtil \
     --host=localhost --port=1234 --pktid=0x1878 --endian LE -C 0 --long 5
 Host: localhost
