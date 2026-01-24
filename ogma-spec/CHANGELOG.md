@@ -1,5 +1,9 @@
 # Revision history for ogma-spec
 
+## [1.12.0] - 2026-01-21
+
+* Version bump 1.12.0 (#336).
+
 ## [1.11.0] - 2025-11-21
 
 * Version bump 1.11.0 (#325).
