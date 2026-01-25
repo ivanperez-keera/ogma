@@ -46,33 +46,3 @@ stateMachineGF (initialState, finalState, noInputData, transitions, badState) = 
 
     ifThenElses ((s1,i,s2):ss) =
       ifThenElse (previousState == constant s1 && i) (constant s2) (ifThenElses ss)
-
--- | True when the given input stream does hold any of the values in the given
--- list.
-noneOf :: [Stream Bool] -> Stream Bool
-noneOf []     = true
-noneOf (x:xs) = not x && noneOf xs
-
--- | Given a list of transitions, and a current state, and a list of possible
--- destination states, produce a list of booleans indicating if a transition to
--- each of the destination states would be valid.
-checkValidTransitions :: [(Word8, Stream Bool, Word8)]
-                      -> Stream Word8
-                      -> [Word8]
-                      -> [Stream Bool]
-checkValidTransitions transitions curState destinations =
-  map (checkValidTransition transitions curState) destinations
-
--- | Given a list of transitions, and a current state, and destination states,
--- produce a list of booleans indicating if a transition to each of the
--- destination states would be valid.
-checkValidTransition :: [(Word8, Stream Bool, Word8)]
-                     -> Stream Word8
-                     -> Word8
-                     -> Stream Bool
-checkValidTransition []                 _   _   = true
-checkValidTransition ((so1, c, sd1):sx) so2 sd2 =
-  ifThenElse
-    ((constant so1 == so2) && (constant sd1 == constant sd2))
-    c
-    (checkValidTransition sx so2 sd2)
