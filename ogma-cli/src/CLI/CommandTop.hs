@@ -78,6 +78,7 @@ import qualified CLI.CommandCStructs2Copilot
 import qualified CLI.CommandCStructs2MsgHandlers
 import qualified CLI.CommandDiagram
 import qualified CLI.CommandFPrimeApp
+import qualified CLI.CommandIBD
 import qualified CLI.CommandOverview
 import qualified CLI.CommandReport
 import qualified CLI.CommandROSApp
@@ -96,6 +97,7 @@ data CommandOpts =
   | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
   | CommandOptsDiagram                   CLI.CommandDiagram.CommandOpts
   | CommandOptsFPrimeApp                 CLI.CommandFPrimeApp.CommandOpts
+  | CommandOptsIBD                       CLI.CommandIBD.CommandOpts
   | CommandOptsOverview                  CLI.CommandOverview.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
   | CommandOptsStandalone                CLI.CommandStandalone.CommandOpts
@@ -120,6 +122,7 @@ commandOptsParser = subparser
   <> subcommandStandalone
   <> subcommandDiagram
   <> subcommandReport
+  <> subcommandIBD
   )
 
 -- | Modifier for the overview subcommand, linking the subcommand options and
@@ -206,6 +209,15 @@ subcommandReport =
     (CommandOptsReport <$> CLI.CommandReport.commandOptsParser)
     CLI.CommandReport.commandDesc
 
+-- | Modifier for the diagram subcommand, linking the subcommand options and
+-- description to the command @diagram@ at top level.
+subcommandIBD :: Mod CommandFields CommandOpts
+subcommandIBD =
+  subcommand
+    "ibd"
+    (CommandOptsIBD <$> CLI.CommandIBD.commandOptsParser)
+    CLI.CommandIBD.commandDesc
+
 -- * Command dispatcher
 
 -- | Command dispatcher that obtains the parameters from the command line and
@@ -246,6 +258,8 @@ command (CommandOptsDiagram c) =
   id <$> CLI.CommandDiagram.command c
 command (CommandOptsReport c) =
   id <$> CLI.CommandReport.command c
+command (CommandOptsIBD c) =
+  id <$> CLI.CommandIBD.command c
 
 -- We indicate to HLint that the use of (id <$>) above should not trigger a
 -- warning. Conceptually, there is a transformation taking place, but no change
