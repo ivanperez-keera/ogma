@@ -67,6 +67,7 @@ data-files:          templates/cfs/Dockerfile
                      templates/ros/test_requirements/src/test_requirements.cpp
                      templates/ros/test_requirements/package.xml
                      templates/diagram/Copilot.hs
+                     templates/ibd/Copilot.hs
                      templates/fprime/CMakeLists.txt
                      templates/fprime/Copilot.cpp
                      templates/fprime/Copilot.fpp
@@ -105,6 +106,7 @@ library
     Command.CStructs2MsgHandlers
     Command.Diagram
     Command.FPrimeApp
+    Command.IBD
     Command.Overview
     Command.Report
     Command.Result
