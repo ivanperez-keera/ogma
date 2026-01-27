@@ -131,6 +131,7 @@ executable ogma
     CLI.CommandCStructs2MsgHandlers
     CLI.CommandDiagram
     CLI.CommandFPrimeApp
+    CLI.CommandIBD
     CLI.CommandOverview
     CLI.CommandReport
     CLI.CommandROSApp
