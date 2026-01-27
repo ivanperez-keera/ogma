@@ -1,0 +1,615 @@
+{-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE OverloadedStrings         #-}
+-- Copyright 2024 United States Government as represented by the Administrator
+-- of the National Aeronautics and Space Administration. All Rights Reserved.
+--
+-- Disclaimers
+--
+-- Licensed under the Apache License, Version 2.0 (the "License"); you may
+-- not use this file except in compliance with the License. You may obtain a
+-- copy of the License at
+--
+--      https://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+-- WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+-- License for the specific language governing permissions and limitations
+-- under the License.
+--
+-- | Transform a state diagram into a Copilot specification.
+module Command.IBD
+    ( diagram
+    , DiagramOptions(..)
+    , DiagramFormat(..)
+    , DiagramMode(..)
+    , DiagramPropFormat(..)
+    , ErrorCode
+    )
+  where
+
+-- External imports
+import           Control.Exception                 as E
+import           Control.Monad                     (when, void)
+import           Data.Aeson                        (object, (.=))
+import           Data.ByteString.Lazy              (toStrict)
+import qualified Data.ByteString.Lazy              as B
+import           Data.Char                         (toLower)
+import           Data.Either                       (isLeft)
+import           Data.Foldable                     (for_)
+import           Data.Functor.Identity             (Identity)
+import           Data.GraphViz                     (graphEdges)
+import qualified Data.GraphViz                     as G
+import qualified Data.GraphViz.Attributes.Complete as Attributes
+import           Data.GraphViz.Commands.IO         (toUTF8)
+import qualified Data.GraphViz.Parsing             as G
+import           Data.GraphViz.PreProcessing       (preProcess)
+import qualified Data.GraphViz.Types.Generalised   as Gs
+import           Data.List                         (intercalate, nub, sort, find)
+import qualified Data.Set                          as Set
+import           Data.Text                         (Text)
+import qualified Data.Text                         as T
+import qualified Data.Text.Encoding                as T
+import           Data.Text.Lazy                    (pack)
+import qualified Data.Text.Lazy                    as LT
+import           Data.Void                         (Void)
+import           System.FilePath                   ((</>))
+import           Text.Megaparsec                   (ErrorFancy (ErrorFail),
+                                                    ParsecT, choice, empty,
+                                                    errorBundlePretty,
+                                                    fancyFailure, many,
+                                                    manyTill, noneOf, parse,
+                                                    (<|>))
+import           Text.Megaparsec.Char              (alphaNumChar, char,
+                                                    digitChar, newline, space1,
+                                                    string)
+import qualified Text.Megaparsec.Char.Lexer        as L
+import GHC.Generics         (Generic)
+import Data.Aeson           (ToJSON (..))
+
+import           Control.Monad          (void)
+import           Control.Monad.IO.Class (liftIO)
+import           Data.Text              (Text)
+import qualified Data.Text              as T
+import qualified Data.Text.IO           as TIO
+import           Data.Void
+import           Text.Megaparsec        as MP
+import           Text.Megaparsec.Char
+
+-- External imports: auxiliary
+import Data.ByteString.Extra  as B ( safeReadFile )
+import System.Directory.Extra ( copyTemplate )
+
+-- External imports: parsing expressions.
+import qualified Language.Lustre.ParLustre as Lustre (myLexer, pBoolSpec)
+import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
+
+-- Internal imports: auxiliary
+import Command.Result  (Result (..))
+import Data.Location   (Location (..))
+import Paths_ogma_core (getDataDir)
+
+-- Internal imports: language ASTs, transformers
+import           Language.SMV.Substitution     (substituteBoolExpr)
+import qualified Language.Trans.Lustre2Copilot as Lustre (boolSpec2Copilot,
+                                                          boolSpecNames)
+import           Language.Trans.SMV2Copilot    as SMV (boolSpec2Copilot,
+                                                       boolSpecNames)
+
+-- | Generate a new Copilot monitor that implements a state machine described
+-- in a diagram given as an input file.
+--
+-- PRE: The file given is readable, contains a valid file with recognizable
+-- format, the formulas in the file do not use any identifiers that exist in
+-- Copilot, or any of @stateMachine@, @externalState@, @noneOf@,
+-- @checkValidTransitions@, @main@, @spec@, @stateMachine1@, @clock@, @ftp@,
+-- @notPreviousNot@. All identifiers used are valid C99 identifiers. The
+-- template, if provided, exists and uses the variables needed by the diagram
+-- application generator. The target directory is writable and there's enough
+-- disk space to copy the files over.
+diagram :: FilePath       -- ^ Path to a file containing a diagram
+        -> DiagramOptions -- ^ Customization options
+        -> IO (Result ErrorCode)
+diagram fp options = do
+  E.handle (return . diagramTemplateError fp) $ do
+    -- Sub-parser for edge expressions.
+    let functions = exprPair (diagramPropFormat options)
+
+    -- Convert the diagram into elements in a Copilot spec.
+    copilotSpecElems <- diagram' fp options functions
+
+    -- Convert the elements into a success or error result.
+    let (mOutput, result) = diagramResult fp copilotSpecElems
+
+    -- If the result is success, expand the template.
+    for_ mOutput $ \(streamDefs, handlerInputs) -> do
+      let subst = object
+                    [ "streamDefs"    .= pack streamDefs
+                    , "specName"      .= pack (diagramFilename options)
+                    , "handlerInputs" .= pack handlerInputs
+                    ]
+
+      templateDir <- case diagramTemplateDir options of
+                       Just x  -> return x
+                       Nothing -> do
+                         dataDir <- getDataDir
+                         return $ dataDir </> "templates" </> "ibd"
+
+      let targetDir = diagramTargetDir options
+
+      copyTemplate templateDir subst targetDir
+
+    return result
+
+-- | Generate a new Copilot monitor that implements a state machine described
+-- in a diagram given as an input file, using a subexpression handler.
+--
+-- PRE: The file given is readable, contains a valid file with recognizable
+-- format, the formulas in the file do not use any identifiers that exist in
+-- Copilot, or any of @stateMachine@, @externalState@, @noneOf@,
+-- @checkValidTransitions@, @main@, @spec@, @stateMachine1@, @clock@, @ftp@,
+-- @notPreviousNot@. All identifiers used are valid C99 identifiers. The
+-- template, if provided, exists and uses the variables needed by the diagram
+-- application generator. The target directory is writable and there's enough
+-- disk space to copy the files over.
+diagram' :: FilePath
+         -> DiagramOptions
+         -> ExprPair
+         -> IO (Either String (String, String))
+diagram' fp options exprP = do
+  contentEither <- B.safeReadFile fp
+  return $ do
+    -- All of the following operations use Either to return error messages. The
+    -- use of the monadic bind to pass arguments from one function to the next
+    -- will cause the program to stop at the earliest error.
+    diagFileContent <- contentEither
+
+    -- Abtract representation of a state machine diagram.
+    diagramR <- parseDiagram (diagramFormat options) diagFileContent exprP
+
+    return $ diagramToCopilot diagramR (diagramMode options)
+
+-- | Options used to customize the conversion of diagrams to Copilot code.
+data DiagramOptions = DiagramOptions
+  { diagramTargetDir   :: FilePath
+  , diagramTemplateDir :: Maybe FilePath
+  , diagramFormat      :: DiagramFormat
+  , diagramPropFormat  :: DiagramPropFormat
+  , diagramFilename    :: String
+  , diagramMode        :: DiagramMode
+  }
+
+-- | Modes of operation.
+data DiagramMode = Check     -- ^ Check if system behaves according to IBD
+                 | Implement -- ^ Implement the IBD
+  deriving (Eq, Show)
+
+-- | Diagram formats supported.
+data DiagramFormat = Mermaid
+  deriving (Eq, Show)
+
+-- | Property formats supported.
+data DiagramPropFormat = Lustre
+                       | Inputs
+                       | Literal
+                       | SMV
+  deriving (Eq, Show)
+
+-- * Error codes
+
+-- | Encoding of reasons why the command can fail.
+--
+-- The error code used is 1 for user error.
+type ErrorCode = Int
+
+-- | Error: the input file cannot be read due to it being unreadable or the
+-- format being incorrect.
+ecDiagramError :: ErrorCode
+ecDiagramError = 1
+
+-- | Error: diagram component generation failed during the copy/write
+-- process.
+ecDiagramTemplateError :: ErrorCode
+ecDiagramTemplateError = 2
+
+-- * Result
+
+-- | Process the result of the transformation function.
+diagramResult :: FilePath
+              -> Either String a
+              -> (Maybe a, Result ErrorCode)
+diagramResult fp result = case result of
+  Left msg -> (Nothing, Error ecDiagramError msg (LocationFile fp))
+  Right t  -> (Just t,  Success)
+
+-- | Report an error when trying to open or copy the template.
+diagramTemplateError :: FilePath
+                     -> E.SomeException
+                     -> Result ErrorCode
+diagramTemplateError fp exception =
+    Error ecDiagramTemplateError msg (LocationFile fp)
+  where
+    msg =
+      "Diagram monitor generation failed during copy/write operation. Check"
+      ++ " that there's free space in the disk and that you have the necessary"
+      ++ " permissions to write in the destination directory. "
+      ++ show exception
+
+-- * Handler for boolean expressions in edges or transitions between states.
+
+-- | Handler for boolean expressions that knows how to parse them, replace
+-- variables in them, and convert them to Copilot.
+data ExprPair = forall a . ExprPair
+  { _exprParse   :: String -> Either String a
+  , _exprReplace :: [(String, String)] -> a -> a
+  , _exprPrint   :: a -> String
+  , _exprIdents  :: a -> [String]
+  }
+
+-- | Return a handler depending on the format used for edge or transition
+-- properties.
+exprPair :: DiagramPropFormat -> ExprPair
+exprPair Lustre  = ExprPair (Lustre.pBoolSpec . Lustre.myLexer)
+                            (\_ -> id)
+                            Lustre.boolSpec2Copilot
+                            Lustre.boolSpecNames
+exprPair Inputs  = ExprPair ((Right . read) :: String -> Either String Int)
+                            (\_ -> id)
+                            (\x -> "input == " ++ show x)
+                            (const [])
+exprPair Literal = ExprPair Right
+                            (\_ -> id)
+                            id
+                            (const [])
+exprPair SMV     = ExprPair (SMV.pBoolSpec . SMV.myLexer)
+                            substituteBoolExpr
+                            SMV.boolSpec2Copilot
+                            SMV.boolSpecNames
+
+-- | Parse and print a value using an auxiliary Expression Pair.
+--
+-- Fails if the value has no valid parse.
+exprPairShow :: ExprPair -> String -> String
+exprPairShow (ExprPair parseProp _replace printProp _ids) =
+  printProp . fromRight' . parseProp
+
+-- * Diagrams
+
+data IBD = IBD
+  { ibdComponents :: [ Component ]
+  , ibdWires      :: [ Wire ]
+  }
+
+
+data Component = Component
+  { compId    :: String
+  , compName  :: String      -- ^ Function name
+  , compIn    :: PortId
+  , compOut   :: PortId
+  }
+  deriving Show
+
+newtype PortId = PortId
+    { cPortId :: String }
+  deriving (Show, Eq, Ord)
+
+data Wire = Wire
+  { wireFrom :: PortId
+  , wireTo   :: PortId
+  }
+  deriving Show
+
+toIR :: Diagram -> IBD
+toIR (Diagram _ subs conns) =
+  IBD
+    { ibdComponents = map subgraphToComponent subs
+    , ibdWires      = map connToWire conns
+    }
+
+subgraphToComponent :: Subgraph -> Component
+subgraphToComponent sg =
+  case subgraphPorts sg of
+    [inp, outp] ->
+      Component
+        { compId   = subgraphId sg
+        , compName = subgraphTitle sg
+        , compIn   = PortId (portId inp)
+        , compOut  = PortId (portId outp)
+        }
+    _ ->
+      error $ "Subgraph must have exactly one input and one output: "
+           ++ subgraphId sg
+
+connToWire :: Connection -> Wire
+connToWire (Connection from to) =
+  Wire (PortId from) (PortId to)
+
+data Expr
+    = Source PortId
+    | Apply String Expr
+  deriving Show
+
+buildExpr :: IBD -> PortId -> Expr
+buildExpr ir port =
+  case incomingWire ir port of
+    Nothing ->
+      Source port
+    Just w ->
+      let producer = componentProducing ir (wireFrom w)
+      in Apply (compName producer)
+               (buildExpr ir (compIn producer))
+
+incomingWire :: IBD -> PortId -> Maybe Wire
+incomingWire ir pid =
+  find (\w -> wireTo w == pid) (ibdWires ir)
+
+componentProducing :: IBD -> PortId -> Component
+componentProducing ir pid =
+  case find (\c -> compOut c == pid) (ibdComponents ir) of
+    Just c  -> c
+    Nothing -> error $ "No component produces port " ++ show pid
+
+ppExpr :: Expr -> String
+ppExpr (Source (PortId p)) = p
+ppExpr (Apply f e) = f ++ " (" ++ ppExpr e ++ ")"
+
+generateCopilot :: IBD -> String
+generateCopilot ir =
+    unlines $
+      "-- Generated Copilot model"
+      : ""
+      : map componentsCopilot (ibdComponents ir)
+        ++ genMain
+        ++ concatMap genSpec (sinkPorts ir)
+  where
+    genSpec :: PortId -> [String]
+    genSpec port@(PortId pid) =
+      [ "spec " ++ pid ++ " ="
+      , "  " ++ ppExpr (buildExpr ir port)
+      , ""
+      ]
+
+    genMain :: [String]
+    genMain = [ "mainSpec " ++ extraArgs ++ " = true"
+              , "  where"
+              ]
+              ++ map genConn (ibdWires ir)
+              ++ map genComp (ibdComponents ir)
+              ++ [""]
+
+    genConn conn = "  " ++ cleanName (cPortId (wireTo conn)) ++ " = " ++ cleanName (cPortId (wireFrom conn))
+    genComp comp = "  " ++ cleanName (cPortId (compOut comp)) ++ " = " ++ cleanName (compId comp) ++ " (" ++ cleanName (cPortId (compIn comp)) ++ ")"
+
+    extraArgs = unwords $ map (cleanName . cPortId . compIn) $ filter usedInput (ibdComponents ir)
+
+    usedInput c =
+      all (\w -> wireTo w /= compIn c) (ibdWires ir)
+
+    componentsCopilot component =
+      cleanName (compId component) ++ " " ++ cleanName (cPortId (compIn component)) ++ " = " ++ removeQuotes (compName component) ++ " (" ++ cleanName (cPortId (compIn component)) ++ ")"
+
+    removeQuotes (_:xs) = init xs
+
+    cleanName (x:xs) =
+      toLower x : cleanName' xs
+
+    cleanName' ('_':'_':xs) = '_' : cleanName' xs
+    cleanName' (x:xs) = x : cleanName' xs
+    cleanName' [] = []
+
+sinkPorts :: IBD -> [PortId]
+sinkPorts ir =
+  let produced = map compOut (ibdComponents ir)
+      consumed = map wireFrom (ibdWires ir)
+  in filter (`notElem` consumed) produced
+
+emitCopilot :: Diagram -> String
+emitCopilot = generateCopilot . toIR
+
+-- | Internal representation for diagrams.
+data Diagram = Diagram GraphDir [Subgraph] [Connection]
+  deriving (Show, Generic)
+
+instance ToJSON Diagram
+
+data GraphDir = TB | LR | TD deriving (Show, Read, Generic)
+
+instance ToJSON GraphDir
+
+data Subgraph = Subgraph
+    { subgraphId    :: String
+    , subgraphTitle :: String
+    , subgraphPorts :: [Port]
+    }
+  deriving (Show, Generic)
+
+instance ToJSON Subgraph
+
+data Port = Port
+    { portId :: String
+    }
+  deriving (Show, Generic)
+
+instance ToJSON Port
+
+data Connection = Connection
+    { connectionFrom :: String
+    , connectionTo   :: String
+    }
+  deriving (Show, Generic)
+
+instance ToJSON Connection
+
+-- * Diagram parsers
+
+-- | Generic function to parse a diagram.
+parseDiagram :: DiagramFormat          -- ^ Format of the input file
+             -> B.ByteString           -- ^ Contents of the diagram
+             -> ExprPair               -- ^ Subparser for conditions or edge
+                                       -- expressions
+             -> Either String Diagram
+parseDiagram Mermaid = parseDiagramMermaid
+
+-- ** Mermaid parser
+
+-- | Parse a mermaid diagram.
+parseDiagramMermaid :: B.ByteString -> ExprPair -> Either String Diagram
+parseDiagramMermaid txtDia exprP =
+    case parsingResult of
+      Left e  -> Left (errorBundlePretty e)
+      Right x -> Right x
+  where
+    txt           = T.decodeUtf8 (toStrict txtDia)
+    parsingResult = parse (sc *> programParser exprP) "<input>" txt
+
+-- Parser type
+type Parser = ParsecT Void Text Identity
+
+programParser :: a -> Parser Diagram
+programParser _ = do
+  sc
+  dir <- graphHeader
+  sc
+  subgraphs <- many subgraphParser
+  sc
+  conns <- many connectionParser
+  eof
+  return $ Diagram dir subgraphs conns
+
+graphHeader :: Parser GraphDir
+graphHeader = do
+  lexeme (string "graph")
+  dir <- lexeme (string "TB" <|> string "LR" <|> string "TD")
+  return $ read $ T.unpack dir
+
+subgraphParser :: Parser Subgraph
+subgraphParser = do
+  lexeme (string "subgraph")
+  ident <- lexeme identParser
+  _ <- lexeme (char '[')
+  title <- manyTill anySingle (char ']')
+  void $ many eol
+  ports <- many (MP.try (notFollowedBy (lexeme (string "end")) *> portParser))
+  lexeme (string "end")
+
+  return $ Subgraph ident title ports
+
+portParser :: Parser Port
+portParser = do
+  sc
+  pid <- lexeme identParser
+  _ <- char '['
+  e <- manyTill anySingle (char ']')
+  void $ many eol
+  return $ Port pid
+
+connectionParser :: Parser Connection
+connectionParser = do
+  sc
+  from <- lexeme identParser
+  lexeme (string "-->")
+  to <- lexeme identParser
+  return $ Connection from to
+
+-- | Parse identifier ignoring keywords
+identParser :: Parser String
+identParser = MP.try $ do
+  ident <- some (alphaNumChar <|> char '_' <|> char ':')
+  if ident `elem` reservedWords
+    then fail $ "reserved word: " ++ ident
+    else return ident
+
+reservedWords :: [String]
+reservedWords = ["end", "graph", "subgraph"]
+
+-- | Auxiliary subparsers
+
+-- skip whitespace and comments
+sc :: Parser ()
+sc = void $ many (void (char ' ') <|> void (char '\t') <|> void eol)
+
+commentLine :: Parser ()
+commentLine = do
+  _ <- string "%%"
+  _ <- manyTill anySingle (void eol <|> eof)
+  return ()
+
+lexeme :: Parser a -> Parser a
+lexeme p = p <* sc
+
+-- * Backend
+
+-- | Convert the diagram into a set of Copilot definitions, and a list of
+-- arguments for the top-level handler.
+diagramToCopilot :: Diagram -> DiagramMode -> (String, String)
+diagramToCopilot d _ = (generateCopilot $ toIR d, "")
+-- diagramToCopilot diag mode = (machine, arguments)
+--   where
+--     machine = unlines
+--       [ "stateMachineProp :: Stream Bool"
+--       , "stateMachineProp = " ++ propExpr
+--       , ""
+--       , "stateMachine1 :: Stream Word8"
+--       , "stateMachine1 = stateMachineGF (initialState, finalState, noInput, "
+--         ++ "transitions, badState)"
+--       , ""
+--       , "-- Check"
+--       , "initialState :: Word8"
+--       , "initialState = " ++ show initialState
+--       , ""
+--       , "-- Check"
+--       , "finalState :: Word8"
+--       , "finalState = " ++ show finalState
+--       , ""
+--       , "noInput :: Stream Bool"
+--       , "noInput = false"
+--       , ""
+--       , "badState :: Word8"
+--       , "badState = " ++ show badState
+--       , ""
+--       , "transitions = " ++ showTransitions
+--       ]
+--
+--     -- Elements of the spec.
+--     propExpr     = case mode of
+--                      Check     -> "stateMachine1 /= externalState"
+--                      Implement -> "true"
+--     initialState = minimum states
+--     finalState   = maximum states
+--     badState     = maximum states + 1
+--
+--     -- Arguments for the handler.
+--     arguments = "[ " ++ intercalate ", " (map ("arg " ++) argExprs) ++ " ]"
+--
+--     argExprs = case mode of
+--       Check     -> [ "stateMachine1", "externalState", "input" ]
+--       Implement -> [ "stateMachine1", "externalState", "input" ]
+--
+--     stateCheckExpr stateId =
+--       "(checkValidTransition transitions externalState " ++ show stateId ++ ")"
+--
+--     -- States and transitions from the diagram.
+--     transitions = diagramTransitions diag
+--     states      = nub $ sort $ concat [ [x, y] | (x, _, y) <- transitions ]
+--
+--     showTransitions :: String
+--     showTransitions = "[" ++ showTransitions' transitions
+--
+--     showTransitions' :: [(Int, String, Int)] -> String
+--     showTransitions' []         = "]"
+--     showTransitions' (x1:x2:xs) =
+--       showTransition x1 ++ ", " ++ showTransitions' (x2:xs)
+--     showTransitions' (x2:[])    = showTransition x2 ++ "]"
+--
+--     showTransition :: (Int, String, Int) -> String
+--     showTransition (a, b, c) =
+--       "(" ++ show a ++ ", " ++ b ++ ", " ++ show c ++ ")"
+--
+-- * Auxiliary functions
+
+-- | Unsafe fromRight. Fails if the value is a 'Left'.
+fromRight' :: Either a b -> b
+fromRight' (Right v) = v
+fromRight' _         = error "fromRight' applied to Left value."
