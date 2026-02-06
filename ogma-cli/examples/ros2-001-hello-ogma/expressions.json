@@ -7,8 +7,8 @@
     "properties": [
       {
         "id":      "TestOgma",
-        "formula": "input_value > 0",
-        "text":    "input_value is greater than zero"
+        "formula": "input_value <= 0",
+        "text":    "input_value shall always be lower than or equal to zero"
       }
     ]
   }
