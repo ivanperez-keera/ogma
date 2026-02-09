@@ -52,10 +52,10 @@ machine implementations, users need to provide the following information:
 An invocation of Ogma's diagram backend may look like the following:
 
 ```sh
-$ ogma diagram --app-target-dir demo \
+$ ogma diagram --target-dir demo \
                --mode calculate \
                --input-file ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot \
-               --file-format dot \
+               --input-format dot \
                --prop-format literal
 ```
 
@@ -195,10 +195,10 @@ To generate the application from the diagram above, we invoke `ogma` with the
 following arguments:
 
 ```sh
-$ ogma diagram --app-target-dir demo \
+$ ogma diagram --target-dir demo \
                --prop-format literal \
                --mode calculate \
-               --file-format dot \
+               --input-format dot \
                --input-file ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot
 ```
 
