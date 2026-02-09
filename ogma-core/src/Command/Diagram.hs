@@ -91,12 +91,11 @@ import           Language.Trans.SMV2Copilot    as SMV (boolSpec2Copilot,
 --
 -- PRE: The file given is readable, contains a valid file with recognizable
 -- format, the formulas in the file do not use any identifiers that exist in
--- Copilot, or any of @stateMachine@, @externalState@, @noneOf@,
--- @checkValidTransitions@, @main@, @spec@, @stateMachine1@, @clock@, @ftp@,
--- @notPreviousNot@. All identifiers used are valid C99 identifiers. The
--- template, if provided, exists and uses the variables needed by the diagram
--- application generator. The target directory is writable and there's enough
--- disk space to copy the files over.
+-- Copilot, or any of @stateMachine@, @externalState@, @main@, @spec@,
+-- @stateMachine1@, @clock@, @ftp@, @notPreviousNot@. All identifiers used are
+-- valid C99 identifiers. The template, if provided, exists and uses the
+-- variables needed by the diagram application generator. The target directory
+-- is writable and there's enough disk space to copy the files over.
 diagram :: FilePath       -- ^ Path to a file containing a diagram
         -> DiagramOptions -- ^ Customization options
         -> IO (Result ErrorCode)
@@ -138,12 +137,11 @@ diagram fp options = do
 --
 -- PRE: The file given is readable, contains a valid file with recognizable
 -- format, the formulas in the file do not use any identifiers that exist in
--- Copilot, or any of @stateMachine@, @externalState@, @noneOf@,
--- @checkValidTransitions@, @main@, @spec@, @stateMachine1@, @clock@, @ftp@,
--- @notPreviousNot@. All identifiers used are valid C99 identifiers. The
--- template, if provided, exists and uses the variables needed by the diagram
--- application generator. The target directory is writable and there's enough
--- disk space to copy the files over.
+-- Copilot, or any of @stateMachine@, @externalState@, @main@, @spec@,
+-- @stateMachine1@, @clock@, @ftp@, @notPreviousNot@. All identifiers used are
+-- valid C99 identifiers. The template, if provided, exists and uses the
+-- variables needed by the diagram application generator. The target directory
+-- is writable and there's enough disk space to copy the files over.
 diagram' :: FilePath
          -> DiagramOptions
          -> ExprPair
