@@ -45,7 +45,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      This package implements the internal commands of ogma.
 
-data-files:          templates/cfs/copilot/CMakeLists.txt
+data-files:          templates/cfs/Dockerfile
+                     templates/cfs/copilot/CMakeLists.txt
                      templates/cfs/copilot/fsw/for_build/Makefile
                      templates/cfs/copilot/fsw/mission_inc/copilot_cfs_perfids.h
                      templates/cfs/copilot/fsw/platform_inc/copilot_cfs_msgids.h
