@@ -7,6 +7,7 @@
 * Add syntax information to code blocks in tutorials (#345).
 * Update installation instructions for Linux, Mac (#347).
 * Fix incorrect arguments to `diagram` command in tutorial (#349).
+* Adjust README, tutorial to account for Dockerfile in cFS template (#353).
 
 ## [1.12.0] - 2026-01-21
 
