@@ -260,6 +260,8 @@ typedef struct sample_msg {
 The call to `ogma` above creates a `demo` directory that contains several files
 and directories, including:
 
+- A dockerfile that demonstrates how to compile the application in cFS.
+
 - A `copilot` directory, where the main generated package is defined.
   Specifically, the expressions used for triggers and outputs are specified in
   a file `copilot/fsw/src/Properties.hs`, and the cFS application that
