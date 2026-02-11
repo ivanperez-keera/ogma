@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2026-01-25
 
 * Remove unused functions from diagram template (#351).
+* Add dockerfile to cFS template (#353).
 
 ## [1.12.0] - 2026-01-21
 

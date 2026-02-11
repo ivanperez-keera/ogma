@@ -45,16 +45,17 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      .
                      This package implements the internal commands of ogma.
 
-data-files:          templates/copilot-cfs/CMakeLists.txt
-                     templates/copilot-cfs/fsw/for_build/Makefile
-                     templates/copilot-cfs/fsw/mission_inc/copilot_cfs_perfids.h
-                     templates/copilot-cfs/fsw/platform_inc/copilot_cfs_msgids.h
-                     templates/copilot-cfs/fsw/src/Properties.hs
-                     templates/copilot-cfs/fsw/src/copilot_cfs_msg.h
-                     templates/copilot-cfs/fsw/src/copilot_cfs.c
-                     templates/copilot-cfs/fsw/src/copilot_cfs_version.h
-                     templates/copilot-cfs/fsw/src/copilot_cfs.h
-                     templates/copilot-cfs/fsw/src/copilot_cfs_events.h
+data-files:          templates/cfs/Dockerfile
+                     templates/cfs/copilot/CMakeLists.txt
+                     templates/cfs/copilot/fsw/for_build/Makefile
+                     templates/cfs/copilot/fsw/mission_inc/copilot_cfs_perfids.h
+                     templates/cfs/copilot/fsw/platform_inc/copilot_cfs_msgids.h
+                     templates/cfs/copilot/fsw/src/Properties.hs
+                     templates/cfs/copilot/fsw/src/copilot_cfs_msg.h
+                     templates/cfs/copilot/fsw/src/copilot_cfs.c
+                     templates/cfs/copilot/fsw/src/copilot_cfs_version.h
+                     templates/cfs/copilot/fsw/src/copilot_cfs.h
+                     templates/cfs/copilot/fsw/src/copilot_cfs_events.h
                      templates/ros/Dockerfile
                      templates/ros/screenrc
                      templates/ros/copilot/CMakeLists.txt
