@@ -39,11 +39,12 @@ import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
                       Requirement (..), Spec (..))
 
 -- Internal imports
-import Command.Common
-import Command.Errors              (ErrorCode, ErrorTriplet(..))
-import Command.Result              (Result (..))
-import Data.Location               (Location (..))
-import Language.Trans.Spec2Copilot (specAnalyze)
+import           Command.Common
+import           Command.Errors              (ErrorCode, ErrorTriplet (..))
+import           Command.Result              (Result (..))
+import           Data.Location               (Location (..))
+import qualified Language.Trans.Spec2Copilot as Spec2Copilot
+import qualified Language.Trans.SpecAnalysis as SpecAnalysis
 
 -- | Generate overview of a spec given in an input file.
 --
@@ -77,15 +78,25 @@ command' :: FilePath
           -> IO (Either String CommandSummary)
 command' fp options (ExprPair exprT) = do
     spec <- runExceptT $ parseInputFile' fp
-    let spec' = either (\(ErrorTriplet _ec msg _loc) -> Left msg) Right spec
+    case spec of
+      Left (ErrorTriplet _ec msg _loc) -> return $ Left msg
 
-    let summary = do
-          spec1 <- spec'
-          spec3 <- specAnalyze $ addMissingIdentifiers ids spec1
-          return $ CommandSummary (length (externalVariables spec3))
-                                  (length (internalVariables spec3))
-                                  (length (requirements spec3))
-    return summary
+      Right spec' -> do
+        let specCompleted = addMissingIdentifiers ids spec'
+            specAnalyzed  = Spec2Copilot.specAnalyze specCompleted
+
+        numConstantReqs <-
+          SpecAnalysis.specAnalyze [] replace printExpr specCompleted
+
+        pure $ do
+          numExterns  <- length . externalVariables <$> specAnalyzed
+          numInternal <- length . internalVariables <$> specAnalyzed
+          numReqs     <- length . requirements      <$> specAnalyzed
+          numTrues    <- SpecAnalysis.numAlwaysTrue  <$> numConstantReqs
+          numFalses   <- SpecAnalysis.numAlwaysFalse <$> numConstantReqs
+
+          pure $
+            CommandSummary numExterns numInternal numReqs numTrues numFalses
 
   where
 
@@ -94,12 +105,14 @@ command' fp options (ExprPair exprT) = do
     propFormatName    = commandPropFormat options
     propVia           = commandPropVia options
 
-    ExprPairT _parse _replace _print ids _def = exprT
+    ExprPairT _parse replace printExpr ids _def = exprT
 
 data CommandSummary = CommandSummary
   { commandExternalVariables :: Int
   , commandInternalVariables :: Int
   , commandRequirements      :: Int
+  , commandRequirementsTrue  :: Int
+  , commandRequirementsFalse :: Int
   }
   deriving (Generic, Show)
 
