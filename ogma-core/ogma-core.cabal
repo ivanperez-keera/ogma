@@ -123,6 +123,7 @@ library
     Command.Common
     Command.Errors
     Command.VariableDB
+    Language.Trans.SpecAnalysis
 
   autogen-modules:
     Paths_ogma_core
@@ -132,9 +133,13 @@ library
     , aeson                   >= 2.0.0.0  && < 2.3
     , bytestring              >= 0.10.8.2 && < 0.13
     , containers              >= 0.5      && < 0.8
+    , copilot-core            >= 4.6.1    && < 4.7
+    , copilot-language        >= 4.6.1    && < 4.7
+    , copilot-theorem         >= 4.6.1    && < 4.7
     , directory               >= 1.3.1.5  && < 1.4
     , filepath                >= 1.4.2    && < 1.6
     , graphviz                >= 2999.20  && < 2999.21
+    , hint                    >= 0.9.0    && < 1.10
     , megaparsec              >= 8.0.0    && < 9.10
     , mtl                     >= 2.2.2    && < 2.4
     , process                 >= 1.6      && < 1.7
