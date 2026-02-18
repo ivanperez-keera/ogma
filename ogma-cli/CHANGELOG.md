@@ -1,6 +1,6 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-01-24
+## [1.X.Y] - 2026-02-17
 
 * Fix grammatical errors in ROS 2 tutorial (#341).
 * Make example file consistent with associated tutorial (#343).
@@ -8,6 +8,7 @@
 * Update installation instructions for Linux, Mac (#347).
 * Fix incorrect arguments to `diagram` command in tutorial (#349).
 * Adjust README, tutorial to account for Dockerfile in cFS template (#353).
+* Augment `overview` command to report results of spec analysis (#356).
 
 ## [1.12.0] - 2026-01-21
 
