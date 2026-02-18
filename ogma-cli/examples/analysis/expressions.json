@@ -1,0 +1,23 @@
+{
+  "internal_variables": [],
+  "external_variables": [
+    {"name": "input_value", "type": "Int32", "meaning": "InputI32"}
+  ],
+  "properties": [
+    {
+      "id":      "ReqUseful",
+      "formula": "input_value <= 0",
+      "text":    "input_value shall always be lower than or equal to zero"
+    },
+    {
+      "id":      "ReqAlwaysTrue",
+      "formula": "input_value == input_value",
+      "text":    "input_value shall always be equal to itself"
+    },
+    {
+      "id":      "ReqAlwaysFalse",
+      "formula": "input_value /= input_value",
+      "text":    "input_value shall never be equal to itself"
+    }
+  ]
+}
