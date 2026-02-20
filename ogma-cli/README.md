@@ -80,16 +80,16 @@ $ ogma --help
 On other Linux distributions or older Debian-based distributions, to use Ogma
 you must compile it from source, for which you need a number of pre-requisites,
 such as a Haskell compiler (GHC) and the package manager Cabal
-(`cabal-install`), as well as the libraries `bz2` and `expat`. At this time, we
-recommend GHC 8.6 and a version of `cabal-install` between 2.4 and 3.2. (Ogma
-has been tested with GHC versions up to 9.2 and cabal-install versions up to
-3.6, although the installation steps may vary slightly depending on the version
-of `cabal-install` being used.)
+(`cabal-install`), the libraries `bz2` and `expat`, and the theorem prover
+`z3`. At this time, we recommend GHC 8.6 and a version of `cabal-install`
+between 2.4 and 3.2. (Ogma has been tested with GHC versions up to 9.2 and
+cabal-install versions up to 3.6, although the installation steps may vary
+slightly depending on the version of `cabal-install` being used.)
 
 On Debian or Ubuntu Linux, these dependencies can be installed with:
 
 ```sh
-$ apt-get install ghc cabal-install libz-dev libbz2-dev libexpat-dev
+$ apt-get install ghc cabal-install libz-dev libbz2-dev libexpat-dev z3
 ```
 
 Once the compiler is installed, install Ogma from
@@ -133,10 +133,11 @@ Like before, the `ogma` executable will be placed in the directory
 
 On macOS, to use Ogma you must compile it from source, for which you need a
 number of pre-requisites, such as a Haskell compiler (GHC) and the package
-manager Cabal (`cabal-install`), as well as the libraries `bz2` and `expat`.
+manager Cabal (`cabal-install`), as well as the libraries `bz2` and `expat`,
+and the theorem prover `z3`.
 
 ```sh
-$ brew install ghc cabal-install bzip2 expat
+$ brew install ghc cabal-install bzip2 expat z3
 ```
 
 Once the compiler is installed, install Ogma from
