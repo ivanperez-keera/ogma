@@ -80,6 +80,8 @@ command c = do
       , " - {{commandExternalVariables}} external variables."
       , " - {{commandInternalVariables}} internal variables."
       , " - {{commandRequirements}} requirements."
+      , "   - {{commandRequirementsTrue}} requirements are constantly or always true."
+      , "   - {{commandRequirementsFalse}} requirements are constantly or always false."
       ]
 
 -- * CLI

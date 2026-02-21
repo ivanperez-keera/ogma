@@ -1,9 +1,10 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-01-25
+## [1.X.Y] - 2026-02-17
 
 * Remove unused functions from diagram template (#351).
 * Add dockerfile to cFS template (#353).
+* Augment overview command to formally analyze specs (#356).
 
 ## [1.12.0] - 2026-01-21
 
