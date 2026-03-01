@@ -1,0 +1,4 @@
+Requirement ID,Text,Rationale,Formalization,Notes
+Req001,The system shall only be in autopilot mode if there is a GPS fix.,,autopilot -> gps_fix,This requirement is not always true or false in principle.
+Req002,The system shall have a GPS fix if and only if it has a GPS fix.,,gps_fix = gps_fix,"This requirement is always true, and therefore doesn't add value. The monitor should never report a violation."
+Req003,The system shall have a GPS fix if and only if it does not have a GPS fix.,,gps_fix != gps_fix,"This requirement is always false, and therefore cannot be realized. The monitor should always report a violation."
