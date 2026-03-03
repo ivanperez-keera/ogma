@@ -1,0 +1,56 @@
+name: csv-ghc-8.6-cabal-2.4
+
+on:
+  - pull_request
+  - push
+
+jobs:
+  cabal:
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        cabal: ["2.4"]
+        ghc:
+          - "8.6"
+
+    steps:
+
+    - uses: haskell-actions/setup@main
+      id: setup-haskell-cabal
+      name: Setup Haskell
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
+
+    - name: Prepare environment
+      run: |
+        echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+        echo "$HOME/.cabal/bin" >> $GITHUB_PATH
+
+    - uses: actions/checkout@v4
+
+    - name: Create sandbox
+      run: |
+        echo "$PWD/.cabal-sandbox/bin" >> $GITHUB_PATH
+        cabal v1-sandbox init
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y libbz2-dev libexpat-dev cmake make psmisc
+        cabal v1-install alex happy
+        cabal v1-install BNFC
+
+    - name: Install ogma
+      run: |
+        cabal v1-install ogma-**/ copilot --constraint="aeson >= 2.0.3.0" --constraint="copilot>=4.6.1"
+
+    - name: Generate Copilot module
+      run: |
+        ogma standalone --input-file ogma-cli/examples/csv/requirements.csv --input-format ogma-cli/examples/csv/csv-format.cfg --prop-format smv
+
+    - name: Compile Copilot module
+      run: |
+        cabal v1-exec -- runhaskell -XPartialTypeSignatures -Wno-partial-type-signatures copilot/Copilot.hs
+        gcc -c monitor.c
