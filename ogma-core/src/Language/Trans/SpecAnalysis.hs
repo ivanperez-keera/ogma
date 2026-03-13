@@ -43,8 +43,9 @@ import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
 
 -- | Result of analyzing a specification.
 data AnalysisResult = AnalysisResult
-  { numAlwaysTrue  :: Int -- ^ Number of always true requirements.
-  , numAlwaysFalse :: Int -- ^ Number of always false requirements.
+  { numAlwaysTrue  :: Int  -- ^ Number of always true requirements.
+  , numAlwaysFalse :: Int  -- ^ Number of always false requirements.
+  , consistent     :: Bool -- ^ Whether requirements are mutually consistent.
   }
 
 -- | Formally analyze a specification for redundancies, conflicts, etc.
@@ -69,7 +70,18 @@ specAnalyze typeMaps exprTransform showExpr spec = do
   let numTrue  = length $ filter fst constantProperties
       numFalse = length $ filter snd constantProperties
 
-  return $ Right $ AnalysisResult numTrue numFalse
+  let negatedConjunction = Core.Op1 Core.Not
+                         $ foldr (Core.Op2 Core.And) true propertyGuards
+      true               = Core.Const Core.Bool True
+
+  provedNegatedConjunction <-
+    exprIsConstant coreSpec "ogma_inc" negatedConjunction
+
+  -- The requirements are considered consistent if it was *not* possible to
+  -- prove that their conjunction is always false.
+  let consistent = not $ fst provedNegatedConjunction
+
+  return $ Right $ AnalysisResult numTrue numFalse consistent
 
 -- * Auxiliary
 
