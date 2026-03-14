@@ -85,18 +85,20 @@ command' fp options (ExprPair exprT) = do
         let specCompleted = addMissingIdentifiers ids spec'
             specAnalyzed  = Spec2Copilot.specAnalyze specCompleted
 
-        numConstantReqs <-
+        specFormalAnalysis <-
           SpecAnalysis.specAnalyze [] replace printExpr specCompleted
 
         pure $ do
           numExterns  <- length . externalVariables <$> specAnalyzed
           numInternal <- length . internalVariables <$> specAnalyzed
           numReqs     <- length . requirements      <$> specAnalyzed
-          numTrues    <- SpecAnalysis.numAlwaysTrue  <$> numConstantReqs
-          numFalses   <- SpecAnalysis.numAlwaysFalse <$> numConstantReqs
+          numTrues    <- SpecAnalysis.numAlwaysTrue  <$> specFormalAnalysis
+          numFalses   <- SpecAnalysis.numAlwaysFalse <$> specFormalAnalysis
+          consistent  <- SpecAnalysis.consistent     <$> specFormalAnalysis
 
           pure $
-            CommandSummary numExterns numInternal numReqs numTrues numFalses
+            CommandSummary
+              numExterns numInternal numReqs numTrues numFalses consistent
 
   where
 
@@ -108,11 +110,12 @@ command' fp options (ExprPair exprT) = do
     ExprPairT _parse replace printExpr ids _def = exprT
 
 data CommandSummary = CommandSummary
-  { commandExternalVariables :: Int
-  , commandInternalVariables :: Int
-  , commandRequirements      :: Int
-  , commandRequirementsTrue  :: Int
-  , commandRequirementsFalse :: Int
+  { commandExternalVariables      :: Int
+  , commandInternalVariables      :: Int
+  , commandRequirements           :: Int
+  , commandRequirementsTrue       :: Int
+  , commandRequirementsFalse      :: Int
+  , commandRequirementsConsistent :: Bool
   }
   deriving (Generic, Show)
 
