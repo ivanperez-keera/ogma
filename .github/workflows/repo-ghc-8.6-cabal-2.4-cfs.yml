@@ -39,7 +39,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get install -y libbz2-dev libexpat-dev cmake make psmisc
-        cabal v1-install alex happy
+        cabal v1-install alex happy --constraint="alex <3.5.4.1 || >3.5.4.1"
         cabal v1-install BNFC
 
     - name: Install ogma
