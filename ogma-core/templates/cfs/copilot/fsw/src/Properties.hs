@@ -10,6 +10,9 @@ import qualified Copilot.Library.MTL       as MTL
 import           Language.Copilot          (reify)
 import           Prelude                   hiding ((&&), (||), (++), (<=), (>=), (<), (>), (==), (/=), not)
 
+{{#copilot_extra_defs}}
+{{{.}}}
+{{/copilot_extra_defs}}
 {{{copilot.externs}}}
 {{{copilot.internals}}}
 {{{copilot.reqs}}}
