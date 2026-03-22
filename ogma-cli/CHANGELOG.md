@@ -1,6 +1,6 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-03-13
+## [1.X.Y] - 2026-03-21
 
 * Fix grammatical errors in ROS 2 tutorial (#341).
 * Make example file consistent with associated tutorial (#343).
@@ -14,6 +14,7 @@
 * Add CI job to test standalone backend using CSV file (#362).
 * Add CI job to test standalone backend using XLSX file (#364).
 * Augment `overview` command to report consistency of specs (#366).
+* Adjust CI jobs to avoid broken version of `alex` (#370).
 
 ## [1.12.0] - 2026-01-21
 
