@@ -1,7 +1,8 @@
 # Revision history for ogma-language-lustre
 
-## [1.X.Y] - 2026-03-21
+## [1.13.0] - 2026-03-21
 
+* Version bump (1.13.0) (#373).
 * Constrain version of `alex` in Cabal file (#370).
 
 ## [1.12.0] - 2026-01-21
