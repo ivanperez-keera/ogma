@@ -1,0 +1,31 @@
+{
+  "local": [],
+  "externs": [
+      {"name": "speed", "type": "Float", "meaning": "Float"}
+    , {"name": "autopilot", "type": "Int32", "meaning": "InputI32"}
+    , {"name": "takeoff", "type": "Bool", "meaning": "Bool"}
+    , {"name": "moving", "type": "Bool", "meaning": "Bool"}
+  ],
+  "properties": [
+    {
+      "id":      "Req1",
+      "formula": "the system shall satisfy (speed < 10)",
+      "text":    "The system shall satisfy speed < 10"
+    },
+    {
+      "id":      "Req2",
+      "formula": "while (autopilot is engaged) (the system shall satisfy (speed < 10))",
+      "text":    "While the autopilot is engaged, the system shall satisfy speed < 10"
+    },
+    {
+      "id":      "Req3",
+      "formula": "during takeoff (the system shall satisfy (speed < 10))",
+      "text":    "During takeoff, the system shall satisfy speed < 10"
+    },
+    {
+      "id":      "Req4",
+      "formula": "while moving (when (autopilot is engaged) (the system shall satisfy (speed < 10)))",
+      "text":    "While moving, when the autopilot is engaged, the system shall satisfy speed < 10"
+    }
+  ]
+}
