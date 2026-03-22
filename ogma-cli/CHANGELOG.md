@@ -15,6 +15,7 @@
 * Add CI job to test standalone backend using XLSX file (#364).
 * Augment `overview` command to report consistency of specs (#366).
 * Adjust CI jobs to avoid broken version of `alex` (#370).
+* Add example containing properties in parenthesized EARS (#372).
 
 ## [1.12.0] - 2026-01-21
 
