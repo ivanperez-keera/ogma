@@ -80,6 +80,14 @@ command c = do
       , " - {{commandExternalVariables}} external variables."
       , " - {{commandInternalVariables}} internal variables."
       , " - {{commandRequirements}} requirements."
+      , "   - {{commandRequirementsTrue}} requirements are constantly or always true."
+      , "   - {{commandRequirementsFalse}} requirements are constantly or always false."
+      , "{{#commandRequirementsConsistent}}"
+      , "   - No inconsistencies detected in the requirements."
+      , "{{/commandRequirementsConsistent}}"
+      , "{{^commandRequirementsConsistent}}"
+      , "   - The requirements are not mutually consistent."
+      , "{{/commandRequirementsConsistent}}"
       ]
 
 -- * CLI

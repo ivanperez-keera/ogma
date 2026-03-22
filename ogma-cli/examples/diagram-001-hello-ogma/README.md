@@ -52,10 +52,10 @@ machine implementations, users need to provide the following information:
 An invocation of Ogma's diagram backend may look like the following:
 
 ```sh
-$ ogma diagram --app-target-dir demo \
+$ ogma diagram --target-dir demo \
                --mode calculate \
                --input-file ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot \
-               --file-format dot \
+               --input-format dot \
                --prop-format literal
 ```
 
@@ -91,7 +91,7 @@ In our example, that information is provided in an `diagram-copilot.dot` file,
 which, in our case, looks like the following (this does not include expressions
 or constraints for the transitions, which will described later):
 
-```
+```dot
 digraph g{
    rankdir="LR";
    edge[splines="curved"]
@@ -136,7 +136,7 @@ than 120. In either case, if the negation of that condition becomes true after
 transitioning, then the system transitions back to the initial state, but it
 does not transition directly between `1` and `2`.
 
-```
+```dot
 digraph g{
    rankdir="LR";
    edge[splines="curved"]
@@ -194,11 +194,11 @@ The above diagram is both fully specified and fully deterministic.
 To generate the application from the diagram above, we invoke `ogma` with the
 following arguments:
 
-```
-$ ogma diagram --app-target-dir demo \
+```sh
+$ ogma diagram --target-dir demo \
                --prop-format literal \
                --mode calculate \
-               --file-format dot \
+               --input-format dot \
                --input-file ogma-cli/examples/diagram-001-hello-ogma/diagram-copilot.dot
 ```
 
@@ -257,7 +257,7 @@ program. To test the generated module, we write a C program in a file `main.c`
 defines different values for `input`, calls the state machine implementation to
 calculate the new expected state, and reports the results:
 
-```
+```C
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -330,7 +330,7 @@ void main (int argc, char **argv)
 ```
 
 We can compile and link all C files together as follows:
-```
+```sh
 $ gcc main.c monitor.c -o main
 ```
 

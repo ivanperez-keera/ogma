@@ -39,8 +39,9 @@ verification framework that generates hard real-time C99 code.
 ## Table of Contents
 
 - [Installation](#installation)
-  - [Pre-requisites](#pre-requisites)
-  - [Compilation](#compilation)
+  - [Linux installation](#linux-installation)
+  - [Mac installation](#mac-installation)
+  - [Troubleshooting](#troubleshooting)
 - [Usage](#usage)
   - [cFS Application Generation](#cfs-application-generation)
   - [ROS Application Generation](#ros-application-generation)
@@ -55,44 +56,136 @@ verification framework that generates hard real-time C99 code.
 # Installation
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-## Pre-requisites
+## Linux Installation
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-To install Ogma from source, users must have the tools GHC and cabal-install,
-as well as the libraries `bz2` and `expat`. At this time, we recommend GHC 8.6
-and a version of cabal-install between 2.4 and 3.2. (Ogma has been tested with
-GHC versions up to 9.2 and cabal-install versions up to 3.6, although the
-installation steps may vary slightly depending on the version of cabal-install
-being used.)
+### Ubuntu 25.10 / Debian Forky or newer
+
+On Ubuntu 25.10 / Debian Forky or newer, Ogma can be installed directly from
+the package repositories with:
+
+```sh
+$ sudo apt-get install ogma
+```
+
+To test that Ogma is available, execute the following to print the list of
+commands supported:
+
+```sh
+$ ogma --help
+```
+
+### Other Linux distributions
+
+On other Linux distributions or older Debian-based distributions, to use Ogma
+you must compile it from source, for which you need a number of pre-requisites,
+such as a Haskell compiler (GHC) and the package manager Cabal
+(`cabal-install`), the libraries `bz2` and `expat`, and the theorem prover
+`z3`. At this time, we recommend GHC 8.6 and a version of `cabal-install`
+between 2.4 and 3.2. (Ogma has been tested with GHC versions up to 9.2 and
+cabal-install versions up to 3.6, although the installation steps may vary
+slightly depending on the version of `cabal-install` being used.)
 
 On Debian or Ubuntu Linux, these dependencies can be installed with:
 
 ```sh
-$ apt-get install ghc cabal-install libz-dev libbz2-dev libexpat-dev
+$ apt-get install ghc cabal-install libz-dev libbz2-dev libexpat-dev z3
 ```
 
-On Mac, they can be installed with:
+Once the compiler is installed, install Ogma from
+[Hackage](https://hackage.haskell.org/package/ogma-cli) with:
 
 ```sh
-$ brew install ghc cabal-install bzip2 expat
-```
-
-## Compilation
-<sup>[(Back to top)](#table-of-contents)</sup>
-
-Once GHC and cabal are installed, the simplest way to install Ogma is with:
-```sh
-$ git clone https://github.com/nasa/ogma.git
-$ cd ogma
-$ export PATH="$HOME/.local/bin/:$PATH"
 $ cabal update
-$ cabal install --lib copilot copilot-c99 copilot-language copilot-theorem \
-    copilot-libraries copilot-interpreter
+$ cabal install --lib copilot copilot-core copilot-c99 copilot-language \
+    copilot-theorem copilot-libraries copilot-interpreter copilot-prettyprinter
 $ cabal install ogma-cli:ogma
 ```
 
 After that, the `ogma` executable will be placed in the directory
 `$HOME/.local/bin/`, where `$HOME` represents your user's home directory.
+
+To test that Ogma is available, execute the following to print the list of
+commands supported:
+
+```sh
+$ ogma --help
+```
+
+Alternatively, you may want to install the latest development version of Ogma
+from the official repository, which you can do as follows:
+
+```sh
+$ git clone https://github.com/nasa/ogma.git
+$ cd ogma
+$ export PATH="$HOME/.local/bin/:$PATH"
+$ cabal update
+$ cabal install --lib copilot copilot-core copilot-c99 copilot-language \
+    copilot-theorem copilot-libraries copilot-interpreter copilot-prettyprinter
+$ cabal install ogma-cli:ogma
+```
+
+Like before, the `ogma` executable will be placed in the directory
+`$HOME/.local/bin/`, where `$HOME` represents your user's home directory.
+
+## Mac installation
+<sup>[(Back to top)](#table-of-contents)</sup>
+
+On macOS, to use Ogma you must compile it from source, for which you need a
+number of pre-requisites, such as a Haskell compiler (GHC) and the package
+manager Cabal (`cabal-install`), as well as the libraries `bz2` and `expat`,
+and the theorem prover `z3`.
+
+```sh
+$ brew install ghc cabal-install bzip2 expat z3
+```
+
+Once the compiler is installed, install Ogma from
+[Hackage](https://hackage.haskell.org/package/ogma-cli) with:
+
+```sh
+$ cabal update
+$ cabal install --lib copilot copilot-core copilot-c99 copilot-language \
+    copilot-theorem copilot-libraries copilot-interpreter copilot-prettyprinter
+$ cabal install ogma-cli:ogma
+```
+
+After that, the `ogma` executable will be placed in the directory
+`$HOME/.local/bin/`, where `$HOME` represents your user's home directory.
+
+To test that Ogma is available, execute the following to print the list of
+commands supported:
+
+```sh
+$ ogma --help
+```
+
+Alternatively, you may want to install the latest development version of Ogma
+from the official repository, which you can do as follows:
+
+```sh
+$ git clone https://github.com/nasa/ogma.git
+$ cd ogma
+$ export PATH="$HOME/.local/bin/:$PATH"
+$ cabal update
+$ cabal install --lib copilot copilot-core copilot-c99 copilot-language \
+    copilot-theorem copilot-libraries copilot-interpreter copilot-prettyprinter
+$ cabal install ogma-cli:ogma
+```
+
+Like before, the `ogma` executable will be placed in the directory
+`$HOME/.local/bin/`, where `$HOME` represents your user's home directory.
+
+## Troubleshooting
+<sup>[(Back to top)](#table-of-contents)</sup>
+
+
+Feel free to open an issue if you are unable to install Ogma following these
+instructions.
+
+There is a `.github/` directory at the root of the repository that may help
+with troubleshooting the installation. Also, our issues often include comments
+with Dockerfiles listing the steps necessary to install Ogma from scratch.
 
 # Usage
 <sup>[(Back to top)](#table-of-contents)</sup>
@@ -169,16 +262,17 @@ $ ogma cfs --variable-db examples/cfs-variable-db.json --variable-file examples/
 
 The application generated by Ogma contains the following files:
 ```
-copilot-cfs-demo/CMakeLists.txt
-copilot-cfs-demo/fsw/for_build/Makefile
-copilot-cfs-demo/fsw/mission_inc/copilot_cfs_perfids.h
-copilot-cfs-demo/fsw/platform_inc/copilot_cfs_msgids.h
-copilot-cfs-demo/fsw/src/copilot_cfs.c
-copilot-cfs-demo/fsw/src/Properties.hs
-copilot-cfs-demo/fsw/src/copilot_cfs_msg.h
-copilot-cfs-demo/fsw/src/copilot_cfs_events.h
-copilot-cfs-demo/fsw/src/copilot_cfs_version.h
-copilot-cfs-demo/fsw/src/copilot_cfs.h
+copilot-cfs-demo/Dockerfile
+copilot-cfs-demo/copilot/CMakeLists.txt
+copilot-cfs-demo/copilot/fsw/for_build/Makefile
+copilot-cfs-demo/copilot/fsw/mission_inc/copilot_cfs_perfids.h
+copilot-cfs-demo/copilot/fsw/platform_inc/copilot_cfs_msgids.h
+copilot-cfs-demo/copilot/fsw/src/copilot_cfs.c
+copilot-cfs-demo/copilot/fsw/src/Properties.hs
+copilot-cfs-demo/copilot/fsw/src/copilot_cfs_msg.h
+copilot-cfs-demo/copilot/fsw/src/copilot_cfs_events.h
+copilot-cfs-demo/copilot/fsw/src/copilot_cfs_version.h
+copilot-cfs-demo/copilot/fsw/src/copilot_cfs.h
 ```
 
 Users are expected to modify `Properties.hs` to adjust the property being
@@ -217,6 +311,15 @@ void COPILOT_ProcessIcarousPosition(void)
     position = *msg;
     step();
 }
+```
+
+The Dockerfile can be used to compile the application inside a distribution
+of NASA's Core Flight System (cFS). To build the image, first place any
+additional header files used by the implementation inside the appilcation
+directory. After, you can compile the image with:
+
+```sh
+$ docker build .
 ```
 
 ### Template Customization

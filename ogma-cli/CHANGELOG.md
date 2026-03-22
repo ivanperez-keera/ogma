@@ -1,5 +1,23 @@
 # Revision history for ogma-cli
 
+## [1.13.0] - 2026-03-21
+
+* Version bump (1.13.0) (#373).
+* Fix grammatical errors in ROS 2 tutorial (#341).
+* Make example file consistent with associated tutorial (#343).
+* Add syntax information to code blocks in tutorials (#345).
+* Update installation instructions for Linux, Mac (#347).
+* Fix incorrect arguments to `diagram` command in tutorial (#349).
+* Adjust README, tutorial to account for Dockerfile in cFS template (#353).
+* Augment `overview` command to report results of spec analysis (#356).
+* Add example containing requirements in CSV format (#358).
+* Add example containing requirements in XLSX format (#360).
+* Add CI job to test standalone backend using CSV file (#362).
+* Add CI job to test standalone backend using XLSX file (#364).
+* Augment `overview` command to report consistency of specs (#366).
+* Adjust CI jobs to avoid broken version of `alex` (#370).
+* Add example containing properties in parenthesized EARS (#372).
+
 ## [1.12.0] - 2026-01-21
 
 * Version bump 1.12.0 (#336).

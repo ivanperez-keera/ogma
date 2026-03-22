@@ -65,7 +65,7 @@ command :: CommandOptions
         -> IO (Result ErrorCode)
 command options = processResult $ do
     -- Obtain template dir
-    templateDir <- locateTemplateDir mTemplateDir "copilot-cfs"
+    templateDir <- locateTemplateDir mTemplateDir "cfs"
 
     templateVars <- parseTemplateVarsFile templateVarsF
 
