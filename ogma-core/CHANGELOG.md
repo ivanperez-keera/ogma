@@ -1,7 +1,8 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-03-21
+## [1.13.0] - 2026-03-21
 
+* Version bump (1.13.0) (#373).
 * Remove unused functions from diagram template (#351).
 * Add dockerfile to cFS template (#353).
 * Augment overview command to formally analyze specs (#356).
