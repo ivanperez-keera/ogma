@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.Y] - 2026-03-23
+
+* Bump upper version constraints on Copilot packages (#377).
+
 ## [1.13.0] - 2026-03-21
 
 * Version bump (1.13.0) (#373).
