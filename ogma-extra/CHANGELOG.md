@@ -1,5 +1,9 @@
 # Revision history for ogma-extra
 
+## [1.X.Y] - 2026-04-03
+
+* Bump upper version constraint on Quickcheck (#382).
+
 ## [1.13.0] - 2026-03-21
 
 * Version bump (1.13.0) (#373).
