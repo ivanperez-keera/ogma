@@ -31,7 +31,8 @@ module Command.Overview
 -- External imports
 import Control.Monad.Except (runExceptT)
 import Data.Aeson           (ToJSON (..))
-import Data.List            (nub, (\\))
+import Data.Functor         ((<&>))
+import Data.List            (nub, sort, (\\))
 import GHC.Generics         (Generic)
 
 -- External imports: Ogma
@@ -40,6 +41,8 @@ import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
 
 -- Internal imports
 import           Command.Common
+import           Command.CommonDiagram       (Diagram (..), DiagramFormat (..),
+                                              readDiagram)
 import           Command.Errors              (ErrorCode, ErrorTriplet (..))
 import           Command.Result              (Result (..))
 import           Data.Location               (Location (..))
@@ -76,29 +79,35 @@ command' :: FilePath
           -> CommandOptions
           -> ExprPair
           -> IO (Either String CommandSummary)
-command' fp options (ExprPair exprT) = do
-    spec <- runExceptT $ parseInputFile' fp
-    case spec of
-      Left (ErrorTriplet _ec msg _loc) -> return $ Left msg
+command' fp options exprP@(ExprPair exprT)
+    | isDiagramFormat formatName
+    = do diagramE <- readDiagram fp diagramFormat exprP
+         pure $ diagramE <&> \diagramR ->
+           CommandSummaryDiagram (diagramNumStates diagramR)
 
-      Right spec' -> do
-        let specCompleted = addMissingIdentifiers ids spec'
-            specAnalyzed  = Spec2Copilot.specAnalyze specCompleted
+    | otherwise
+    = do spec <- runExceptT $ parseInputFile' fp
+         case spec of
+           Left (ErrorTriplet _ec msg _loc) -> return $ Left msg
 
-        specFormalAnalysis <-
-          SpecAnalysis.specAnalyze [] replace printExpr specCompleted
+           Right spec' -> do
+             let specCompleted = addMissingIdentifiers ids spec'
+                 specAnalyzed  = Spec2Copilot.specAnalyze specCompleted
 
-        pure $ do
-          numExterns  <- length . externalVariables <$> specAnalyzed
-          numInternal <- length . internalVariables <$> specAnalyzed
-          numReqs     <- length . requirements      <$> specAnalyzed
-          numTrues    <- SpecAnalysis.numAlwaysTrue  <$> specFormalAnalysis
-          numFalses   <- SpecAnalysis.numAlwaysFalse <$> specFormalAnalysis
-          consistent  <- SpecAnalysis.consistent     <$> specFormalAnalysis
+             specFormalAnalysis <-
+               SpecAnalysis.specAnalyze [] replace printExpr specCompleted
 
-          pure $
-            CommandSummary
-              numExterns numInternal numReqs numTrues numFalses consistent
+             pure $ do
+               numExterns  <- length . externalVariables <$> specAnalyzed
+               numInternal <- length . internalVariables <$> specAnalyzed
+               numReqs     <- length . requirements      <$> specAnalyzed
+               numTrues    <- SpecAnalysis.numAlwaysTrue  <$> specFormalAnalysis
+               numFalses   <- SpecAnalysis.numAlwaysFalse <$> specFormalAnalysis
+               consistent  <- SpecAnalysis.consistent     <$> specFormalAnalysis
+
+               pure $
+                 CommandSummaryRequirement
+                   numExterns numInternal numReqs numTrues numFalses consistent
 
   where
 
@@ -109,14 +118,31 @@ command' fp options (ExprPair exprT) = do
 
     ExprPairT _parse replace printExpr ids _def = exprT
 
-data CommandSummary = CommandSummary
-  { commandExternalVariables      :: Int
-  , commandInternalVariables      :: Int
-  , commandRequirements           :: Int
-  , commandRequirementsTrue       :: Int
-  , commandRequirementsFalse      :: Int
-  , commandRequirementsConsistent :: Bool
-  }
+    isDiagramFormat :: String -> Bool
+    isDiagramFormat fName = fName `elem` [ "dot", "mermaid" ]
+
+    diagramFormat :: DiagramFormat
+    diagramFormat
+      | formatName == "dot"     = Dot
+      | formatName == "mermaid" = Mermaid
+      | otherwise               = error $
+         "diagramFormat: Not a diagram format " ++ show formatName
+
+    diagramNumStates :: Diagram -> Int
+    diagramNumStates diagramR = length $ nub $ sort $ concat
+      [ [s, d] | (s, _, d) <- diagramTransitions diagramR ]
+
+data CommandSummary
+    = CommandSummaryRequirement
+        { commandExternalVariables      :: Int
+        , commandInternalVariables      :: Int
+        , commandRequirements           :: Int
+        , commandRequirementsTrue       :: Int
+        , commandRequirementsFalse      :: Int
+        , commandRequirementsConsistent :: Bool
+        }
+    | CommandSummaryDiagram
+        { commandNumStates :: Int }
   deriving (Generic, Show)
 
 instance ToJSON CommandSummary
