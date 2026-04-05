@@ -71,10 +71,13 @@ import Data.ByteString.Extra  as B ( safeReadFile )
 import System.Directory.Extra ( copyTemplate )
 
 -- External imports: parsing expressions.
+import qualified Language.Lustre.AbsLustre as Lustre
 import qualified Language.Lustre.ParLustre as Lustre (myLexer, pBoolSpec)
+import qualified Language.SMV.AbsSMV       as SMV
 import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
 
 -- Internal imports: auxiliary
+import Command.Common  (ExprPair(..), ExprPairT(..))
 import Command.Result  (Result (..))
 import Data.Location   (Location (..))
 import Paths_ogma_core (getDataDir)
@@ -232,41 +235,46 @@ diagramTemplateError fp exception =
 
 -- * Handler for boolean expressions in edges or transitions between states.
 
--- | Handler for boolean expressions that knows how to parse them, replace
--- variables in them, and convert them to Copilot.
-data ExprPair = forall a . ExprPair
-  { _exprParse   :: String -> Either String a
-  , _exprReplace :: [(String, String)] -> a -> a
-  , _exprPrint   :: a -> String
-  , _exprIdents  :: a -> [String]
-  }
-
 -- | Return a handler depending on the format used for edge or transition
 -- properties.
 exprPair :: DiagramPropFormat -> ExprPair
-exprPair Lustre  = ExprPair (Lustre.pBoolSpec . Lustre.myLexer)
-                            (\_ -> id)
-                            Lustre.boolSpec2Copilot
-                            Lustre.boolSpecNames
-exprPair Inputs  = ExprPair ((Right . read) :: String -> Either String Int)
-                            (\_ -> id)
-                            (\x -> "input == " ++ show x)
-                            (const [])
-exprPair Literal = ExprPair Right
-                            (\_ -> id)
-                            id
-                            (const [])
-exprPair SMV     = ExprPair (SMV.pBoolSpec . SMV.myLexer)
-                            substituteBoolExpr
-                            SMV.boolSpec2Copilot
-                            SMV.boolSpecNames
+exprPair Lustre = ExprPair $
+  ExprPairT
+    (Lustre.pBoolSpec . Lustre.myLexer)
+    (\_ -> id)
+    Lustre.boolSpec2Copilot
+    Lustre.boolSpecNames
+    (Lustre.BoolSpecSignal (Lustre.Ident "undefined"))
+exprPair Inputs = ExprPair $
+  ExprPairT
+    ((Right . read) :: String -> Either String Int)
+    (\_ -> id)
+    (\x -> "input == " ++ show x)
+    (const [])
+    (-1)
+exprPair Literal = ExprPair $
+  ExprPairT
+    Right
+    (\_ -> id)
+    id
+    (const [])
+    "undefined"
+exprPair SMV = ExprPair $
+  ExprPairT
+    (SMV.pBoolSpec . SMV.myLexer)
+    substituteBoolExpr
+    SMV.boolSpec2Copilot
+    SMV.boolSpecNames
+    (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
 -- | Parse and print a value using an auxiliary Expression Pair.
 --
 -- Fails if the value has no valid parse.
 exprPairShow :: ExprPair -> String -> String
-exprPairShow (ExprPair parseProp _replace printProp _ids) =
-  printProp . fromRight' . parseProp
+exprPairShow (ExprPair exprP) =
+    printProp . fromRight' . parseProp
+  where
+    ExprPairT parseProp _replace printProp _ids _unknown = exprP
 
 -- * Diagrams
 
@@ -358,7 +366,7 @@ pGraphDiagram exprP = do
 -- This parser depends on an auxiliary parser for the expressions associated to
 -- the edges or connections between states.
 pGraphTransition :: ExprPair -> MermaidParser (Int, String, Int)
-pGraphTransition ep@(ExprPair { _exprParse = parseProp }) = do
+pGraphTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
   _ <- spaces
   stateFrom <- many digitChar
   _ <- string "-->|"
@@ -385,7 +393,7 @@ pStateDiagram exprPair = do
 
 -- | Parser for transition label in stateDiagram-v2 mermaid diagram.
 pStateTransition :: ExprPair -> MermaidParser (Int, String, Int)
-pStateTransition ep@(ExprPair { _exprParse = parseProp }) = do
+pStateTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
   _ <- spaces
   from <- read <$> many digitChar
   _ <- spaces
@@ -422,7 +430,7 @@ pSequenceDiagram exprPair = do
 -- This parser depends on an auxiliary parser for the expressions associated to
 -- the connections or messages between elements.
 pSequenceTransition :: ExprPair -> MermaidParser String
-pSequenceTransition ep@(ExprPair { _exprParse = parseProp }) = do
+pSequenceTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
   spaces
   stateFrom <- many digitChar
   spaces
