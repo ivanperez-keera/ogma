@@ -30,44 +30,15 @@ module Command.Diagram
   where
 
 -- External imports
-import           Control.Exception                 as E
-import           Control.Monad                     (when, void)
-import           Data.Aeson                        (object, (.=))
-import           Data.ByteString.Lazy              (toStrict)
-import qualified Data.ByteString.Lazy              as B
-import           Data.Either                       (isLeft)
-import           Data.Foldable                     (for_)
-import           Data.Functor.Identity             (Identity)
-import           Data.GraphViz                     (graphEdges)
-import qualified Data.GraphViz                     as G
-import qualified Data.GraphViz.Attributes.Complete as Attributes
-import           Data.GraphViz.Commands.IO         (toUTF8)
-import qualified Data.GraphViz.Parsing             as G
-import           Data.GraphViz.PreProcessing       (preProcess)
-import qualified Data.GraphViz.Types.Generalised   as Gs
-import           Data.List                         (intercalate, nub, sort)
-import qualified Data.Set                          as Set
-import           Data.Text                         (Text)
-import qualified Data.Text                         as T
-import qualified Data.Text.Encoding                as T
-import           Data.Text.Lazy                    (pack)
-import qualified Data.Text.Lazy                    as LT
-import           Data.Void                         (Void)
-import           System.FilePath                   ((</>))
-import           Text.Megaparsec                   (ErrorFancy (ErrorFail),
-                                                    ParsecT, choice, empty,
-                                                    errorBundlePretty,
-                                                    fancyFailure, many,
-                                                    manyTill, noneOf, parse,
-                                                    (<|>))
-import           Text.Megaparsec.Char              (alphaNumChar, char,
-                                                    digitChar, newline, space1,
-                                                    string)
-import qualified Text.Megaparsec.Char.Lexer        as L
-
+import Control.Exception as E
+import Data.Aeson        (object, (.=))
+import Data.Foldable     (for_)
+import Data.Functor      ((<&>))
+import Data.List         (intercalate, nub, sort)
+import Data.Text.Lazy    (pack)
+import System.FilePath   ((</>))
 
 -- External imports: auxiliary
-import Data.ByteString.Extra  as B ( safeReadFile )
 import System.Directory.Extra ( copyTemplate )
 
 -- External imports: parsing expressions.
@@ -77,10 +48,11 @@ import qualified Language.SMV.AbsSMV       as SMV
 import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
 
 -- Internal imports: auxiliary
-import Command.Common  (ExprPair(..), ExprPairT(..))
-import Command.Result  (Result (..))
-import Data.Location   (Location (..))
-import Paths_ogma_core (getDataDir)
+import Command.Common        (ExprPair (..), ExprPairT (..))
+import Command.CommonDiagram (Diagram (..), DiagramFormat (..), readDiagram)
+import Command.Result        (Result (..))
+import Data.Location         (Location (..))
+import Paths_ogma_core       (getDataDir)
 
 -- Internal imports: language ASTs, transformers
 import           Language.SMV.Substitution     (substituteBoolExpr)
@@ -150,17 +122,9 @@ diagram' :: FilePath
          -> ExprPair
          -> IO (Either String (String, String))
 diagram' fp options exprP = do
-  contentEither <- B.safeReadFile fp
-  return $ do
-    -- All of the following operations use Either to return error messages. The
-    -- use of the monadic bind to pass arguments from one function to the next
-    -- will cause the program to stop at the earliest error.
-    diagFileContent <- contentEither
-
-    -- Abtract representation of a state machine diagram.
-    diagramR <- parseDiagram (diagramFormat options) diagFileContent exprP
-
-    return $ diagramToCopilot diagramR (diagramMode options)
+  diagramE <- readDiagram fp (diagramFormat options) exprP
+  pure $ diagramE <&> \diagramR ->
+    diagramToCopilot diagramR (diagramMode options)
 
 -- | Options used to customize the conversion of diagrams to Copilot code.
 data DiagramOptions = DiagramOptions
@@ -179,11 +143,6 @@ data DiagramMode = CheckState   -- ^ Check if given state matches expectation
                  | ComputeState -- ^ Compute expected state
                  | CheckMoves   -- ^ Check if transitioning to a state would be
                                 --   possible.
-  deriving (Eq, Show)
-
--- | Diagram formats supported.
-data DiagramFormat = Mermaid
-                   | Dot
   deriving (Eq, Show)
 
 -- | Property formats supported.
@@ -267,201 +226,6 @@ exprPair SMV = ExprPair $
     SMV.boolSpecNames
     (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
--- | Parse and print a value using an auxiliary Expression Pair.
---
--- Fails if the value has no valid parse.
-exprPairShow :: ExprPair -> String -> String
-exprPairShow (ExprPair exprP) =
-    printProp . fromRight' . parseProp
-  where
-    ExprPairT parseProp _replace printProp _ids _unknown = exprP
-
--- * Diagrams
-
--- | Internal representation for diagrams.
-newtype Diagram = Diagram
-    { diagramTransitions :: [(Int, String, Int)]
-    }
-  deriving (Show, Eq)
-
--- * Diagram parsers
-
--- | Generic function to parse a diagram.
-parseDiagram :: DiagramFormat          -- ^ Format of the input file
-             -> B.ByteString           -- ^ Contents of the diagram
-             -> ExprPair               -- ^ Subparser for conditions or edge
-                                       -- expressions
-             -> Either String Diagram
-parseDiagram Dot     = parseDiagramDot
-parseDiagram Mermaid = parseDiagramMermaid
-
--- ** Dot parser
-
--- | Parse a DOT / Graphviz diagram.
-parseDiagramDot :: B.ByteString -> ExprPair -> Either String Diagram
-parseDiagramDot contents exprP = do
-    let contentsUTF8 = toUTF8 contents
-    dg <- fst $ G.runParser G.parse $ preProcess contentsUTF8
-    return $ makeDiagram dg
-  where
-    makeDiagram :: Gs.DotGraph LT.Text -> Diagram
-    makeDiagram g = Diagram links
-      where
-        links = map edgeToLink (graphEdges g)
-
-        edgeToLink edge =
-            ( read (LT.unpack o)
-            , exprPairShow exprP (LT.unpack e)
-            , read (LT.unpack d)
-            )
-          where
-            o = G.fromNode edge
-            d = G.toNode edge
-            e = getLabel (G.edgeAttributes edge)
-
-            -- Extract the label from a list of attributes. If no label is
-            -- found, it's assumed that the condition is the literal true.
-            getLabel [] = "true"
-            getLabel ((Attributes.Label (Attributes.StrLabel l)) : _) = l
-            getLabel (_ : as) = getLabel as
-
--- ** Mermaid parser
-
--- | Parse a mermaid diagram.
-parseDiagramMermaid :: B.ByteString -> ExprPair -> Either String Diagram
-parseDiagramMermaid txtDia exprP =
-    case parsingResult of
-      Left e  -> Left (errorBundlePretty e)
-      Right x -> Right x
-  where
-    txt           = T.decodeUtf8 (toStrict txtDia)
-    parsingResult = parse (spaces *> pDiagram exprP) "<input>" txt
-
--- | Type for parser for memaid diagrams.
-type MermaidParser = ParsecT Void Text Identity
-
--- | Parser for mermaid diagrams.
-pDiagram :: ExprPair -> MermaidParser Diagram
-pDiagram  exprP =
-      pGraphDiagram exprP
-  <|> pStateDiagram exprP
-  <|> pSequenceDiagram exprP
-
--- | Parser for a mermaid diagram.
---
--- This parser depends on an auxiliary parser for the expressions associated to
--- the edges or connections between states.
-pGraphDiagram :: ExprPair -> MermaidParser Diagram
-pGraphDiagram exprP = do
-  _ <- string "graph" <* spaces
-  _name <- T.pack <$> manyTill alphaNumChar (char ';')
-  _ <- newline
-
-  transitions <- many (pGraphTransition exprP)
-
-  pure $ Diagram transitions
-
--- | Parser for an edge in a state diagram.
---
--- This parser depends on an auxiliary parser for the expressions associated to
--- the edges or connections between states.
-pGraphTransition :: ExprPair -> MermaidParser (Int, String, Int)
-pGraphTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
-  _ <- spaces
-  stateFrom <- many digitChar
-  _ <- string "-->|"
-  edge <- many (noneOf ("|" :: [Char]))
-
-  let x = parseProp edge
-  when (isLeft x) $ fancyFailure $ Set.singleton $
-    ErrorFail $ "Edge property has incorrect format: " ++ show edge
-
-  _ <- char '|'
-  stateTo <- many digitChar
-  _ <- char ';'
-  _ <- newline
-  return (read stateFrom, exprPairShow ep edge, read stateTo)
-
--- | Parser for Mermaid diagrams of type stateDiagram-v2.
-pStateDiagram :: ExprPair -> MermaidParser Diagram
-pStateDiagram exprPair = do
-  _ <- string "stateDiagram-v2" <* spaces
-
-  transitions <- many (pStateTransition exprPair)
-
-  pure $ Diagram transitions
-
--- | Parser for transition label in stateDiagram-v2 mermaid diagram.
-pStateTransition :: ExprPair -> MermaidParser (Int, String, Int)
-pStateTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
-  _ <- spaces
-  from <- read <$> many digitChar
-  _ <- spaces
-  string "-->"
-  _ <- spaces
-  to <- read <$> many digitChar
-  _ <- spaces
-  _ <- char ':'
-  _ <- spaces
-  edge <- many (noneOf ("\n" :: [Char]))
-
-  let x = parseProp edge
-  when (isLeft x) $ fancyFailure $ Set.singleton $
-    ErrorFail $ "Edge property has incorrect format: " ++ show edge
-
-  _ <- newline
-
-  pure $ (from, exprPairShow ep edge, to)
-
--- | Parser for Mermaid diagrams of type sequenceDiagram.
-pSequenceDiagram :: ExprPair -> MermaidParser Diagram
-pSequenceDiagram exprPair = do
-  spaces
-  _ <- string "sequenceDiagram"
-  spaces
-
-  conditions <- many (pSequenceTransition exprPair)
-  let transitions = zipWith (\t idx -> (idx, t, idx + 1)) conditions [0..]
-
-  pure $ Diagram transitions
-
--- | Parser for a connection, message or transition in a sequence diagram.
---
--- This parser depends on an auxiliary parser for the expressions associated to
--- the connections or messages between elements.
-pSequenceTransition :: ExprPair -> MermaidParser String
-pSequenceTransition ep@(ExprPair (ExprPairT { exprTParse = parseProp })) = do
-  spaces
-  stateFrom <- many digitChar
-  spaces
-  pSequenceArrow
-  spaces
-  stateTo <- many digitChar
-  spaces
-  _ <- char ':'
-  spaces
-  edge <- many (noneOf ("\n" :: [Char]))
-
-  let x = parseProp edge
-  when (isLeft x) $ fancyFailure $ Set.singleton $
-    ErrorFail $ "Edge property has incorrect format: " ++ show edge
-
-  _ <- newline
-
-  pure (exprPairShow ep edge)
-
--- | Parser for arrow in sequence diagram.
-pSequenceArrow :: MermaidParser ()
-pSequenceArrow = void $ choice
-  [ string "->>"
-  , string "-->>"
-  , string "-)"
-  ]
-
--- | Consume spaces
-spaces :: MermaidParser ()
-spaces = L.space space1 empty empty
-
 -- * Backend
 
 -- | Convert the diagram into a set of Copilot definitions, and a list of
@@ -530,10 +294,3 @@ diagramToCopilot diag mode = (machine, arguments)
     showTransition :: (Int, String, Int) -> String
     showTransition (a, b, c) =
       "(" ++ show a ++ ", " ++ b ++ ", " ++ show c ++ ")"
-
--- * Auxiliary functions
-
--- | Unsafe fromRight. Fails if the value is a 'Left'.
-fromRight' :: Either a b -> b
-fromRight' (Right v) = v
-fromRight' _         = error "fromRight' applied to Left value."
