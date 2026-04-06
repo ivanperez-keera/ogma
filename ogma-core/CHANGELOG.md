@@ -1,11 +1,12 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-04-04
+## [1.X.Y] - 2026-04-05
 
 * Bump upper version constraints on Copilot packages (#377).
 * Lower upper version bound on `megaparsec` (#380).
 * Bump upper version constraint on Quickcheck (#382).
 * Adjust `Common.Diagram` module to use `Command.Common.ExprPair` (#384).
+* Add support for reading diagrams to overview command (#386).
 
 ## [1.13.0] - 2026-03-21
 
