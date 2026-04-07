@@ -61,9 +61,11 @@ command c = do
     (mOutput, result) <-
       Command.Overview.command (overviewInputFile c) internalCommandOpts
 
-    case (mOutput, outputString) of
-      (Just output, Right template) ->
-         T.putStr $ renderMustache template (toJSON output)
+    case mOutput of
+      Just output ->
+        case outputString output of
+          Right template -> T.putStr $ renderMustache template (toJSON output)
+          _              -> putStrLn "Error"
       _ -> putStrLn "Error"
     return result
 
@@ -75,20 +77,26 @@ command c = do
       , Command.Overview.commandPropVia     = overviewPropVia c
       }
 
-    outputString = compileMustacheText "output" $ T.unlines
-      [ "The file has:"
-      , " - {{commandExternalVariables}} external variables."
-      , " - {{commandInternalVariables}} internal variables."
-      , " - {{commandRequirements}} requirements."
-      , "   - {{commandRequirementsTrue}} requirements are constantly or always true."
-      , "   - {{commandRequirementsFalse}} requirements are constantly or always false."
-      , "{{#commandRequirementsConsistent}}"
-      , "   - No inconsistencies detected in the requirements."
-      , "{{/commandRequirementsConsistent}}"
-      , "{{^commandRequirementsConsistent}}"
-      , "   - The requirements are not mutually consistent."
-      , "{{/commandRequirementsConsistent}}"
-      ]
+    outputString (Command.Overview.CommandSummaryRequirement {}) =
+      compileMustacheText "output" $ T.unlines
+        [ "The requirements file has:"
+        , " - {{commandExternalVariables}} external variables."
+        , " - {{commandInternalVariables}} internal variables."
+        , " - {{commandRequirements}} requirements."
+        , "   - {{commandRequirementsTrue}} requirements are constantly or always true."
+        , "   - {{commandRequirementsFalse}} requirements are constantly or always false."
+        , "{{#commandRequirementsConsistent}}"
+        , "   - No inconsistencies detected in the requirements."
+        , "{{/commandRequirementsConsistent}}"
+        , "{{^commandRequirementsConsistent}}"
+        , "   - The requirements are not mutually consistent."
+        , "{{/commandRequirementsConsistent}}"
+        ]
+    outputString (Command.Overview.CommandSummaryDiagram {}) =
+      compileMustacheText "output" $ T.unlines
+        [ "The diagram file has:"
+        , " - {{commandNumStates}} states."
+        ]
 
 -- * CLI
 

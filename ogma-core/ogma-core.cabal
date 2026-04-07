@@ -121,6 +121,7 @@ library
   other-modules:
     Paths_ogma_core
     Command.Common
+    Command.CommonDiagram
     Command.Errors
     Command.VariableDB
     Language.Trans.SpecAnalysis

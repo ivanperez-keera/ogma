@@ -1,5 +1,9 @@
 # Revision history for ogma-cli
 
+## [1.X.Y] - 2026-04-05
+
+* Add support for reading diagrams to `overview` command (#386).
+
 ## [1.13.0] - 2026-03-21
 
 * Version bump (1.13.0) (#373).
