@@ -94,8 +94,14 @@ command c = do
         ]
     outputString (Command.Overview.CommandSummaryDiagram {}) =
       compileMustacheText "output" $ T.unlines
-        [ "The diagram file has:"
-        , " - {{commandNumStates}} states."
+        [ "The diagram file:"
+        , " - Has {{commandNumStates}} states."
+        , "{{#commandDeterministic}}"
+        , " - Is deterministic."
+        , "{{/commandDeterministic}}"
+        , "{{^commandDeterministic}}"
+        , " - Is not deterministic."
+        , "{{/commandDeterministic}}"
         ]
 
 -- * CLI
