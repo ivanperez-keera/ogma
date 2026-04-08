@@ -21,11 +21,14 @@ module Command.CommonDiagram
     ( Diagram(..)
     , DiagramFormat(..)
     , readDiagram
+    , analyzeDiagram
+    , AnalysisResult(..)
     )
   where
 
 -- External imports
 import           Control.Monad                     (when, void)
+import qualified Copilot.Core                      as Core
 import           Data.ByteString.Lazy              (toStrict)
 import qualified Data.ByteString.Lazy              as B
 import           Data.Either                       (isLeft)
@@ -37,6 +40,7 @@ import           Data.GraphViz.Commands.IO         (toUTF8)
 import qualified Data.GraphViz.Parsing             as G
 import           Data.GraphViz.PreProcessing       (preProcess)
 import qualified Data.GraphViz.Types.Generalised   as Gs
+import           Data.List                         (intercalate, nub, sort)
 import qualified Data.Set                          as Set
 import           Data.Text                         (Text)
 import qualified Data.Text                         as T
@@ -58,7 +62,8 @@ import qualified Text.Megaparsec.Char.Lexer        as L
 import Data.ByteString.Extra as B (safeReadFile)
 
 -- Internal imports: auxiliary
-import Command.Common (ExprPair(..), ExprPairT(..))
+import Command.Common              (ExprPair (..), ExprPairT (..))
+import Language.Trans.SpecAnalysis (exprIsConstant, reifySpec)
 
 -- * Diagram
 
@@ -67,6 +72,15 @@ newtype Diagram = Diagram
     { diagramTransitions :: [(Int, String, Int)]
     }
   deriving (Show, Eq)
+
+-- | States in a diagram.
+diagramStates :: Diagram -> [Int]
+diagramStates diagram = nub $ sort $ concat
+  [ [s, d] | (s, _, d) <- diagramTransitions diagram ]
+
+-- | Number of states in a diagram.
+diagramNumStates :: Diagram -> Int
+diagramNumStates = length . diagramStates
 
 -- | Diagram formats supported.
 data DiagramFormat = Mermaid
@@ -266,6 +280,157 @@ pSequenceArrow = void $ choice
 -- | Consume spaces
 spaces :: MermaidParser ()
 spaces = L.space space1 empty empty
+
+-- * Analysis of Specs
+
+-- | Result of analyzing a diagram.
+data AnalysisResult = AnalysisResult
+  { numStates     :: Int  -- ^ Number of states in the diagram.
+  , deterministic :: Bool -- ^ True if the diagram is deterministic.
+  }
+
+-- | Formally analyze a diagram.
+analyzeDiagram :: Diagram -> IO AnalysisResult
+analyzeDiagram diagram = do
+
+  let nStates = diagramNumStates diagram
+
+  coreSpec <- reifySpec defaultSpecImports $ showDiagram diagram
+
+  let properties     = zip ["deterministic"] propertyGuards
+      propertyGuards = map Core.triggerGuard $ Core.specTriggers coreSpec
+
+  constantProperties <- mapM (uncurry $ exprIsConstant coreSpec) properties
+
+  let numTrue = length $ filter fst constantProperties
+
+  let diagramDeterministic = numTrue > 0
+
+  return $ AnalysisResult nStates diagramDeterministic
+
+-- | Default imports for a 'Spec' that was converted into a 'Copilot.Spec'.
+defaultSpecImports :: [(String, Maybe String)]
+defaultSpecImports =
+  [ ("Control.Monad.Writer",  Nothing)
+  , ("Copilot.Language",      Nothing)
+  , ("Copilot.Language.Spec", Nothing)
+  , ("Data.Functor.Identity", Nothing)
+  , ("Data.List",             Just "L")
+  , ("Prelude",               Just "P")
+  ]
+
+-- | Render a 'Diagram' as a Haskell definition of a 'Copilot.Spec'.
+--
+-- The shown 'Copilot.Spec' has a top-level triggers for the properties we are
+-- interested in, as well as several auxiliary definitions.
+showDiagram :: Diagram -> String
+showDiagram diagram = unlines
+    [ "do let"
+    , ""
+    , "       stateMachine :: (Eq a, Typed a)"
+    , "                    => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
+    , "                    -> Stream a"
+    , "       stateMachine (initial, final, noInputData, transitions, bad) ="
+    , "           state"
+    , "         where"
+    , "           state         = ifThenElses transitions"
+    , "           previousState = [initial] ++ state"
+    , ""
+    , "           -- ifThenElses :: [(a, Stream Bool, a)] -> Stream a"
+    , "           ifThenElses [] ="
+    , "             ifThenElse"
+    , "               (previousState == constant final && noInputData)"
+    , "               (constant final)"
+    , "               (constant bad)"
+    , ""
+    , "           ifThenElses ((s1, i, s2):ss) ="
+    , "             ifThenElse"
+    , "               (previousState == constant s1 && i)"
+    , "               (constant s2)"
+    , "               (ifThenElses ss)"
+    , ""
+    , "       isDeterministic :: (Ord a, Eq a, Typed a)"
+    , "                       => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
+    , "                       -> Stream Bool"
+    , "       isDeterministic (_, _, _, ts, _) = all $"
+    , "           map"
+    , "             (\\s -> all (map not $ pairwise $ transitionsFrom s))"
+    , "             states"
+    , "         where"
+    , "           states = L.nub $ L.sort $ concat $"
+    , "             map (\\(s1, _, s2) -> [s1, s2]) ts"
+    , ""
+    , "           transitionsFrom s = [ t | (s1, t, _) <- ts, s P.== s1 ]"
+    , ""
+    , "       completeMachine :: (Ord a, Eq a, Typed a)"
+    , "                       => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
+    , "                       -> Stream Bool"
+    , "       completeMachine (_, _, _, ts, _) = all $"
+    , "           map (\\s -> or $ transitionsFrom s) states"
+    , "         where"
+    , "           states = L.nub $ L.sort $ concat $"
+    , "             map (\\(s1, _, s2) -> [s1, s2]) ts"
+    , "           transitionsFrom s = [ t | (s1, t, _) <- ts, s P.== s1 ]"
+    , ""
+    , "       all [] = true"
+    , "       all (x:xs) = x && all xs"
+    , ""
+    , "       or [] = false"
+    , "       or (x:xs) = x || or xs"
+    , ""
+    , "       pairwise :: [ Stream Bool ] -> [ Stream Bool ]"
+    , "       pairwise []      = []"
+    , "       pairwise (x:[])  = []"
+    , "       pairwise (x1:xs) ="
+    , "         (map (\\x2 -> (x1 && x2)) xs) P.++ pairwise xs"
+    , ""
+    , "       stateMachine1 :: ( Word8"
+    , "                        , Word8"
+    , "                        , Stream Bool"
+    , "                        , [(Word8, Stream Bool, Word8)]"
+    , "                        , Word8"
+    , "                        )"
+    , "       stateMachine1 ="
+    , "         (initialState, finalState, noInput, transitions, badState)"
+    , ""
+    , "       initialState :: Word8"
+    , "       initialState = " ++ show initialState
+    , ""
+    , "       finalState :: Word8"
+    , "       finalState = " ++ show finalState
+    , ""
+    , "       noInput :: Stream Bool"
+    , "       noInput = false"
+    , ""
+    , "       input :: Stream Word8"
+    , "       input = extern \"input\" Nothing"
+    , ""
+    , "       badState :: Word8"
+    , "       badState = " ++ show badState
+    , ""
+    , "       transitions = " ++ showTransitions
+    , ""
+    , "   trigger \"deterministic\" (isDeterministic stateMachine1) []"
+    ]
+
+  where
+
+    -- Elements of the spec.
+    initialState = minimum states
+    finalState   = maximum states
+    badState     = maximum states + 1
+
+    -- States and transitions from the diagram.
+    states      = diagramStates diagram
+    transitions = diagramTransitions diagram
+
+    showTransitions :: String
+    showTransitions =
+      "[" ++ intercalate ", " (map showTransition transitions) ++ "]"
+
+    showTransition :: (Int, String, Int) -> String
+    showTransition (a, b, c) =
+      "(" ++ show a ++ ", " ++ b ++ ", " ++ show c ++ ")"
 
 -- * Auxiliary functions
 
