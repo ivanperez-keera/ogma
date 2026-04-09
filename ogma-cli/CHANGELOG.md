@@ -1,8 +1,9 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-04-05
+## [1.X.Y] - 2026-04-09
 
 * Add support for reading diagrams to `overview` command (#386).
+* Augment `overview` command to report determinism of state machines (#388).
 
 ## [1.13.0] - 2026-03-21
 
