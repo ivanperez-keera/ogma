@@ -19,6 +19,8 @@
 module Language.Trans.SpecAnalysis
     ( AnalysisResult(..)
     , specAnalyze
+    , reifySpec
+    , exprIsConstant
     )
   where
 

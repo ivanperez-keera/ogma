@@ -31,8 +31,7 @@ module Command.Overview
 -- External imports
 import Control.Monad.Except (runExceptT)
 import Data.Aeson           (ToJSON (..))
-import Data.Functor         ((<&>))
-import Data.List            (nub, sort, (\\))
+import Data.List            (nub, (\\))
 import GHC.Generics         (Generic)
 
 -- External imports: Ogma
@@ -41,8 +40,9 @@ import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
 
 -- Internal imports
 import           Command.Common
-import           Command.CommonDiagram       (Diagram (..), DiagramFormat (..),
-                                              readDiagram)
+import           Command.CommonDiagram       (AnalysisResult (..),
+                                              DiagramFormat (..),
+                                              analyzeDiagram, readDiagram)
 import           Command.Errors              (ErrorCode, ErrorTriplet (..))
 import           Command.Result              (Result (..))
 import           Data.Location               (Location (..))
@@ -82,8 +82,14 @@ command' :: FilePath
 command' fp options exprP@(ExprPair exprT)
     | isDiagramFormat formatName
     = do diagramE <- readDiagram fp diagramFormat exprP
-         pure $ diagramE <&> \diagramR ->
-           CommandSummaryDiagram (diagramNumStates diagramR)
+         case diagramE of
+           Left s -> return $ Left s
+           Right diagramR -> do
+             analysisResult <- analyzeDiagram diagramR
+             pure $ Right $
+               CommandSummaryDiagram
+                 (numStates analysisResult)
+                 (deterministic analysisResult)
 
     | otherwise
     = do spec <- runExceptT $ parseInputFile' fp
@@ -128,10 +134,6 @@ command' fp options exprP@(ExprPair exprT)
       | otherwise               = error $
          "diagramFormat: Not a diagram format " ++ show formatName
 
-    diagramNumStates :: Diagram -> Int
-    diagramNumStates diagramR = length $ nub $ sort $ concat
-      [ [s, d] | (s, _, d) <- diagramTransitions diagramR ]
-
 data CommandSummary
     = CommandSummaryRequirement
         { commandExternalVariables      :: Int
@@ -142,7 +144,9 @@ data CommandSummary
         , commandRequirementsConsistent :: Bool
         }
     | CommandSummaryDiagram
-        { commandNumStates :: Int }
+        { commandNumStates     :: Int
+        , commandDeterministic :: Bool
+        }
   deriving (Generic, Show)
 
 instance ToJSON CommandSummary
