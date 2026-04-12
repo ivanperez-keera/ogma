@@ -121,13 +121,13 @@ library
   other-modules:
     Paths_ogma_core
     Command.Common
-    Command.CommonDiagram
     Command.Errors
     Command.VariableDB
     Copilot.Core.Analysis
     Copilot.Language.Reify.Extra
     Data.Aeson.Extra
     Data.Diagram
+    Data.Diagram.Analysis
     Data.Diagram.Parser
     Data.Diagram.Parser.Dot
     Data.Diagram.Parser.Mermaid

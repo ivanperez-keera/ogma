@@ -15,8 +15,8 @@
 -- License for the specific language governing permissions and limitations
 -- under the License.
 --
--- | Common functionality related to diagrams.
-module Command.CommonDiagram
+-- | Formal analysis of diagrams.
+module Data.Diagram.Analysis
     ( analyzeDiagram
     , AnalysisResult(..)
     )
