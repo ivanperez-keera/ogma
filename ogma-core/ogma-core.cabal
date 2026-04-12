@@ -127,6 +127,7 @@ library
     Copilot.Core.Analysis
     Copilot.Language.Reify.Extra
     Data.Aeson.Extra
+    Data.Diagram
     Data.Either.Extra
     Data.ExprPair
     Data.Spec.Analysis

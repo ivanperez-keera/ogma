@@ -18,8 +18,7 @@
 --
 -- | Common functionality related to diagrams.
 module Command.CommonDiagram
-    ( Diagram(..)
-    , DiagramFormat(..)
+    ( DiagramFormat(..)
     , readDiagram
     , analyzeDiagram
     , AnalysisResult(..)
@@ -40,7 +39,7 @@ import           Data.GraphViz.Commands.IO         (toUTF8)
 import qualified Data.GraphViz.Parsing             as G
 import           Data.GraphViz.PreProcessing       (preProcess)
 import qualified Data.GraphViz.Types.Generalised   as Gs
-import           Data.List                         (intercalate, nub, sort)
+import           Data.List                         (intercalate)
 import qualified Data.Set                          as Set
 import           Data.Text                         (Text)
 import qualified Data.Text                         as T
@@ -64,24 +63,9 @@ import Data.ByteString.Extra as B (safeReadFile)
 -- Internal imports: auxiliary
 import Copilot.Core.Analysis        (exprIsConstant)
 import Copilot.Language.Reify.Extra (reifySpec)
+import Data.Diagram                 (Diagram (..), diagramNumStates,
+                                     diagramStates)
 import Data.ExprPair                (ExprPair (..), ExprPairT (..))
-
--- * Diagram
-
--- | Internal representation for diagrams.
-newtype Diagram = Diagram
-    { diagramTransitions :: [(Int, String, Int)]
-    }
-  deriving (Show, Eq)
-
--- | States in a diagram.
-diagramStates :: Diagram -> [Int]
-diagramStates diagram = nub $ sort $ concat
-  [ [s, d] | (s, _, d) <- diagramTransitions diagram ]
-
--- | Number of states in a diagram.
-diagramNumStates :: Diagram -> Int
-diagramNumStates = length . diagramStates
 
 -- | Diagram formats supported.
 data DiagramFormat = Mermaid
