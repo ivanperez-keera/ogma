@@ -37,7 +37,6 @@ module Command.Common
     , processResult
     , cannotCopyTemplate
     , makeLeftE
-    , mergeObjects
     , locateTemplateDir
     )
   where
@@ -48,7 +47,6 @@ import           Control.Monad.Except   (ExceptT (..), runExceptT, throwError)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (Value (Null, Object), eitherDecode,
                                          eitherDecodeFileStrict, object)
-import           Data.Aeson.KeyMap      (union)
 import qualified Data.ByteString.Lazy   as L
 import           Data.List              (isInfixOf, isPrefixOf)
 import           System.Directory       (doesFileExist)
@@ -517,15 +515,6 @@ wrapVia (Just f) parse s =
   E.handle (\(e :: E.IOException) -> return $ Left $ show e) $ do
     out <- readProcess f [] s
     return $ parse out
-
--- | Merge two JSON objects.
---
--- Fails if the values are not objects or null.
-mergeObjects :: Value -> Value -> Value
-mergeObjects (Object m1) (Object m2) = Object (union m1 m2)
-mergeObjects obj         Null        = obj
-mergeObjects Null        obj         = obj
-mergeObjects _           _           = error "The values passed are not objects"
 
 -- | Replace the left Exception in an Either.
 makeLeftE :: c -> Either E.SomeException b -> Either c b

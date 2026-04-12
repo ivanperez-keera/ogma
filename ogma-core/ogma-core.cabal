@@ -124,6 +124,7 @@ library
     Command.CommonDiagram
     Command.Errors
     Command.VariableDB
+    Data.Aeson.Extra
     Data.Either.Extra
     Language.Trans.SpecAnalysis
 

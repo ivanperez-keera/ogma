@@ -58,6 +58,7 @@ import Command.Errors     (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB (Connection (..), InputDef (..), TopicDef (..),
                            TypeDef (..), VariableDB, findConnection, findInput,
                            findTopic, findType, findTypeByType)
+import Data.Aeson.Extra   (mergeObjects)
 
 -- | Generate a new ROS application connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.

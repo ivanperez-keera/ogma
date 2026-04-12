@@ -49,6 +49,7 @@ import System.Directory.Extra (copyTemplate)
 import Command.Common
 import Command.Errors              (ErrorCode, ErrorTriplet(..))
 import Command.Result              (Result (..))
+import Data.Aeson.Extra            (mergeObjects)
 import Data.Either.Extra           (mapLeft)
 import Data.Location               (Location (..))
 import Language.Trans.Spec2Copilot (spec2Copilot, specAnalyze)
