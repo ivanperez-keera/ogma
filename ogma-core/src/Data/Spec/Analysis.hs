@@ -16,7 +16,7 @@
 -- under the License.
 
 -- | Formally analyze specifications and provide information about them.
-module Language.Trans.SpecAnalysis
+module Data.Spec.Analysis
     ( AnalysisResult(..)
     , specAnalyze
     )

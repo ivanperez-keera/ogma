@@ -129,7 +129,7 @@ library
     Data.Aeson.Extra
     Data.Either.Extra
     Data.ExprPair
-    Language.Trans.SpecAnalysis
+    Data.Spec.Analysis
 
   autogen-modules:
     Paths_ogma_core
