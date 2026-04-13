@@ -54,6 +54,7 @@ import Command.Errors     (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB (InputDef (..), TypeDef (..), VariableDB, findInput,
                            findType, findTypeByType)
 import Data.Aeson.Extra   (mergeObjects)
+import Data.ExprPair      (ExprPair(..), exprPair)
 
 -- | Generate a new FPrime component connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.

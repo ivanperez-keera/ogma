@@ -60,6 +60,7 @@ import Command.VariableDB (Connection (..), TopicDef (..), TypeDef (..),
                            VariableDB, findConnection, findInput, findTopic,
                            findType, findTypeByType)
 import Data.Aeson.Extra   (mergeObjects)
+import Data.ExprPair      (ExprPair(..), exprPair)
 
 -- | Generate a new CFS application connected to Copilot.
 command :: CommandOptions

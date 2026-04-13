@@ -45,6 +45,8 @@ import           Command.CommonDiagram       (AnalysisResult (..),
                                               analyzeDiagram, readDiagram)
 import           Command.Errors              (ErrorCode, ErrorTriplet (..))
 import           Command.Result              (Result (..))
+import           Data.ExprPair               (ExprPair(..), ExprPairT(..),
+                                              exprPair)
 import           Data.Location               (Location (..))
 import qualified Language.Trans.Spec2Copilot as Spec2Copilot
 import qualified Language.Trans.SpecAnalysis as SpecAnalysis

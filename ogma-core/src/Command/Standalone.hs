@@ -51,6 +51,7 @@ import Command.Errors              (ErrorCode, ErrorTriplet(..))
 import Command.Result              (Result (..))
 import Data.Aeson.Extra            (mergeObjects)
 import Data.Either.Extra           (mapLeft)
+import Data.ExprPair               (ExprPair(..), ExprPairT(..), exprPair)
 import Data.Location               (Location (..))
 import Language.Trans.Spec2Copilot (spec2Copilot, specAnalyze)
 

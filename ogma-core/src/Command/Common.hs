@@ -31,9 +31,6 @@ module Command.Common
     , checkArguments
     , specExtractExternalVariables
     , specExtractHandlers
-    , ExprPair(..)
-    , ExprPairT(..)
-    , exprPair
     , processResult
     , cannotCopyTemplate
     , makeLeftE
@@ -67,19 +64,6 @@ import Language.JSONSpec.Parser (parseJSONSpec)
 import Language.XLSXSpec.Parser (parseXLSXSpec)
 import Language.XMLSpec.Parser  (parseXMLSpec)
 
--- External imports: language ASTs, transformers
-import qualified Language.Lustre.AbsLustre as Lustre
-import qualified Language.Lustre.ParLustre as Lustre (myLexer, pBoolSpec)
-
-import qualified Language.SMV.AbsSMV       as SMV
-import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
-import           Language.SMV.Substitution (substituteBoolExpr)
-
-import qualified Language.Trans.Lustre2Copilot as Lustre (boolSpec2Copilot,
-                                                          boolSpecNames)
-import           Language.Trans.SMV2Copilot    as SMV (boolSpec2Copilot,
-                                                       boolSpecNames)
-
 -- Internal imports: VariableDBs
 import Command.VariableDB (VariableDB, emptyVariableDB, mergeVariableDB)
 
@@ -87,6 +71,7 @@ import Command.VariableDB (VariableDB, emptyVariableDB, mergeVariableDB)
 import Command.Errors    (ErrorTriplet(..), ErrorCode)
 import Command.Result    (Result (..))
 import Data.Either.Extra (makeLeft, mapLeft)
+import Data.ExprPair     (ExprPair (..), ExprPairT (..), exprPair)
 import Data.Location     (Location (..))
 import Paths_ogma_core   (getDataDir)
 
@@ -287,53 +272,6 @@ specExtractHandlers (Just cs) = map extractReqData
       (handlerNameF (requirementName r), requirementResultType r)
 
     handlerNameF = ("handler" ++) . sanitizeUCIdentifier
-
--- * Handler for boolean expressions
-
--- | Handler for boolean expressions that knows how to parse them, replace
--- variables in them, and convert them to Copilot.
---
--- It also contains a default value to be used whenever an expression cannot be
--- found in the input file.
-data ExprPair = forall a . ExprPair
-  { exprTPair   :: ExprPairT a
-  }
-
-data ExprPairT a = ExprPairT
-  { exprTParse   :: String -> Either String a
-  , exprTReplace :: [(String, String)] -> a -> a
-  , exprTPrint   :: a -> String
-  , exprTIdents  :: a -> [String]
-  , exprTUnknown :: a
-  }
-
-
--- | Return a handler depending on whether it should be for Lustre boolean
--- expressions or for SMV boolean expressions. We default to SMV if not format
--- is given.
-exprPair :: String -> ExprPair
-exprPair "lustre" = ExprPair $
-  ExprPairT
-    (Lustre.pBoolSpec . Lustre.myLexer)
-    (\_ -> id)
-    (Lustre.boolSpec2Copilot)
-    (Lustre.boolSpecNames)
-    (Lustre.BoolSpecSignal (Lustre.Ident "undefined"))
-exprPair "literal" = ExprPair $
-  ExprPairT
-    Right
-    (\_ -> id)
-    id
-    (const [])
-    "undefined"
-exprPair "cocospec" = exprPair "lustre"
-exprPair _ = ExprPair $
-  ExprPairT
-    (SMV.pBoolSpec . SMV.myLexer)
-    (substituteBoolExpr)
-    (SMV.boolSpec2Copilot)
-    (SMV.boolSpecNames)
-    (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
 -- * Errors
 
