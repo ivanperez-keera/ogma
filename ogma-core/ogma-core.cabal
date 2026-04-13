@@ -130,6 +130,7 @@ library
     Data.Either.Extra
     Data.ExprPair
     Data.Spec.Analysis
+    Data.Spec.Extra
 
   autogen-modules:
     Paths_ogma_core

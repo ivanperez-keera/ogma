@@ -35,14 +35,11 @@ import Control.Applicative  ((<|>))
 import Control.Exception    as E
 import Control.Monad.Except (ExceptT (..), liftEither)
 import Data.Aeson           (ToJSON (..))
-import Data.List            (nub, (\\))
 import Data.Maybe           (fromMaybe)
 import GHC.Generics         (Generic)
 
 -- External imports: Ogma
-import Data.OgmaSpec          (ExternalVariableDef (..),
-                               InternalVariableDef (..), Requirement (..),
-                               Spec (..))
+import Data.OgmaSpec          (Spec)
 import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
@@ -53,6 +50,7 @@ import Data.Aeson.Extra            (mergeObjects)
 import Data.Either.Extra           (mapLeft)
 import Data.ExprPair               (ExprPair(..), ExprPairT(..), exprPair)
 import Data.Location               (Location (..))
+import Data.Spec.Extra             (addMissingIdentifiers)
 import Language.Trans.Spec2Copilot (spec2Copilot, specAnalyze)
 
 -- | Generate a new standalone Copilot monitor that implements the spec in an
@@ -242,21 +240,3 @@ ecMissingSpec = 1
 -- | Error: the input specification cannot be formalized.
 ecIncorrectSpec :: ErrorCode
 ecIncorrectSpec = 1
-
--- | Add to a spec external variables for all identifiers mentioned in
--- expressions that are not defined anywhere.
-addMissingIdentifiers :: (a -> [String]) -> Spec a -> Spec a
-addMissingIdentifiers f s = s { externalVariables = vars' }
-  where
-    vars'   = externalVariables s ++ newVars
-    newVars = map (\n -> ExternalVariableDef n "") newVarNames
-
-    -- Names that are not defined anywhere
-    newVarNames = identifiers \\ existingNames
-
-    -- Identifiers being mentioned in the requirements.
-    identifiers = nub $ concatMap (f . requirementExpr) (requirements s)
-
-    -- Names that are defined in variables.
-    existingNames = map externalVariableName (externalVariables s)
-                 ++ map internalVariableName (internalVariables s)

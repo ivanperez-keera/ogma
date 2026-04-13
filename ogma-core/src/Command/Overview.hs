@@ -31,12 +31,10 @@ module Command.Overview
 -- External imports
 import Control.Monad.Except (runExceptT)
 import Data.Aeson           (ToJSON (..))
-import Data.List            (nub, (\\))
 import GHC.Generics         (Generic)
 
 -- External imports: Ogma
-import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
-                      Requirement (..), Spec (..))
+import Data.OgmaSpec (Spec (..))
 
 -- Internal imports
 import           Command.Common
@@ -49,6 +47,7 @@ import           Data.ExprPair               (ExprPair(..), ExprPairT(..),
                                               exprPair)
 import           Data.Location               (Location (..))
 import qualified Data.Spec.Analysis          as SpecAnalysis
+import           Data.Spec.Extra             (addMissingIdentifiers)
 import qualified Language.Trans.Spec2Copilot as Spec2Copilot
 
 -- | Generate overview of a spec given in an input file.
@@ -177,21 +176,3 @@ commandResult :: CommandOptions
 commandResult _options fp result = case result of
   Left msg -> (Nothing, Error ecOverviewError msg (LocationFile fp))
   Right t  -> (Just t,  Success)
-
--- | Add to a spec external variables for all identifiers mentioned in
--- expressions that are not defined anywhere.
-addMissingIdentifiers :: (a -> [String]) -> Spec a -> Spec a
-addMissingIdentifiers f s = s { externalVariables = vars' }
-  where
-    vars'   = externalVariables s ++ newVars
-    newVars = map (\n -> ExternalVariableDef n "") newVarNames
-
-    -- Names that are not defined anywhere
-    newVarNames = identifiers \\ existingNames
-
-    -- Identifiers being mentioned in the requirements.
-    identifiers = nub $ concatMap (f . requirementExpr) (requirements s)
-
-    -- Names that are defined in variables.
-    existingNames = map externalVariableName (externalVariables s)
-                 ++ map internalVariableName (internalVariables s)
