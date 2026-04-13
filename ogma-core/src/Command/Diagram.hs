@@ -30,13 +30,13 @@ module Command.Diagram
   where
 
 -- External imports
-import Control.Exception as E
-import Data.Aeson        (object, (.=))
-import Data.Foldable     (for_)
-import Data.Functor      ((<&>))
-import Data.List         (intercalate, nub, sort)
-import Data.Text.Lazy    (pack)
-import System.FilePath   ((</>))
+import Control.Exception    as E
+import Control.Monad.Except (runExceptT)
+import Data.Aeson           (object, (.=))
+import Data.Foldable        (for_)
+import Data.List            (intercalate, nub, sort)
+import Data.Text.Lazy       (pack)
+import System.FilePath      ((</>))
 
 -- External imports: auxiliary
 import System.Directory.Extra ( copyTemplate )
@@ -48,6 +48,7 @@ import qualified Language.SMV.AbsSMV       as SMV
 import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
 
 -- Internal imports: auxiliary
+import Command.Errors      (ErrorTriplet(..))
 import Command.Result      (Result (..))
 import Data.Diagram        (Diagram (..))
 import Data.Diagram.Parser (DiagramFormat (..), readDiagram)
@@ -124,9 +125,11 @@ diagram' :: FilePath
          -> ExprPair
          -> IO (Either String (String, String))
 diagram' fp options exprP = do
-  diagramE <- readDiagram fp (diagramFormat options) exprP
-  pure $ diagramE <&> \diagramR ->
-    diagramToCopilot diagramR (diagramMode options)
+  diagramE <- runExceptT $ readDiagram fp (diagramFormat options) exprP
+  case diagramE of
+    Left (ErrorTriplet _ec msg _loc) -> pure $ Left msg
+    Right diagramR ->
+      pure $ Right $ diagramToCopilot diagramR (diagramMode options)
 
 -- | Options used to customize the conversion of diagrams to Copilot code.
 data DiagramOptions = DiagramOptions
