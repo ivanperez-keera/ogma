@@ -49,6 +49,7 @@ import System.Directory.Extra (copyTemplate)
 import Command.Common
 import Command.Errors              (ErrorCode, ErrorTriplet(..))
 import Command.Result              (Result (..))
+import Data.Either.Extra           (mapLeft)
 import Data.Location               (Location (..))
 import Language.Trans.Spec2Copilot (spec2Copilot, specAnalyze)
 
@@ -257,7 +258,3 @@ addMissingIdentifiers f s = s { externalVariables = vars' }
     -- Names that are defined in variables.
     existingNames = map externalVariableName (externalVariables s)
                  ++ map internalVariableName (internalVariables s)
-
-mapLeft :: (a -> c) -> Either a b -> Either c b
-mapLeft f (Left x)  = Left (f x)
-mapLeft _ (Right x) = Right x

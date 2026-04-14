@@ -17,10 +17,19 @@
 --
 -- | Auxiliary functions for working with values of type 'Either'.
 module Data.Either.Extra
-    ( makeLeft )
+    ( makeLeft
+    , mapLeft
+    )
   where
 
 -- | Replace the left value in an @Either@.
 makeLeft :: c -> Either a b -> Either c b
 makeLeft c (Left _)  = Left c
 makeLeft _ (Right x) = Right x
+
+-- | Apply a transformation only to the 'Left' values of an 'Either'.
+--
+-- Left counterpart of 'fmap'.
+mapLeft :: (a -> c) -> Either a b -> Either c b
+mapLeft f (Left x)  = Left (f x)
+mapLeft _ (Right x) = Right x
