@@ -88,7 +88,7 @@ import Command.VariableDB (VariableDB, emptyVariableDB, mergeVariableDB)
 -- Internal imports: auxiliary
 import Command.Errors    (ErrorTriplet(..), ErrorCode)
 import Command.Result    (Result (..))
-import Data.Either.Extra (makeLeft)
+import Data.Either.Extra (makeLeft, mapLeft)
 import Data.Location     (Location (..))
 import Paths_ogma_core   (getDataDir)
 
@@ -112,9 +112,8 @@ parseInputExpr expr propFormatName propVia exprT =
           let req = Requirement "triggerCondition" expr' "" Nothing Nothing
           return $ Spec [] [] [ req ]
 
-    case spec of
-      Left e  -> return $ Left $ cannotReadConditionExpr expr e
-      Right s -> return $ Right s
+    -- Return the spec, transforming the error message if applicable.
+    pure $ mapLeft (cannotReadConditionExpr expr) spec
 
 -- | Process input specification, if available, and return its abstract
 -- representation.
