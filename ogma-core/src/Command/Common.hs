@@ -86,10 +86,11 @@ import           Language.Trans.SMV2Copilot    as SMV (boolSpec2Copilot,
 import Command.VariableDB (VariableDB, emptyVariableDB, mergeVariableDB)
 
 -- Internal imports: auxiliary
-import Command.Errors  (ErrorTriplet(..), ErrorCode)
-import Command.Result  (Result (..))
-import Data.Location   (Location (..))
-import Paths_ogma_core (getDataDir)
+import Command.Errors    (ErrorTriplet(..), ErrorCode)
+import Command.Result    (Result (..))
+import Data.Either.Extra (makeLeft, mapLeft)
+import Data.Location     (Location (..))
+import Paths_ogma_core   (getDataDir)
 
 -- | Process input specification from a single expression and return its
 -- abstract representation.
@@ -111,9 +112,8 @@ parseInputExpr expr propFormatName propVia exprT =
           let req = Requirement "triggerCondition" expr' "" Nothing Nothing
           return $ Spec [] [] [ req ]
 
-    case spec of
-      Left e  -> return $ Left $ cannotReadConditionExpr expr e
-      Right s -> return $ Right s
+    -- Return the spec, transforming the error message if applicable.
+    pure $ mapLeft (cannotReadConditionExpr expr) spec
 
 -- | Process input specification, if available, and return its abstract
 -- representation.
@@ -224,7 +224,7 @@ openVarDBFiles acc (x:xs) = do
                    -> ExceptT ErrorTriplet IO VariableDB
     parseVarDBFile Nothing   = return emptyVariableDB
     parseVarDBFile (Just fn) =
-      ExceptT $ makeLeftE' (cannotOpenDB fn) <$>
+      ExceptT $ makeLeft (cannotOpenDB fn) <$>
         eitherDecodeFileStrict fn
 
 -- | Read a list of variable DBs, as well as the default variable DB.
@@ -529,9 +529,4 @@ mergeObjects _           _           = error "The values passed are not objects"
 
 -- | Replace the left Exception in an Either.
 makeLeftE :: c -> Either E.SomeException b -> Either c b
-makeLeftE = makeLeftE'
-
--- | Replace the left value in an @Either@.
-makeLeftE' :: c -> Either a b -> Either c b
-makeLeftE' c (Left _)  = Left c
-makeLeftE' _ (Right x) = Right x
+makeLeftE = makeLeft
