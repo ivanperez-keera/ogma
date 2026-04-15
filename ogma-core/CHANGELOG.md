@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-04-14
+## [1.X.Y] - 2026-04-15
 
 * Bump upper version constraints on Copilot packages (#377).
 * Lower upper version bound on `megaparsec` (#380).
@@ -10,6 +10,7 @@
 * Augment overview command to formally analyze diagrams (#388).
 * Move functions related to `Either` type to dedicated module (#391).
 * Move function related to JSON objects to dedicated module (#393).
+* Move definitions related to `ExprPair` type to dedicated module (#395).
 
 ## [1.13.0] - 2026-03-21
 
