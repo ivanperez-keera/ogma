@@ -126,6 +126,7 @@ library
     Command.VariableDB
     Data.Aeson.Extra
     Data.Either.Extra
+    Data.ExprPair
     Language.Trans.SpecAnalysis
 
   autogen-modules:

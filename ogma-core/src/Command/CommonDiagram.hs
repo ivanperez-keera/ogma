@@ -62,7 +62,7 @@ import qualified Text.Megaparsec.Char.Lexer        as L
 import Data.ByteString.Extra as B (safeReadFile)
 
 -- Internal imports: auxiliary
-import Command.Common              (ExprPair (..), ExprPairT (..))
+import Data.ExprPair               (ExprPair (..), ExprPairT (..))
 import Language.Trans.SpecAnalysis (exprIsConstant, reifySpec)
 
 -- * Diagram

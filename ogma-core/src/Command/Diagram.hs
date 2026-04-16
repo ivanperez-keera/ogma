@@ -48,9 +48,9 @@ import qualified Language.SMV.AbsSMV       as SMV
 import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
 
 -- Internal imports: auxiliary
-import Command.Common        (ExprPair (..), ExprPairT (..))
 import Command.CommonDiagram (Diagram (..), DiagramFormat (..), readDiagram)
 import Command.Result        (Result (..))
+import Data.ExprPair         (ExprPair (..), ExprPairT (..))
 import Data.Location         (Location (..))
 import Paths_ogma_core       (getDataDir)
 
