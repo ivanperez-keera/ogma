@@ -20,7 +20,6 @@ module Language.Trans.SpecAnalysis
     ( AnalysisResult(..)
     , specAnalyze
     , reifySpec
-    , exprIsConstant
     )
   where
 
@@ -28,8 +27,6 @@ module Language.Trans.SpecAnalysis
 import qualified Copilot.Core                 as Core
 import qualified Copilot.Language             as Copilot
 import qualified Copilot.Language.Reify       as Copilot
-import           Copilot.Theorem.What4        (SatResult (..), Solver (Z3),
-                                               prove)
 import           Data.List                    (intercalate, lookup)
 import           Data.Maybe                   (fromMaybe)
 import qualified Language.Haskell.Interpreter as HI
@@ -40,6 +37,9 @@ import Data.String.Extra (sanitizeLCIdentifier, sanitizeUCIdentifier)
 -- External imports: ogma-spec
 import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
                       Requirement (..), Spec (..))
+
+-- Internal imports
+import Copilot.Core.Analysis (exprIsConstant)
 
 -- * Analysis of Specs
 
@@ -268,41 +268,6 @@ reifySpec imports specText = do
                    error $ show err
 
     Right coreSpec -> return coreSpec
-
--- ** Analysis of Copilot specs
-
--- | Determine if a boolean expression is always 'True' or always 'False'.
---
--- The first boolean in the result is 'True' if the expression can be proven
--- always 'True'. The second boolean in the expression is 'True' is the
--- expression can be proven always 'False'.
---
--- They values in the tuple cannot both 'True' at the same time.
-exprIsConstant :: Core.Spec
-               -> Core.Name
-               -> Core.Expr Bool
-               -> IO (Bool, Bool)
-exprIsConstant spec name expr = do
-  r1 <- propIsValid spec name (Core.Forall expr)
-  r2 <- propIsValid spec name (Core.Forall (Core.Op1 Core.Not expr))
-  pure (r1, r2)
-
--- | 'True' if the Copilot 'Prop' with the given name and expression is
--- constantly 'True', or valid, and 'False' otherwise (not always 'True' or
--- unknown).
-propIsValid :: Core.Spec
-            -> Core.Name
-            -> Core.Prop
-            -> IO Bool
-propIsValid spec name expr =
-    maybe False isValid . lookup name <$> prove Z3 spec'
-  where
-    spec' = spec { Core.specProperties = prop' : Core.specProperties spec }
-    prop' = Core.Property name expr
-
-    isValid :: SatResult -> Bool
-    isValid Valid = True
-    isValid _     = False
 
 -- ** Auxiliary list functions
 

@@ -62,8 +62,9 @@ import qualified Text.Megaparsec.Char.Lexer        as L
 import Data.ByteString.Extra as B (safeReadFile)
 
 -- Internal imports: auxiliary
+import Copilot.Core.Analysis       (exprIsConstant)
 import Data.ExprPair               (ExprPair (..), ExprPairT (..))
-import Language.Trans.SpecAnalysis (exprIsConstant, reifySpec)
+import Language.Trans.SpecAnalysis (reifySpec)
 
 -- * Diagram
 

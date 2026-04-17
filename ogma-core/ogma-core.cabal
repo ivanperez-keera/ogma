@@ -124,6 +124,7 @@ library
     Command.CommonDiagram
     Command.Errors
     Command.VariableDB
+    Copilot.Core.Analysis
     Data.Aeson.Extra
     Data.Either.Extra
     Data.ExprPair
