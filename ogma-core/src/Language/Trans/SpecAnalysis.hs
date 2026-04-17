@@ -19,17 +19,13 @@
 module Language.Trans.SpecAnalysis
     ( AnalysisResult(..)
     , specAnalyze
-    , reifySpec
     )
   where
 
 -- External imports
-import qualified Copilot.Core                 as Core
-import qualified Copilot.Language             as Copilot
-import qualified Copilot.Language.Reify       as Copilot
-import           Data.List                    (intercalate, lookup)
-import           Data.Maybe                   (fromMaybe)
-import qualified Language.Haskell.Interpreter as HI
+import qualified Copilot.Core as Core
+import           Data.List    (intercalate, lookup)
+import           Data.Maybe   (fromMaybe)
 
 -- External imports: auxiliary
 import Data.String.Extra (sanitizeLCIdentifier, sanitizeUCIdentifier)
@@ -39,7 +35,8 @@ import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
                       Requirement (..), Spec (..))
 
 -- Internal imports
-import Copilot.Core.Analysis (exprIsConstant)
+import Copilot.Core.Analysis        (exprIsConstant)
+import Copilot.Language.Reify.Extra (reifySpec)
 
 -- * Analysis of Specs
 
@@ -250,24 +247,6 @@ defaultSpecImports =
   , ("Copilot.Library.PTLTL", Just "PTLTL")
   , ("Prelude",               Just "P")
   ]
-
--- ** Typechecking of Copilot specs
-
--- | Read a specification from a 'String' and reify it.
---
--- This function receives a list of possibly qualified imports.
-reifySpec :: [(String, Maybe String)] -> String -> IO Core.Spec
-reifySpec imports specText = do
-  coreSpecE <- HI.runInterpreter $ do
-                 HI.setImportsQ imports
-                 copilotSpec <- HI.interpret specText (HI.as :: Copilot.Spec)
-                 HI.liftIO $ Copilot.reify copilotSpec
-
-  case coreSpecE of
-    Left err -> do putStrLn $ "Error: " ++ show err
-                   error $ show err
-
-    Right coreSpec -> return coreSpec
 
 -- ** Auxiliary list functions
 

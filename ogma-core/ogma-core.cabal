@@ -125,6 +125,7 @@ library
     Command.Errors
     Command.VariableDB
     Copilot.Core.Analysis
+    Copilot.Language.Reify.Extra
     Data.Aeson.Extra
     Data.Either.Extra
     Data.ExprPair
