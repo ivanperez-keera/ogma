@@ -48,8 +48,8 @@ import           Command.Result              (Result (..))
 import           Data.ExprPair               (ExprPair(..), ExprPairT(..),
                                               exprPair)
 import           Data.Location               (Location (..))
+import qualified Data.Spec.Analysis          as SpecAnalysis
 import qualified Language.Trans.Spec2Copilot as Spec2Copilot
-import qualified Language.Trans.SpecAnalysis as SpecAnalysis
 
 -- | Generate overview of a spec given in an input file.
 --
