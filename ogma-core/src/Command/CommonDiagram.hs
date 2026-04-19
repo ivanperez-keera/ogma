@@ -65,7 +65,8 @@ import Copilot.Core.Analysis        (exprIsConstant)
 import Copilot.Language.Reify.Extra (reifySpec)
 import Data.Diagram                 (Diagram (..), diagramNumStates,
                                      diagramStates)
-import Data.ExprPair                (ExprPair (..), ExprPairT (..))
+import Data.ExprPair                (ExprPair (..), ExprPairT (..),
+                                     exprPairShow)
 
 -- | Diagram formats supported.
 data DiagramFormat = Mermaid
@@ -416,19 +417,3 @@ showDiagram diagram = unlines
     showTransition :: (Int, String, Int) -> String
     showTransition (a, b, c) =
       "(" ++ show a ++ ", " ++ b ++ ", " ++ show c ++ ")"
-
--- * Auxiliary functions
-
--- | Parse and print a value using an auxiliary Expression Pair.
---
--- Fails if the value has no valid parse.
-exprPairShow :: ExprPair -> String -> String
-exprPairShow (ExprPair exprP) =
-    printProp . fromRight' . parseProp
-  where
-    ExprPairT parseProp _replace printProp _ids _unknown = exprP
-
--- | Unsafe fromRight. Fails if the value is a 'Left'.
-fromRight' :: Either a b -> b
-fromRight' (Right v) = v
-fromRight' _         = error "fromRight' applied to Left value."
