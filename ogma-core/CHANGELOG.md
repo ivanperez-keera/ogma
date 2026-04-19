@@ -13,6 +13,7 @@
 * Move definitions related to `ExprPair` type to dedicated module (#395).
 * Move functions related to Copilot specs to dedicated modules (#397).
 * Rename module to more accurately reflect intent (#399).
+* Move auxiliary function into new auxiliary module (#401).
 
 ## [1.13.0] - 2026-03-21
 
