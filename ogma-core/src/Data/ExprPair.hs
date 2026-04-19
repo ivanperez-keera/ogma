@@ -21,6 +21,7 @@ module Data.ExprPair
     ( ExprPair(..)
     , ExprPairT(..)
     , exprPair
+    , exprPairShow
     )
   where
 
@@ -89,3 +90,17 @@ exprPair _ = ExprPair $
     (SMV.boolSpec2Copilot)
     (SMV.boolSpecNames)
     (SMV.BoolSpecSignal (SMV.Ident "undefined"))
+
+-- | Parse and print a value using an auxiliary Expression Pair.
+--
+-- Fails if the value has no valid parse.
+exprPairShow :: ExprPair -> String -> String
+exprPairShow (ExprPair exprP) =
+    printProp . fromRight' . parseProp
+  where
+    ExprPairT parseProp _replace printProp _ids _unknown = exprP
+
+    -- | Unsafe fromRight. Fails if the value is a 'Left'.
+    fromRight' :: Either a b -> b
+    fromRight' (Right v) = v
+    fromRight' _         = error "fromRight' applied to Left value."

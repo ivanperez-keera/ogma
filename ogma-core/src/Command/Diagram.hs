@@ -48,11 +48,12 @@ import qualified Language.SMV.AbsSMV       as SMV
 import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
 
 -- Internal imports: auxiliary
-import Command.CommonDiagram (Diagram (..), DiagramFormat (..), readDiagram)
-import Command.Result        (Result (..))
-import Data.ExprPair         (ExprPair (..), ExprPairT (..))
-import Data.Location         (Location (..))
-import Paths_ogma_core       (getDataDir)
+import Command.Result      (Result (..))
+import Data.Diagram        (Diagram (..))
+import Data.Diagram.Parser (DiagramFormat (..), readDiagram)
+import Data.ExprPair       (ExprPair (..), ExprPairT (..))
+import Data.Location       (Location (..))
+import Paths_ogma_core     (getDataDir)
 
 -- Internal imports: language ASTs, transformers
 import           Language.SMV.Substitution     (substituteBoolExpr)

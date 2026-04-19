@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-04-18
+## [1.X.Y] - 2026-04-19
 
 * Bump upper version constraints on Copilot packages (#377).
 * Lower upper version bound on `megaparsec` (#380).
@@ -14,6 +14,7 @@
 * Move functions related to Copilot specs to dedicated modules (#397).
 * Rename module to more accurately reflect intent (#399).
 * Move auxiliary function into new auxiliary module (#401).
+* Split `Command.CommonDiagram` into smaller, more cohesive modules (#403).
 
 ## [1.13.0] - 2026-03-21
 
