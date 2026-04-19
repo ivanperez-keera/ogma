@@ -128,6 +128,9 @@ library
     Copilot.Language.Reify.Extra
     Data.Aeson.Extra
     Data.Diagram
+    Data.Diagram.Parser
+    Data.Diagram.Parser.Dot
+    Data.Diagram.Parser.Mermaid
     Data.Either.Extra
     Data.ExprPair
     Data.Spec.Analysis

@@ -39,10 +39,10 @@ import Data.OgmaSpec (Spec (..))
 -- Internal imports
 import           Command.Common
 import           Command.CommonDiagram       (AnalysisResult (..),
-                                              DiagramFormat (..),
-                                              analyzeDiagram, readDiagram)
+                                              analyzeDiagram)
 import           Command.Errors              (ErrorCode, ErrorTriplet (..))
 import           Command.Result              (Result (..))
+import           Data.Diagram.Parser         (DiagramFormat (..), readDiagram)
 import           Data.ExprPair               (ExprPair(..), ExprPairT(..),
                                               exprPair)
 import           Data.Location               (Location (..))
