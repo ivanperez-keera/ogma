@@ -82,10 +82,10 @@ command' :: FilePath
           -> IO (Either String CommandSummary)
 command' fp options exprP@(ExprPair exprT)
     | isDiagramFormat formatName
-    = do diagramE <- readDiagram fp diagramFormat exprP
+    = do diagramE <- runExceptT $ readDiagram fp diagramFormat exprP
          case diagramE of
-           Left s -> return $ Left s
-           Right diagramR -> do
+           Left (ErrorTriplet _ s _) -> return $ Left s
+           Right diagramR            -> do
              analysisResult <- analyzeDiagram diagramR
              pure $ Right $
                CommandSummaryDiagram

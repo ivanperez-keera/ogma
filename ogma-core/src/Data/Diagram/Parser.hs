@@ -23,16 +23,20 @@ module Data.Diagram.Parser
   where
 
 -- External imports
+import           Control.Monad.Except (ExceptT (..))
 import qualified Data.ByteString.Lazy as B
 
 -- External imports: auxiliary
 import Data.ByteString.Extra as B (safeReadFile)
 
 -- Internal imports: auxiliary
+import Command.Errors              (ErrorCode, ErrorTriplet (..))
 import Data.Diagram                (Diagram)
 import Data.Diagram.Parser.Dot     (parseDiagramDot)
 import Data.Diagram.Parser.Mermaid (parseDiagramMermaid)
+import Data.Either.Extra           (mapLeft)
 import Data.ExprPair               (ExprPair)
+import Data.Location               (Location (..))
 
 -- | Diagram formats supported.
 data DiagramFormat = Mermaid
@@ -40,20 +44,25 @@ data DiagramFormat = Mermaid
   deriving (Eq, Show)
 
 -- | Read a diagram from a file.
-readDiagram :: FilePath                    -- ^ File containing diagram
-            -> DiagramFormat               -- ^ Format of the input file
-            -> ExprPair                    -- ^ Subparser for conditions or
-                                           -- edge expressions
-            -> IO (Either String Diagram)
-readDiagram fp format exprP = do
+readDiagram :: FilePath                         -- ^ File containing diagram
+            -> DiagramFormat                    -- ^ Format of the input file
+            -> ExprPair                         -- ^ Subparser for conditions
+                                                -- or edge expressions
+            -> ExceptT ErrorTriplet IO Diagram
+readDiagram fp format exprP = ExceptT $ do
   contentEither <- B.safeReadFile fp
-  return $ do
-    -- The following functions use Either to return errors. The use of (>>=) to
-    -- chain functions makes the program stop at the earliest error.
-    diagFileContent <- contentEither
+  let diagramE = do
+        -- The following functions use Either to return errors. The use of
+        -- (>>=) to chain functions makes the program stop at the earliest
+        -- error.
+        diagFileContent <- contentEither
 
-    -- Abtract representation of a state machine diagram.
-    parseDiagram format diagFileContent exprP
+        -- Abtract representation of a state machine diagram.
+        parseDiagram format diagFileContent exprP
+
+  pure $ mapLeft
+           (\msg -> ErrorTriplet ecCannotReadDiagram msg (LocationFile fp))
+           diagramE
 
 --- | Generic function to parse a diagram.
 parseDiagram :: DiagramFormat          -- ^ Format of the input file
@@ -63,3 +72,10 @@ parseDiagram :: DiagramFormat          -- ^ Format of the input file
              -> Either String Diagram
 parseDiagram Dot     = parseDiagramDot
 parseDiagram Mermaid = parseDiagramMermaid
+
+-- ** Error codes
+
+-- | Error: the diagram cannot be read due to an error opening the file or
+-- parsing the file.
+ecCannotReadDiagram :: ErrorCode
+ecCannotReadDiagram = 1
