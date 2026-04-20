@@ -49,19 +49,19 @@ import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
 
 -- Internal imports: auxiliary
 import Command.Result      (Result (..))
-import Data.Diagram        (Diagram (..), diagramBadState, diagramFinalState,
-                            diagramInitialState)
+import Data.Diagram        (Diagram (..))
 import Data.Diagram.Parser (DiagramFormat (..), readDiagram)
 import Data.ExprPair       (ExprPair (..), ExprPairT (..))
 import Data.Location       (Location (..))
 import Paths_ogma_core     (getDataDir)
 
 -- Internal imports: language ASTs, transformers
-import           Language.SMV.Substitution     (substituteBoolExpr)
-import qualified Language.Trans.Lustre2Copilot as Lustre (boolSpec2Copilot,
-                                                          boolSpecNames)
-import           Language.Trans.SMV2Copilot    as SMV (boolSpec2Copilot,
-                                                       boolSpecNames)
+import           Language.SMV.Substitution      (substituteBoolExpr)
+import qualified Language.Trans.Diagram2Copilot as Diagram2Copilot
+import qualified Language.Trans.Lustre2Copilot  as Lustre (boolSpec2Copilot,
+                                                           boolSpecNames)
+import           Language.Trans.SMV2Copilot     as SMV (boolSpec2Copilot,
+                                                        boolSpecNames)
 
 -- | Generate a new Copilot monitor that implements a state machine described
 -- in a diagram given as an input file.
@@ -236,45 +236,27 @@ diagramToCopilot :: Diagram -> DiagramMode -> (String, String)
 diagramToCopilot diag mode = (machine, arguments)
   where
     machine = unlines
-      [ "stateMachineProp :: Stream Bool"
+      [ "stateMachineS :: Stream Word8"
+      , "stateMachineS = stateMachineGF stateMachine1"
+      , ""
+      , "stateMachineProp :: Stream Bool"
       , "stateMachineProp = " ++ propExpr
       , ""
-      , "stateMachine1 :: Stream Word8"
-      , "stateMachine1 = stateMachineGF (initialState, finalState, noInput, "
-        ++ "transitions, badState)"
-      , ""
-      , "-- Check"
-      , "initialState :: Word8"
-      , "initialState = " ++ show initialState
-      , ""
-      , "-- Check"
-      , "finalState :: Word8"
-      , "finalState = " ++ show finalState
-      , ""
-      , "noInput :: Stream Bool"
-      , "noInput = false"
-      , ""
-      , "badState :: Word8"
-      , "badState = " ++ show badState
-      , ""
-      , "transitions = " ++ showTransitions
       ]
+      ++ Diagram2Copilot.diagram2Copilot diag
 
     -- Elements of the spec.
-    propExpr     = case mode of
-                     CheckState   -> "stateMachine1 /= externalState"
-                     ComputeState -> "true"
-                     CheckMoves   -> "true"
-    initialState = diagramInitialState diag
-    finalState   = diagramFinalState diag
-    badState     = diagramBadState diag
+    propExpr = case mode of
+                 CheckState   -> "stateMachineS /= externalState"
+                 ComputeState -> "true"
+                 CheckMoves   -> "true"
 
     -- Arguments for the handler.
     arguments = "[ " ++ intercalate ", " (map ("arg " ++) argExprs) ++ " ]"
 
     argExprs = case mode of
-      CheckState   -> [ "stateMachine1", "externalState", "input" ]
-      ComputeState -> [ "stateMachine1", "externalState", "input" ]
+      CheckState   -> [ "stateMachineS", "externalState", "input" ]
+      ComputeState -> [ "stateMachineS", "externalState", "input" ]
       CheckMoves   -> map stateCheckExpr states
 
     stateCheckExpr stateId =
@@ -283,11 +265,3 @@ diagramToCopilot diag mode = (machine, arguments)
     -- States and transitions from the diagram.
     transitions = diagramTransitions diag
     states      = nub $ sort $ concat [ [x, y] | (x, _, y) <- transitions ]
-
-    showTransitions :: String
-    showTransitions =
-      "[" ++ intercalate ", " (map showTransition transitions) ++ "]"
-
-    showTransition :: (Int, String, Int) -> String
-    showTransition (a, b, c) =
-      "(" ++ show a ++ ", " ++ b ++ ", " ++ show c ++ ")"
