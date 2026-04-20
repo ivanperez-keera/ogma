@@ -37,7 +37,8 @@ import qualified Language.C.AbsC as C
 
 -- | Convert a top-level struct declaration into a CStruct
 mkCStruct :: C.ExternalDeclaration -> Either String CStruct
-mkCStruct (C.MkExternalDeclarationFunctionDefinition _) = Left "C files must contain struct definitions only."
+mkCStruct (C.MkExternalDeclarationFunctionDefinition d) = Left $ "C files must contain struct definitions only."
+  ++ show d
 mkCStruct (C.MkExternalDeclarationDeclaration (C.MkDeclaration specifiers initDecl)) =
   case specifiers of
     C.DeclarationSpecifiers (C.MkDeclarationSpecifierStorageClass C.MkStorageClassSpecifierTypedef) s ->
@@ -46,7 +47,11 @@ mkCStruct (C.MkExternalDeclarationDeclaration (C.MkDeclaration specifiers initDe
           name = Right t
           fields = mapM buildCField u
       in CStruct <$> name <*> fields
-    _ -> Left "C files must contain struct definitions only."
+    d -> Left $ "C files must contain struct definitions only:\n" ++ show d ++ " " ++ show initDecl
+
+-- This is what a function looks like
+-- DeclarationSpecifiers (MkDeclarationSpecifierTypeSpecifier returnTy) [] MkInitDeclarationListOptJust [MkInitDeclaratorUninitialized (MkDeclarator MkPointerOptNothing (MkDirectDeclaratorParameterTypeList (MkDirectDeclaratorIdentifier (Identifier fName)) (MkParameterTypeList params)))]
+--   params = (MkParameterList1 (MkParameterDeclarationDeclarator (DeclarationSpecifiers (MkDeclarationSpecifierTypeSpecifier MkTypeSpecifierUInt8) []) (MkDeclarator MkPointerOptNothing (MkDirectDeclaratorIdentifier (Identifier "x")))))
 
 -- -- | Convert a declaration within a struct into a field declaration.
 buildCField :: C.StructDeclaration -> Either String CField

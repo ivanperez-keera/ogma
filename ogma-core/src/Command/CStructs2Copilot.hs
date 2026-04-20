@@ -54,6 +54,7 @@ cstructs2Copilot :: FilePath -- ^ Path to a readable, valid C header file
 cstructs2Copilot fp = do
     source <- parseCFile fp
 
+    print source
     case cstructs2CopilotDecls =<< source of
       Right decls -> printDecls decls >> return Success
       Left msg    -> return $ Error ecCStructError msg (LocationFile fp)
