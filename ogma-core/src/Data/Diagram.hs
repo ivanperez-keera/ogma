@@ -20,6 +20,9 @@ module Data.Diagram
     ( Diagram(..)
     , diagramStates
     , diagramNumStates
+    , diagramInitialState
+    , diagramFinalState
+    , diagramBadState
     )
   where
 
@@ -40,3 +43,17 @@ diagramStates diagram = nub $ sort $ concat
 -- | Number of states in a diagram.
 diagramNumStates :: Diagram -> Int
 diagramNumStates = length . diagramStates
+
+-- | Initial state of a diagram.
+diagramInitialState :: Diagram -> Int
+diagramInitialState = minimum . diagramStates
+
+-- | Final state of a diagram.
+--
+-- PRE: The diagram obtains one and only one final state.
+diagramFinalState :: Diagram -> Int
+diagramFinalState = maximum . diagramStates
+
+-- | Return a state value that does not represent any state in the diagram.
+diagramBadState :: Diagram -> Int
+diagramBadState diag = maximum (diagramStates diag) + 1
