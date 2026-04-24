@@ -1,5 +1,5 @@
 import           Copilot.Compile.C99
-import           Copilot.Language         hiding (prop)
+import           Copilot.Language         hiding (max, min, prop)
 import           Copilot.Language.Prelude
 import           Copilot.Library.LTL      (next)
 import           Copilot.Library.MTL      hiding (alwaysBeen, since, trigger)
@@ -7,8 +7,10 @@ import qualified Copilot.Library.MTL      as MTL
 import           Copilot.Library.PTLTL    (alwaysBeen, previous, since)
 import qualified Copilot.Library.PTLTL    as PTLTL
 import           Language.Copilot         (reify)
-import           Prelude                  hiding (not, (&&), (++), (/=), (<),
-                                           (<=), (==), (>), (>=), (||))
+import           Language.Copilot         hiding (max, min)
+import           Prelude                  hiding (max, min, mod, not, until,
+                                           (&&), (++), (/=), (<), (<=), (==),
+                                           (>), (>=), (||))
 
 {{#copilot_extra_defs}}
 {{{.}}}
