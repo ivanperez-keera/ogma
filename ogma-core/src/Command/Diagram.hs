@@ -284,13 +284,8 @@ diagramToCopilot diag mode = (machine, arguments)
     states      = nub $ sort $ concat [ [x, y] | (x, _, y) <- transitions ]
 
     showTransitions :: String
-    showTransitions = "[" ++ showTransitions' transitions
-
-    showTransitions' :: [(Int, String, Int)] -> String
-    showTransitions' []         = "]"
-    showTransitions' (x1:x2:xs) =
-      showTransition x1 ++ ", " ++ showTransitions' (x2:xs)
-    showTransitions' (x2:[])    = showTransition x2 ++ "]"
+    showTransitions =
+      "[" ++ intercalate ", " (map showTransition transitions) ++ "]"
 
     showTransition :: (Int, String, Int) -> String
     showTransition (a, b, c) =
