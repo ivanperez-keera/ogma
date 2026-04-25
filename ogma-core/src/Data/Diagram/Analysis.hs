@@ -24,14 +24,13 @@ module Data.Diagram.Analysis
 
 -- External imports
 import qualified Copilot.Core as Core
-import           Data.List    (intercalate)
 
 -- Internal imports: auxiliary
-import Copilot.Core.Analysis        (exprIsConstant)
-import Copilot.Language.Reify.Extra (reifySpec)
-import Data.Diagram                 (Diagram (..), diagramBadState,
-                                     diagramFinalState, diagramInitialState,
-                                     diagramNumStates)
+import Copilot.Core.Analysis          (exprIsConstant)
+import Copilot.Language.Reify.Extra   (reifySpec)
+import Data.Diagram                   (Diagram (..),
+                                       diagramNumStates)
+import Language.Trans.Diagram2Copilot (diagram2Copilot)
 
 -- * Analysis of Specs
 
@@ -76,109 +75,79 @@ defaultSpecImports =
 -- The shown 'Copilot.Spec' has a top-level triggers for the properties we are
 -- interested in, as well as several auxiliary definitions.
 showDiagram :: Diagram -> String
-showDiagram diagram = unlines
-    [ "do let"
-    , ""
-    , "       stateMachine :: (Eq a, Typed a)"
-    , "                    => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
-    , "                    -> Stream a"
-    , "       stateMachine (initial, final, noInputData, transitions, bad) ="
-    , "           state"
-    , "         where"
-    , "           state         = ifThenElses transitions"
-    , "           previousState = [initial] ++ state"
-    , ""
-    , "           -- ifThenElses :: [(a, Stream Bool, a)] -> Stream a"
-    , "           ifThenElses [] ="
-    , "             ifThenElse"
-    , "               (previousState == constant final && noInputData)"
-    , "               (constant final)"
-    , "               (constant bad)"
-    , ""
-    , "           ifThenElses ((s1, i, s2):ss) ="
-    , "             ifThenElse"
-    , "               (previousState == constant s1 && i)"
-    , "               (constant s2)"
-    , "               (ifThenElses ss)"
-    , ""
-    , "       isDeterministic :: (Ord a, Eq a, Typed a)"
-    , "                       => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
-    , "                       -> Stream Bool"
-    , "       isDeterministic (_, _, _, ts, _) = all $"
-    , "           map"
-    , "             (\\s -> all (map not $ pairwise $ transitionsFrom s))"
-    , "             states"
-    , "         where"
-    , "           states = L.nub $ L.sort $ concat $"
-    , "             map (\\(s1, _, s2) -> [s1, s2]) ts"
-    , ""
-    , "           transitionsFrom s = [ t | (s1, t, _) <- ts, s P.== s1 ]"
-    , ""
-    , "       completeMachine :: (Ord a, Eq a, Typed a)"
-    , "                       => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
-    , "                       -> Stream Bool"
-    , "       completeMachine (_, _, _, ts, _) = all $"
-    , "           map (\\s -> or $ transitionsFrom s) states"
-    , "         where"
-    , "           states = L.nub $ L.sort $ concat $"
-    , "             map (\\(s1, _, s2) -> [s1, s2]) ts"
-    , "           transitionsFrom s = [ t | (s1, t, _) <- ts, s P.== s1 ]"
-    , ""
-    , "       all [] = true"
-    , "       all (x:xs) = x && all xs"
-    , ""
-    , "       or [] = false"
-    , "       or (x:xs) = x || or xs"
-    , ""
-    , "       pairwise :: [ Stream Bool ] -> [ Stream Bool ]"
-    , "       pairwise []      = []"
-    , "       pairwise (x:[])  = []"
-    , "       pairwise (x1:xs) ="
-    , "         (map (\\x2 -> (x1 && x2)) xs) P.++ pairwise xs"
-    , ""
-    , "       stateMachine1 :: ( Word8"
-    , "                        , Word8"
-    , "                        , Stream Bool"
-    , "                        , [(Word8, Stream Bool, Word8)]"
-    , "                        , Word8"
-    , "                        )"
-    , "       stateMachine1 ="
-    , "         (initialState, finalState, noInput, transitions, badState)"
-    , ""
-    , "       initialState :: Word8"
-    , "       initialState = " ++ show initialState
-    , ""
-    , "       finalState :: Word8"
-    , "       finalState = " ++ show finalState
-    , ""
-    , "       noInput :: Stream Bool"
-    , "       noInput = false"
-    , ""
-    , "       input :: Stream Word8"
-    , "       input = extern \"input\" Nothing"
-    , ""
-    , "       badState :: Word8"
-    , "       badState = " ++ show badState
-    , ""
-    , "       transitions = " ++ showTransitions
-    , ""
-    , "   trigger \"deterministic\" (isDeterministic stateMachine1) []"
-    ]
+showDiagram diagram = unlines $
+       [ "do let" ]
+    ++ map ("       " ++) (lines auxiliaryDefinitions)
+    ++ map ("       " ++) (lines input)
+    ++ map ("       " ++) (lines diagramDefinitions)
+    ++ [ "   trigger \"deterministic\" (isDeterministic stateMachine1) []" ]
 
   where
 
-    -- Elements of the spec.
-    initialState = diagramInitialState diagram
-    finalState   = diagramFinalState diagram
-    badState     = diagramBadState diagram
+    input = unlines
+      [ "input :: Stream Word8"
+      , "input = extern \"input\" Nothing"
+      ]
 
-    -- Transitions from the diagram.
-    transitions = diagramTransitions diagram
+    diagramDefinitions = diagram2Copilot diagram
 
-    showTransitions :: String
-    showTransitions =
-      "[" ++ intercalate ", " (map showTransition transitions) ++ "]"
-
-    showTransition :: (Int, String, Int) -> String
-    showTransition (a, b, c) =
-      "(" ++ show a ++ ", " ++ b ++ ", " ++ show c ++ ")"
+-- | Auxiliary definitions needed in the spec.
+auxiliaryDefinitions :: String
+auxiliaryDefinitions = unlines
+  [ "stateMachine :: (Eq a, Typed a)"
+  , "             => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
+  , "             -> Stream a"
+  , "stateMachine (initial, final, noInputData, transitions, bad) ="
+  , "    state"
+  , "  where"
+  , "    state         = ifThenElses transitions"
+  , "    previousState = [initial] ++ state"
+  , ""
+  , "    -- ifThenElses :: [(a, Stream Bool, a)] -> Stream a"
+  , "    ifThenElses [] ="
+  , "      ifThenElse"
+  , "        (previousState == constant final && noInputData)"
+  , "        (constant final)"
+  , "        (constant bad)"
+  , ""
+  , "    ifThenElses ((s1, i, s2):ss) ="
+  , "      ifThenElse"
+  , "        (previousState == constant s1 && i)"
+  , "        (constant s2)"
+  , "        (ifThenElses ss)"
+  , ""
+  , "isDeterministic :: (Ord a, Eq a, Typed a)"
+  , "                => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
+  , "                -> Stream Bool"
+  , "isDeterministic (_, _, _, ts, _) = all $"
+  , "    map"
+  , "      (\\s -> all (map not $ pairwise $ transitionsFrom s))"
+  , "      states"
+  , "  where"
+  , "    states = L.nub $ L.sort $ concat $"
+  , "      map (\\(s1, _, s2) -> [s1, s2]) ts"
+  , ""
+  , "    transitionsFrom s = [ t | (s1, t, _) <- ts, s P.== s1 ]"
+  , ""
+  , "completeMachine :: (Ord a, Eq a, Typed a)"
+  , "                => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
+  , "                -> Stream Bool"
+  , "completeMachine (_, _, _, ts, _) = all $"
+  , "    map (\\s -> or $ transitionsFrom s) states"
+  , "  where"
+  , "    states = L.nub $ L.sort $ concat $"
+  , "      map (\\(s1, _, s2) -> [s1, s2]) ts"
+  , "    transitionsFrom s = [ t | (s1, t, _) <- ts, s P.== s1 ]"
+  , ""
+  , "all [] = true"
+  , "all (x:xs) = x && all xs"
+  , ""
+  , "or [] = false"
+  , "or (x:xs) = x || or xs"
+  , ""
+  , "pairwise :: [ Stream Bool ] -> [ Stream Bool ]"
+  , "pairwise []      = []"
+  , "pairwise (x:[])  = []"
+  , "pairwise (x1:xs) ="
+  , "  (map (\\x2 -> (x1 && x2)) xs) P.++ pairwise xs"
+  ]
