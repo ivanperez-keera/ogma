@@ -29,8 +29,9 @@ import           Data.List    (intercalate)
 -- Internal imports: auxiliary
 import Copilot.Core.Analysis        (exprIsConstant)
 import Copilot.Language.Reify.Extra (reifySpec)
-import Data.Diagram                 (Diagram (..), diagramNumStates,
-                                     diagramStates)
+import Data.Diagram                 (Diagram (..), diagramBadState,
+                                     diagramFinalState, diagramInitialState,
+                                     diagramNumStates)
 
 -- * Analysis of Specs
 
@@ -167,12 +168,11 @@ showDiagram diagram = unlines
   where
 
     -- Elements of the spec.
-    initialState = minimum states
-    finalState   = maximum states
-    badState     = maximum states + 1
+    initialState = diagramInitialState diagram
+    finalState   = diagramFinalState diagram
+    badState     = diagramBadState diagram
 
-    -- States and transitions from the diagram.
-    states      = diagramStates diagram
+    -- Transitions from the diagram.
     transitions = diagramTransitions diagram
 
     showTransitions :: String
