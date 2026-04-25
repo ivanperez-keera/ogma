@@ -114,6 +114,7 @@ library
     Language.Trans.CStruct2CopilotStruct
     Language.Trans.CStructs2Copilot
     Language.Trans.CStructs2MsgHandlers
+    Language.Trans.Diagram2Copilot
     Language.Trans.Lustre2Copilot
     Language.Trans.Spec2Copilot
     Language.Trans.SMV2Copilot
