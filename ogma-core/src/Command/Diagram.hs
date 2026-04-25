@@ -49,7 +49,8 @@ import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
 
 -- Internal imports: auxiliary
 import Command.Result      (Result (..))
-import Data.Diagram        (Diagram (..))
+import Data.Diagram        (Diagram (..), diagramBadState, diagramFinalState,
+                            diagramInitialState)
 import Data.Diagram.Parser (DiagramFormat (..), readDiagram)
 import Data.ExprPair       (ExprPair (..), ExprPairT (..))
 import Data.Location       (Location (..))
@@ -264,9 +265,9 @@ diagramToCopilot diag mode = (machine, arguments)
                      CheckState   -> "stateMachine1 /= externalState"
                      ComputeState -> "true"
                      CheckMoves   -> "true"
-    initialState = minimum states
-    finalState   = maximum states
-    badState     = maximum states + 1
+    initialState = diagramInitialState diag
+    finalState   = diagramFinalState diag
+    badState     = diagramBadState diag
 
     -- Arguments for the handler.
     arguments = "[ " ++ intercalate ", " (map ("arg " ++) argExprs) ++ " ]"
