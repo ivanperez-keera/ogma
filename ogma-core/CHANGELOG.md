@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-04-24
+## [1.X.Y] - 2026-04-25
 
 * Bump upper version constraints on Copilot packages (#377).
 * Lower upper version bound on `megaparsec` (#380).
@@ -16,6 +16,7 @@
 * Move auxiliary function into new auxiliary module (#401).
 * Split `Command.CommonDiagram` into smaller, more cohesive modules (#403).
 * Simplify internal definition `showTransitions` (#405).
+* Add diagram query functions to `Data.Diagram` (#407).
 
 ## [1.13.0] - 2026-03-21
 
