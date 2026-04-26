@@ -272,13 +272,11 @@ uint64_t iteration = 0;
  * Function called by the state machine to communicate its expected state.
  *
  * @param handler_arg0 The new state of the state machine.
- * @param handler_arg1 The previous state of the state machine.
- * @param handler_arg2 The input received that caused the transition.
  */
-void handler(uint8_t handler_arg0, uint8_t handler_arg1, uint8_t handler_arg2)
+void handler(uint8_t handler_arg0)
 {
   printf("[Calculated] Previous state: %d, input: %d, new state: %d\n",
-         handler_arg1, handler_arg2, handler_arg0);
+         state, input, handler_arg0);
 
   iteration++;
 
