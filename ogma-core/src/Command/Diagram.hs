@@ -255,8 +255,8 @@ diagramToCopilot diag mode = (machine, arguments)
     arguments = "[ " ++ intercalate ", " (map ("arg " ++) argExprs) ++ " ]"
 
     argExprs = case mode of
-      CheckState   -> [ "stateMachineS", "externalState", "input" ]
-      ComputeState -> [ "stateMachineS", "externalState", "input" ]
+      CheckState   -> [ "stateMachineS" ]
+      ComputeState -> [ "stateMachineS" ]
       CheckMoves   -> map stateCheckExpr states
 
     stateCheckExpr stateId =
