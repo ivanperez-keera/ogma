@@ -43,8 +43,7 @@ import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
 import Command.Common
-import Command.Diagram             (DiagramMode (..),
-                                    diagramToCopilotStructured)
+import Command.Diagram             (DiagramMode (..))
 import Command.Errors              (ErrorCode, ErrorTriplet(..))
 import Command.Result              (Result (..))
 import Data.Aeson.Extra            (mergeObjects)
@@ -246,3 +245,5 @@ ecMissingSpec = 1
 -- | Error: the input specification cannot be formalized.
 ecIncorrectSpec :: ErrorCode
 ecIncorrectSpec = 1
+
+diagramToCopilotStructured = undefined
