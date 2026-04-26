@@ -136,6 +136,7 @@ library
     Data.ExprPair
     Data.Spec.Analysis
     Data.Spec.Extra
+    Data.Spec.Parser
 
   autogen-modules:
     Paths_ogma_core
