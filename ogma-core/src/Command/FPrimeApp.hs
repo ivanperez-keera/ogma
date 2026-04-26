@@ -55,6 +55,7 @@ import Command.VariableDB (InputDef (..), TypeDef (..), VariableDB, findInput,
                            findType, findTypeByType)
 import Data.Aeson.Extra   (mergeObjects)
 import Data.ExprPair      (ExprPair(..), exprPair)
+import Data.Spec.Parser   (readInputExpr, readInputFile)
 
 -- | Generate a new FPrime component connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.
@@ -89,8 +90,8 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- openVarDBFilesWithDefault varDBFile
 
-    specT <- maybe (return Nothing) (\e -> Just <$> parseInputExpr' e) cExpr
-    specF <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
+    specT <- maybe (return Nothing) (\e -> Just <$> readInputExpr' e) cExpr
+    specF <- maybe (return Nothing) (\f -> Just <$> readInputFile' f) fp
 
     let spec = specT <|> specF
 
@@ -121,11 +122,11 @@ command' options (ExprPair exprT) = do
     propFormatName = commandPropFormat options
     propVia        = commandPropVia options
 
-    parseInputExpr' e =
-      parseInputExpr e propFormatName propVia exprT
+    readInputExpr' e =
+      readInputExpr e propFormatName propVia exprT
 
-    parseInputFile' f =
-      parseInputFile f formatName propFormatName propVia exprT
+    readInputFile' f =
+      readInputFile f formatName propFormatName propVia exprT
 
     processSpec spec' expr' fp' =
       Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'

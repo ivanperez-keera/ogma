@@ -51,6 +51,7 @@ import Data.Either.Extra           (mapLeft)
 import Data.ExprPair               (ExprPair(..), ExprPairT(..), exprPair)
 import Data.Location               (Location (..))
 import Data.Spec.Extra             (addMissingIdentifiers)
+import Data.Spec.Parser            (readInputExpr, readInputFile)
 import Language.Trans.Spec2Copilot (spec2Copilot, specAnalyze)
 
 -- | Generate a new standalone Copilot monitor that implements the spec in an
@@ -101,8 +102,8 @@ command' options (ExprPair exprT) = do
 
     -- Read spec and complement the specification with any missing/implicit
     -- definitions.
-    specT <- maybe (return Nothing) (\e -> Just <$> parseInputExpr' e) triggerExprM
-    specF <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fpM
+    specT <- maybe (return Nothing) (\e -> Just <$> readInputExpr' e) triggerExprM
+    specF <- maybe (return Nothing) (\f -> Just <$> readInputFile' f) fpM
     let spec = specT <|> specF
 
     case spec of
@@ -118,11 +119,11 @@ command' options (ExprPair exprT) = do
     propFormatName = commandPropFormat options
     propVia        = commandPropVia options
 
-    parseInputExpr' e =
-      parseInputExpr e propFormatName propVia exprT
+    readInputExpr' e =
+      readInputExpr e propFormatName propVia exprT
 
-    parseInputFile' f =
-      parseInputFile f formatName propFormatName propVia exprT
+    readInputFile' f =
+      readInputFile f formatName propFormatName propVia exprT
 
 
 -- | Generate the data of a new standalone Copilot monitor that implements the

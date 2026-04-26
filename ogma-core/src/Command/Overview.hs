@@ -37,7 +37,6 @@ import GHC.Generics         (Generic)
 import Data.OgmaSpec (Spec (..))
 
 -- Internal imports
-import           Command.Common
 import           Command.Errors              (ErrorCode, ErrorTriplet (..))
 import           Command.Result              (Result (..))
 import           Data.Diagram.Analysis       (AnalysisResult (..),
@@ -48,6 +47,7 @@ import           Data.ExprPair               (ExprPair(..), ExprPairT(..),
 import           Data.Location               (Location (..))
 import qualified Data.Spec.Analysis          as SpecAnalysis
 import           Data.Spec.Extra             (addMissingIdentifiers)
+import           Data.Spec.Parser            (readInputFile)
 import qualified Language.Trans.Spec2Copilot as Spec2Copilot
 
 -- | Generate overview of a spec given in an input file.
@@ -93,7 +93,7 @@ command' fp options exprP@(ExprPair exprT)
                  (deterministic analysisResult)
 
     | otherwise
-    = do spec <- runExceptT $ parseInputFile' fp
+    = do spec <- runExceptT $ readInputFile' fp
          case spec of
            Left (ErrorTriplet _ec msg _loc) -> return $ Left msg
 
@@ -118,10 +118,10 @@ command' fp options exprP@(ExprPair exprT)
 
   where
 
-    parseInputFile' f = parseInputFile f formatName propFormatName propVia exprT
-    formatName        = commandFormat options
-    propFormatName    = commandPropFormat options
-    propVia           = commandPropVia options
+    readInputFile' f = readInputFile f formatName propFormatName propVia exprT
+    formatName       = commandFormat options
+    propFormatName   = commandPropFormat options
+    propVia          = commandPropVia options
 
     ExprPairT _parse replace printExpr ids _def = exprT
 
