@@ -104,11 +104,8 @@ command' options (ExprPair exprT) = do
 
     copilotM <- sequenceA $ (\spec' -> processSpec spec' fp cExpr) <$> spec
 
-    let varNames = fromMaybe (specExtractExternalVariables spec) vs
-        monitors = maybe
-                     (specExtractHandlers spec)
-                     (map (\x -> (x, Nothing)))
-                     rs
+    let varNames = fromMaybe (defaultVarNames spec) vs
+        monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
 
     let appData =
           AppData variables monitors' copilotM testingAdditionalApps testingVars
@@ -143,6 +140,17 @@ command' options (ExprPair exprT) = do
 
     processSpec spec' expr' fp' =
       Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
+
+    defaultVarNames spec' = case spec' of
+      Just (InputFileSpec spec'') -> specExtractExternalVariables (Just spec'')
+      Nothing                    -> specExtractExternalVariables Nothing
+      _                          -> []
+
+
+    defaultMonitors spec' = case spec' of
+      Just (InputFileSpec spec'') -> specExtractHandlers (Just spec'')
+      Nothing                    -> specExtractHandlers Nothing
+      _                          -> []
 
     testingAdditionalApps = commandTestingApps options
     testingLimitedVars    = commandTestingVars options
