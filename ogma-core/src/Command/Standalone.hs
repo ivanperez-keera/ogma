@@ -39,20 +39,20 @@ import Data.Maybe           (fromMaybe)
 import GHC.Generics         (Generic)
 
 -- External imports: Ogma
-import Data.OgmaSpec          (Spec)
 import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
 import Command.Common
-import Command.Errors              (ErrorCode, ErrorTriplet(..))
-import Command.Result              (Result (..))
-import Data.Aeson.Extra            (mergeObjects)
-import Data.Either.Extra           (mapLeft)
-import Data.ExprPair               (ExprPair(..), ExprPairT(..), exprPair)
-import Data.Location               (Location (..))
-import Data.Spec.Extra             (addMissingIdentifiers)
-import Data.Spec.Parser            (readInputExpr, readInputFile)
-import Language.Trans.Spec2Copilot (spec2Copilot, specAnalyze)
+import Command.Errors                 (ErrorCode, ErrorTriplet(..))
+import Command.Result                 (Result (..))
+import Data.Aeson.Extra               (mergeObjects)
+import Data.Either.Extra              (mapLeft)
+import Data.ExprPair                  (ExprPair(..), ExprPairT(..), exprPair)
+import Data.Location                  (Location (..))
+import Data.Spec.Extra                (addMissingIdentifiers)
+import Data.Spec.Parser               (readInputExpr)
+import Language.Trans.Diagram2Copilot (DiagramMode (..), diagram2CopilotSpec)
+import Language.Trans.Spec2Copilot    (spec2Copilot, specAnalyze)
 
 -- | Generate a new standalone Copilot monitor that implements the spec in an
 -- input file.
@@ -102,7 +102,7 @@ command' options (ExprPair exprT) = do
 
     -- Read spec and complement the specification with any missing/implicit
     -- definitions.
-    specT <- maybe (return Nothing) (\e -> Just <$> readInputExpr' e) triggerExprM
+    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) triggerExprM
     specF <- maybe (return Nothing) (\f -> Just <$> readInputFile' f) fpM
     let spec = specT <|> specF
 
@@ -123,7 +123,7 @@ command' options (ExprPair exprT) = do
       readInputExpr e propFormatName propVia exprT
 
     readInputFile' f =
-      readInputFile f formatName propFormatName propVia exprT
+      parseInputFile f formatName propFormatName propVia exprT
 
 
 -- | Generate the data of a new standalone Copilot monitor that implements the
@@ -133,9 +133,14 @@ commandLogic :: Maybe String
              -> String
              -> [(String, String)]
              -> ExprPairT a
-             -> Spec a
+             -> InputFile a
              -> ExceptT ErrorTriplet IO AppData
-commandLogic expr fp name typeMaps exprT input = do
+commandLogic expr fp name typeMaps exprT (InputFileDiagram d) =
+    return $ AppData [] int [] trigs name
+  where
+    (int, trigs) = diagram2CopilotSpec d ComputeState
+
+commandLogic expr fp name typeMaps exprT (InputFileSpec input) = do
     let spec = addMissingIdentifiers ids input
     -- Analyze the spec for incorrect identifiers and convert it to Copilot.
     -- If there is an error, we change the error to a message we control.
