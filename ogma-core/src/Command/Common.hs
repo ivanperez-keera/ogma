@@ -21,7 +21,9 @@
 --
 -- | Shared functions across multiple backends.
 module Command.Common
-    ( parseVariablesFile
+    ( InputFile(..)
+    , parseInputFile
+    , parseVariablesFile
     , parseRequirementsListFile
     , openVarDBFiles
     , openVarDBFilesWithDefault
@@ -57,11 +59,49 @@ import Data.OgmaSpec (Requirement (..), Spec (..), externalVariableName,
 import Command.VariableDB (VariableDB, emptyVariableDB, mergeVariableDB)
 
 -- Internal imports: auxiliary
-import Command.Errors    (ErrorTriplet(..), ErrorCode)
-import Command.Result    (Result (..))
-import Data.Either.Extra (makeLeft)
-import Data.Location     (Location (..))
-import Paths_ogma_core   (getDataDir)
+import Command.Errors      (ErrorCode, ErrorTriplet (..))
+import Command.Result      (Result (..))
+import Data.Diagram        (Diagram)
+import Data.Diagram.Parser (DiagramFormat (..), readDiagram)
+import Data.Either.Extra   (makeLeft)
+import Data.ExprPair       (ExprPair (..), ExprPairT (..))
+import Data.Location       (Location (..))
+import Data.Spec.Parser    (readInputFile)
+import Paths_ogma_core     (getDataDir)
+
+-- | File containing information to be processed by Ogma (e.g., specification,
+-- diagram).
+data InputFile a = InputFileDiagram Diagram
+                 | InputFileSpec    (Spec a)
+
+-- | Process input specification, if available, and return its abstract
+-- representation.
+parseInputFile :: FilePath
+               -> String
+               -> String
+               -> Maybe String
+               -> ExprPairT a
+               -> ExceptT ErrorTriplet IO (InputFile a)
+parseInputFile fp formatName propFormatName propVia exprT
+    | isDiagramFormat formatName
+    = InputFileDiagram <$>
+        readDiagram fp diagramFormat (ExprPair exprT)
+
+    | otherwise
+    = InputFileSpec <$>
+        readInputFile fp formatName propFormatName propVia exprT
+
+  where
+
+    isDiagramFormat :: String -> Bool
+    isDiagramFormat fName = fName `elem` [ "dot", "mermaid" ]
+
+    diagramFormat :: DiagramFormat
+    diagramFormat
+      | formatName == "dot"     = Dot
+      | formatName == "mermaid" = Mermaid
+      | otherwise               = error $
+         "diagramFormat: Not a diagram format " ++ show formatName
 
 -- | Process a variable selection file, if available, and return the variable
 -- names.
@@ -137,7 +177,7 @@ parseTemplateVarsFile (Just fp) = do
 --
 -- If an input file is not provided, then the user must provide BOTH a variable
 -- list, and a list of handlers.
-checkArguments :: Maybe (Spec a)
+checkArguments :: Maybe (InputFile a)
                -> Maybe [String]
                -> Maybe [String]
                -> Either ErrorTriplet ()
