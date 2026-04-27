@@ -39,11 +39,12 @@ import Data.Maybe           (fromMaybe)
 import GHC.Generics         (Generic)
 
 -- External imports: Ogma
-import Data.OgmaSpec          (Spec)
 import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
 import Command.Common
+import Command.Diagram             (DiagramMode (..),
+                                    diagramToCopilotStructured)
 import Command.Errors              (ErrorCode, ErrorTriplet(..))
 import Command.Result              (Result (..))
 import Data.Aeson.Extra            (mergeObjects)
@@ -133,9 +134,13 @@ commandLogic :: Maybe String
              -> String
              -> [(String, String)]
              -> ExprPairT a
-             -> Spec a
+             -> InputFile a
              -> ExceptT ErrorTriplet IO AppData
-commandLogic expr fp name typeMaps exprT input = do
+commandLogic expr fp name typeMaps exprT (InputFileDiagram d) = do
+    let (ext, int, reqs, trigs, specN) = diagramToCopilotStructured d ComputeState
+    return $ AppData ext int reqs trigs specN
+
+commandLogic expr fp name typeMaps exprT (InputFileSpec input) = do
     let spec = addMissingIdentifiers ids input
     -- Analyze the spec for incorrect identifiers and convert it to Copilot.
     -- If there is an error, we change the error to a message we control.
