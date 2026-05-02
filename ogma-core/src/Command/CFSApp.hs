@@ -61,7 +61,7 @@ import Command.VariableDB (Connection (..), TopicDef (..), TypeDef (..),
                            findType, findTypeByType)
 import Data.Aeson.Extra   (mergeObjects)
 import Data.ExprPair      (ExprPair(..), exprPair)
-import Data.Spec.Parser   (readInputExpr, readInputFile)
+import Data.Spec.Parser   (readInputExpr)
 
 -- | Generate a new CFS application connected to Copilot.
 command :: CommandOptions
@@ -96,7 +96,7 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- openVarDBFilesWithDefault varDBFile
 
-    specT <- maybe (return Nothing) (\e -> Just <$> readInputExpr' e) cExpr
+    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) cExpr
     specF <- maybe (return Nothing) (\f -> Just <$> readInputFile' f) fp
 
     let spec = specT <|> specF
@@ -105,11 +105,8 @@ command' options (ExprPair exprT) = do
 
     copilotM <- sequenceA $ (\spec' -> processSpec spec' fp cExpr) <$> spec
 
-    let varNames = fromMaybe (specExtractExternalVariables spec) vs
-        monitors = maybe
-                     (specExtractHandlers spec)
-                     (map (\x -> (x, Nothing)))
-                     rs
+    let varNames = fromMaybe (defaultVarNames spec) vs
+        monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
 
     let appData   = commandLogic varDB varNames monitors' copilotM
         monitors' = mapMaybe (monitorMap varDB) monitors
@@ -131,10 +128,21 @@ command' options (ExprPair exprT) = do
       readInputExpr e propFormatName propVia exprT
 
     readInputFile' f =
-      readInputFile f formatName propFormatName propVia exprT
+      parseInputFile f formatName propFormatName propVia exprT
 
     processSpec spec' expr' fp' =
       Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
+
+    defaultVarNames spec = case spec of
+      Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
+      Just (InputFileDiagram _)  -> []
+      Nothing                    -> specExtractExternalVariables Nothing
+
+
+    defaultMonitors spec = case spec of
+      Just (InputFileSpec spec') -> specExtractHandlers (Just spec')
+      Just (InputFileDiagram _)  -> [ ("handler", Just "uint8_t" ) ]
+      Nothing                    -> specExtractHandlers Nothing
 
 -- | Generate a variable substitution map for a cFS application.
 commandLogic :: VariableDB
