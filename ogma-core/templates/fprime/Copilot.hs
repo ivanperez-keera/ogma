@@ -34,6 +34,31 @@ tpre = ([True] ++)
 notPreviousNot :: Stream Bool -> Stream Bool
 notPreviousNot = not . PTLTL.previous . not
 
+-- Initial state, final state, no transition signal, transitions, bad state
+type StateMachineGF a = (a, a, Stream Bool, [(a, Stream Bool, a)], a)
+
+stateMachineGF :: (Eq a, Typed a)
+               => StateMachineGF a
+               -> Stream a
+stateMachineGF (initial, final, noInputData, transitions, bad) =
+    state
+  where
+    state         = ifThenElses transitions
+    previousState = [initial] ++ state
+
+    -- ifThenElses :: [(a, Stream Bool, a)] -> Stream a
+    ifThenElses [] =
+      ifThenElse
+        (previousState == constant final && noInputData)
+        (constant final)
+        (constant bad)
+
+    ifThenElses ((s1, i, s2):ss) =
+      ifThenElse
+        (previousState == constant s1 && i)
+        (constant s2)
+        (ifThenElses ss)
+
 -- | Complete specification. Calls C handler functions when properties are
 -- violated.
 spec :: Spec
