@@ -34,7 +34,6 @@ import Control.Exception as E
 import Data.Aeson        (object, (.=))
 import Data.Foldable     (for_)
 import Data.Functor      ((<&>))
-import Data.List         (intercalate, nub, sort)
 import Data.Text.Lazy    (pack)
 import System.FilePath   ((</>))
 
@@ -49,7 +48,6 @@ import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
 
 -- Internal imports: auxiliary
 import Command.Result      (Result (..))
-import Data.Diagram        (Diagram (..))
 import Data.Diagram.Parser (DiagramFormat (..), readDiagram)
 import Data.ExprPair       (ExprPair (..), ExprPairT (..))
 import Data.Location       (Location (..))
@@ -57,7 +55,8 @@ import Paths_ogma_core     (getDataDir)
 
 -- Internal imports: language ASTs, transformers
 import           Language.SMV.Substitution      (substituteBoolExpr)
-import qualified Language.Trans.Diagram2Copilot as Diagram2Copilot
+import           Language.Trans.Diagram2Copilot (DiagramMode (..),
+                                                 diagram2CopilotSpec)
 import qualified Language.Trans.Lustre2Copilot  as Lustre (boolSpec2Copilot,
                                                            boolSpecNames)
 import           Language.Trans.SMV2Copilot     as SMV (boolSpec2Copilot,
@@ -126,7 +125,7 @@ diagram' :: FilePath
 diagram' fp options exprP = do
   diagramE <- readDiagram fp (diagramFormat options) exprP
   pure $ diagramE <&> \diagramR ->
-    diagramToCopilot diagramR (diagramMode options)
+    diagram2CopilotSpec diagramR (diagramMode options)
 
 -- | Options used to customize the conversion of diagrams to Copilot code.
 data DiagramOptions = DiagramOptions
@@ -139,13 +138,6 @@ data DiagramOptions = DiagramOptions
   , diagramStateVar    :: String
   , diagramInputVar    :: String
   }
-
--- | Modes of operation.
-data DiagramMode = CheckState   -- ^ Check if given state matches expectation
-                 | ComputeState -- ^ Compute expected state
-                 | CheckMoves   -- ^ Check if transitioning to a state would be
-                                --   possible.
-  deriving (Eq, Show)
 
 -- | Property formats supported.
 data DiagramPropFormat = Lustre
@@ -229,39 +221,3 @@ exprPair SMV = ExprPair $
     (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
 -- * Backend
-
--- | Convert the diagram into a set of Copilot definitions, and a list of
--- arguments for the top-level handler.
-diagramToCopilot :: Diagram -> DiagramMode -> (String, String)
-diagramToCopilot diag mode = (machine, arguments)
-  where
-    machine = unlines
-      [ "stateMachineS :: Stream Word8"
-      , "stateMachineS = stateMachineGF stateMachine1"
-      , ""
-      , "stateMachineProp :: Stream Bool"
-      , "stateMachineProp = " ++ propExpr
-      , ""
-      ]
-      ++ Diagram2Copilot.diagram2Copilot diag
-
-    -- Elements of the spec.
-    propExpr = case mode of
-                 CheckState   -> "stateMachineS /= externalState"
-                 ComputeState -> "true"
-                 CheckMoves   -> "true"
-
-    -- Arguments for the handler.
-    arguments = "[ " ++ intercalate ", " (map ("arg " ++) argExprs) ++ " ]"
-
-    argExprs = case mode of
-      CheckState   -> [ "stateMachineS" ]
-      ComputeState -> [ "stateMachineS" ]
-      CheckMoves   -> map stateCheckExpr states
-
-    stateCheckExpr stateId =
-      "(checkValidTransition transitions externalState " ++ show stateId ++ ")"
-
-    -- States and transitions from the diagram.
-    transitions = diagramTransitions diag
-    states      = nub $ sort $ concat [ [x, y] | (x, _, y) <- transitions ]

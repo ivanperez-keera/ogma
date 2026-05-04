@@ -17,16 +17,61 @@
 --
 -- | Transform a state diagram into a Copilot specification.
 module Language.Trans.Diagram2Copilot
-    ( diagram2Copilot
+    ( DiagramMode(..)
+    , diagram2CopilotSpec
+    , diagram2Copilot
     )
   where
 
 -- External imports
-import Data.List (intercalate)
+import Data.List (intercalate, nub, sort)
 
 -- Internal imports: auxiliary
 import Data.Diagram (Diagram (..), diagramBadState, diagramFinalState,
                      diagramInitialState)
+
+-- | Modes of operation.
+data DiagramMode = CheckState   -- ^ Check if given state matches expectation
+                 | ComputeState -- ^ Compute expected state
+                 | CheckMoves   -- ^ Check if transitioning to a state would be
+                                --   possible.
+  deriving (Eq, Show)
+
+-- | Convert the diagram into a set of Copilot definitions, and a list of
+-- arguments for the top-level handler.
+diagram2CopilotSpec :: Diagram -> DiagramMode -> (String, String)
+diagram2CopilotSpec diag mode = (machine, arguments)
+  where
+    machine = unlines
+      [ "stateMachineS :: Stream Word8"
+      , "stateMachineS = stateMachineGF stateMachine1"
+      , ""
+      , "stateMachineProp :: Stream Bool"
+      , "stateMachineProp = " ++ propExpr
+      , ""
+      ]
+      ++ diagram2Copilot diag
+
+    -- Elements of the spec.
+    propExpr = case mode of
+                 CheckState   -> "stateMachineS /= externalState"
+                 ComputeState -> "true"
+                 CheckMoves   -> "true"
+
+    -- Arguments for the handler.
+    arguments = "[ " ++ intercalate ", " (map ("arg " ++) argExprs) ++ " ]"
+
+    argExprs = case mode of
+      CheckState   -> [ "stateMachineS" ]
+      ComputeState -> [ "stateMachineS" ]
+      CheckMoves   -> map stateCheckExpr states
+
+    stateCheckExpr stateId =
+      "(checkValidTransition transitions externalState " ++ show stateId ++ ")"
+
+    -- States and transitions from the diagram.
+    transitions = diagramTransitions diag
+    states      = nub $ sort $ concat [ [x, y] | (x, _, y) <- transitions ]
 
 -- | Convert the diagram into a set of Copilot definitions.
 diagram2Copilot :: Diagram -> String
