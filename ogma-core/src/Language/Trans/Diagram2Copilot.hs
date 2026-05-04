@@ -38,9 +38,9 @@ data DiagramMode = CheckState   -- ^ Check if given state matches expectation
   deriving (Eq, Show)
 
 -- | Convert the diagram into a set of Copilot definitions, and a list of
--- arguments for the top-level handler.
+-- indented trigger definitions to include in the Copilot spec.
 diagram2CopilotSpec :: Diagram -> DiagramMode -> (String, String)
-diagram2CopilotSpec diag mode = (machine, arguments)
+diagram2CopilotSpec diag mode = (machine, triggers)
   where
     machine = unlines
       [ "stateMachineS :: Stream Word8"
@@ -57,6 +57,8 @@ diagram2CopilotSpec diag mode = (machine, arguments)
                  CheckState   -> "stateMachineS /= externalState"
                  ComputeState -> "true"
                  CheckMoves   -> "true"
+
+    triggers = "  trigger \"handler\" stateMachineProp " ++ arguments
 
     -- Arguments for the handler.
     arguments = "[ " ++ intercalate ", " (map ("arg " ++) argExprs) ++ " ]"

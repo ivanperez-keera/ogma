@@ -87,13 +87,13 @@ diagram fp options = do
     let (mOutput, result) = diagramResult fp copilotSpecElems
 
     -- If the result is success, expand the template.
-    for_ mOutput $ \(streamDefs, handlerInputs) -> do
+    for_ mOutput $ \(streamDefs, triggers) -> do
       let subst = object
-                    [ "streamDefs"    .= pack streamDefs
-                    , "specName"      .= pack (diagramFilename options)
-                    , "input"         .= pack (diagramInputVar options)
-                    , "state"         .= pack (diagramStateVar options)
-                    , "handlerInputs" .= pack handlerInputs
+                    [ "streamDefs" .= pack streamDefs
+                    , "specName"   .= pack (diagramFilename options)
+                    , "input"      .= pack (diagramInputVar options)
+                    , "state"      .= pack (diagramStateVar options)
+                    , "triggers"   .= pack triggers
                     ]
 
       templateDir <- case diagramTemplateDir options of
