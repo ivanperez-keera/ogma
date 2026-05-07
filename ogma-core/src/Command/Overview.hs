@@ -37,17 +37,16 @@ import GHC.Generics         (Generic)
 import Data.OgmaSpec (Spec (..))
 
 -- Internal imports
+import           Command.Common              (InputFile(..), parseInputFile)
 import           Command.Errors              (ErrorCode, ErrorTriplet (..))
 import           Command.Result              (Result (..))
 import           Data.Diagram.Analysis       (AnalysisResult (..),
                                               analyzeDiagram)
-import           Data.Diagram.Parser         (DiagramFormat (..), readDiagram)
 import           Data.ExprPair               (ExprPair(..), ExprPairT(..),
                                               exprPair)
 import           Data.Location               (Location (..))
 import qualified Data.Spec.Analysis          as SpecAnalysis
 import           Data.Spec.Extra             (addMissingIdentifiers)
-import           Data.Spec.Parser            (readInputFile)
 import qualified Language.Trans.Spec2Copilot as Spec2Copilot
 
 -- | Generate overview of a spec given in an input file.
@@ -80,60 +79,45 @@ command' :: FilePath
           -> CommandOptions
           -> ExprPair
           -> IO (Either String CommandSummary)
-command' fp options exprP@(ExprPair exprT)
-    | isDiagramFormat formatName
-    = do diagramE <- readDiagram fp diagramFormat exprP
-         case diagramE of
-           Left s -> return $ Left s
-           Right diagramR -> do
-             analysisResult <- analyzeDiagram diagramR
-             pure $ Right $
-               CommandSummaryDiagram
-                 (numStates analysisResult)
-                 (deterministic analysisResult)
+command' fp options (ExprPair exprT) = do
+    res <- runExceptT $
+             parseInputFile fp formatName propFormatName propVia exprT
+    case res of
+      Left (ErrorTriplet _ s _) -> return $ Left s
 
-    | otherwise
-    = do spec <- runExceptT $ readInputFile' fp
-         case spec of
-           Left (ErrorTriplet _ec msg _loc) -> return $ Left msg
+      Right (InputFileDiagram diagramR) -> do
+        analysisResult <- analyzeDiagram diagramR
+        pure $ Right $
+          CommandSummaryDiagram
+            (numStates analysisResult)
+            (deterministic analysisResult)
 
-           Right spec' -> do
-             let specCompleted = addMissingIdentifiers ids spec'
-                 specAnalyzed  = Spec2Copilot.specAnalyze specCompleted
+      Right (InputFileSpec spec') -> do
+        let specCompleted = addMissingIdentifiers ids spec'
+            specAnalyzed  = Spec2Copilot.specAnalyze specCompleted
 
-             specFormalAnalysis <-
-               SpecAnalysis.specAnalyze [] replace printExpr specCompleted
+        specFormalAnalysis <-
+          SpecAnalysis.specAnalyze [] replace printExpr specCompleted
 
-             pure $ do
-               numExterns  <- length . externalVariables <$> specAnalyzed
-               numInternal <- length . internalVariables <$> specAnalyzed
-               numReqs     <- length . requirements      <$> specAnalyzed
-               numTrues    <- SpecAnalysis.numAlwaysTrue  <$> specFormalAnalysis
-               numFalses   <- SpecAnalysis.numAlwaysFalse <$> specFormalAnalysis
-               consistent  <- SpecAnalysis.consistent     <$> specFormalAnalysis
+        pure $ do
+          numExterns  <- length . externalVariables <$> specAnalyzed
+          numInternal <- length . internalVariables <$> specAnalyzed
+          numReqs     <- length . requirements      <$> specAnalyzed
+          numTrues    <- SpecAnalysis.numAlwaysTrue  <$> specFormalAnalysis
+          numFalses   <- SpecAnalysis.numAlwaysFalse <$> specFormalAnalysis
+          consistent  <- SpecAnalysis.consistent     <$> specFormalAnalysis
 
-               pure $
-                 CommandSummaryRequirement
-                   numExterns numInternal numReqs numTrues numFalses consistent
+          pure $
+            CommandSummaryRequirement
+              numExterns numInternal numReqs numTrues numFalses consistent
 
   where
 
-    readInputFile' f = readInputFile f formatName propFormatName propVia exprT
-    formatName       = commandFormat options
-    propFormatName   = commandPropFormat options
-    propVia          = commandPropVia options
+    formatName     = commandFormat options
+    propFormatName = commandPropFormat options
+    propVia        = commandPropVia options
 
     ExprPairT _parse replace printExpr ids _def = exprT
-
-    isDiagramFormat :: String -> Bool
-    isDiagramFormat fName = fName `elem` [ "dot", "mermaid" ]
-
-    diagramFormat :: DiagramFormat
-    diagramFormat
-      | formatName == "dot"     = Dot
-      | formatName == "mermaid" = Mermaid
-      | otherwise               = error $
-         "diagramFormat: Not a diagram format " ++ show formatName
 
 data CommandSummary
     = CommandSummaryRequirement
