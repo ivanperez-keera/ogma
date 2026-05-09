@@ -103,16 +103,24 @@ command' options (ExprPair exprT) = do
     -- Read spec and complement the specification with any missing/implicit
     -- definitions.
     specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) triggerExprM
-    specF <- maybe (return Nothing) (\f -> Just <$> readInputFile' f) fpM
+    specF <- if null fpA
+                  then return Nothing
+                  else do
+                    fpA' <- mapM readInputFile' fpA
+                    let fpA'' = combineInputFiles fpA'
+                    if length fpA'' > 1
+                      then liftEither $ Left commandMultipleInputTypes
+                      else pure $ Just $ head fpA''
+
     let spec = specT <|> specF
 
     case spec of
       Nothing    -> liftEither $ Left $ commandMissingSpec
-      Just spec' -> commandLogic triggerExprM fpM name typeMaps exprT spec'
+      Just spec' -> commandLogic triggerExprM fpA name typeMaps exprT spec'
 
   where
     triggerExprM   = commandConditionExpr options
-    fpM            = commandInputFile options
+    fpA            = commandInputFiles options
     name           = commandFilename options
     typeMaps       = typeToCopilotTypeMapping (commandTypeMapping options)
     formatName     = commandFormat options
@@ -129,18 +137,18 @@ command' options (ExprPair exprT) = do
 -- | Generate the data of a new standalone Copilot monitor that implements the
 -- spec, using a subexpression handler.
 commandLogic :: Maybe String
-             -> Maybe FilePath
+             -> [FilePath]
              -> String
              -> [(String, String)]
              -> ExprPairT a
              -> InputFile a
              -> ExceptT ErrorTriplet IO AppData
-commandLogic expr fp name typeMaps exprT (InputFileDiagram d) =
+commandLogic expr fps name typeMaps exprT (InputFileDiagram d) =
     return $ AppData [] int [] trigs name
   where
     (int, trigs) = diagram2CopilotSpec d ComputeState
 
-commandLogic expr fp name typeMaps exprT (InputFileSpec input) = do
+commandLogic expr fps name typeMaps exprT (InputFileSpec input) = do
     let spec = addMissingIdentifiers ids input
     -- Analyze the spec for incorrect identifiers and convert it to Copilot.
     -- If there is an error, we change the error to a message we control.
@@ -157,10 +165,10 @@ commandLogic expr fp name typeMaps exprT (InputFileSpec input) = do
 
   where
 
-    commandIncorrectSpec' = case (expr, fp) of
-      (Nothing,    Just fp') -> commandIncorrectSpecF fp'
-      (Just expr', _)        -> commandIncorrectSpecE expr'
-      (_, _)                 -> error "Both expression and file are missing"
+    commandIncorrectSpec' = case (expr, fps) of
+      (Nothing,    [])   -> error "Both expression and file are missing"
+      (Nothing,    fps') -> commandIncorrectSpecF
+      (Just expr', _)    -> commandIncorrectSpecE expr'
 
     ExprPairT parse replace print ids def = exprT
 
@@ -170,7 +178,7 @@ commandLogic expr fp name typeMaps exprT (InputFileSpec input) = do
 -- code.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String
-  , commandInputFile   :: Maybe FilePath     -- ^ Input specification file.
+  , commandInputFiles  :: [FilePath]         -- ^ Input specification file(s).
   , commandTargetDir   :: FilePath           -- ^ Target directory where the
                                              -- application should be created.
   , commandTemplateDir :: Maybe FilePath     -- ^ Directory where the template
@@ -221,13 +229,22 @@ commandMissingSpec =
     msg =
       "No input specification has been provided."
 
--- | Error message associated to not being able to formalize the input spec.
-commandIncorrectSpecF :: String -> String -> ErrorTriplet
-commandIncorrectSpecF file e =
-    ErrorTriplet ecIncorrectSpec msg (LocationFile file)
+-- | Error message associated to having multiple input files of incompatible
+-- types.
+commandMultipleInputTypes :: ErrorTriplet
+commandMultipleInputTypes =
+    ErrorTriplet ecMultipleInputTypes msg LocationNothing
   where
     msg =
-      "The input specification " ++ file ++ " canbot be formalized: " ++ e
+      "Too many inputs provided. Provide one diagram or multiple specs."
+
+-- | Error message associated to not being able to formalize the input spec.
+commandIncorrectSpecF :: String -> ErrorTriplet
+commandIncorrectSpecF e =
+    ErrorTriplet ecIncorrectSpec msg LocationNothing
+  where
+    msg =
+      "The input specification(s) canbot be formalized: " ++ e
 
 -- | Error message associated to not being able to formalize the input spec.
 commandIncorrectSpecE :: String -> String -> ErrorTriplet
@@ -242,6 +259,10 @@ commandIncorrectSpecE expr e =
 -- | Error: there is no input argument.
 ecMissingSpec :: ErrorCode
 ecMissingSpec = 1
+
+-- | Error: multiple inputs of incompatible types.
+ecMultipleInputTypes :: ErrorCode
+ecMultipleInputTypes = 1
 
 -- | Error: the input specification cannot be formalized.
 ecIncorrectSpec :: ErrorCode
