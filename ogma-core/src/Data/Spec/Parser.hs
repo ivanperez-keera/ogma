@@ -46,6 +46,7 @@ import Language.CSVSpec.Parser  (parseCSVSpec)
 import Language.JSONSpec.Parser (parseJSONSpec)
 import Language.XLSXSpec.Parser (parseXLSXSpec)
 import Language.XMLSpec.Parser  (parseXMLSpec)
+import Language.YAMLSpec.Parser (parseYAMLSpec)
 
 -- Internal imports: auxiliary
 import Command.Errors    (ErrorTriplet(..), ErrorCode)
@@ -133,6 +134,12 @@ readInputFile fp formatName propFormatName propVia exprT =
              -> do let xlsxFormat = read format
                    content <- L.readFile fp
                    parseXLSXSpec wrapper def xlsxFormat content
+             | isPrefixOf "YAMLFormat" format
+             -> do let yamlFormat = read format
+                   content <- B.safeReadFile fp
+                   case content of
+                     Left e  -> return $ Left e
+                     Right b -> parseYAMLSpec wrapper yamlFormat (L.toStrict b)
              | otherwise
              -> do let jsonFormat = read format
                    content <- B.safeReadFile fp
