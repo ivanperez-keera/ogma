@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-05-10
+## [1.X.Y] - 2026-05-11
 
 * Bump upper version constraints on Copilot packages (#377).
 * Lower upper version bound on `megaparsec` (#380).
@@ -22,6 +22,7 @@
 * Move functions related to reading specs to dedicated module (#413).
 * Make standalone, app backends support working directly with diagrams (#415).
 * Add support for reading specs from YAML files (#417).
+* Fix order of arguments in calls to internal function (#419).
 
 ## [1.13.0] - 2026-03-21
 
