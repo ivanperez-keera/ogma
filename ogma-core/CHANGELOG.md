@@ -23,6 +23,7 @@
 * Make standalone, app backends support working directly with diagrams (#415).
 * Add support for reading specs from YAML files (#417).
 * Fix order of arguments in calls to internal function (#419).
+* Adjust standalone, app backends to support multiple input specs (#421).
 
 ## [1.13.0] - 2026-03-21
 

@@ -104,7 +104,7 @@ testStandaloneFCS file success = do
     targetDir <- getTemporaryDirectory
     let opts = CommandOptions
                  { commandConditionExpr = Nothing
-                 , commandInputFile   = Just file
+                 , commandInputFiles  = [ file ]
                  , commandFormat      = "fcs"
                  , commandPropFormat  = "smv"
                  , commandTypeMapping = [("int", "Int64"), ("real", "Float")]
@@ -142,7 +142,7 @@ testStandaloneFDB file success = do
     targetDir <- getTemporaryDirectory
     let opts = CommandOptions
                  { commandConditionExpr = Nothing
-                 , commandInputFile   = Just file
+                 , commandInputFiles  = [ file ]
                  , commandFormat      = "fdb"
                  , commandPropFormat  = "lustre"
                  , commandTypeMapping = []

@@ -30,8 +30,8 @@ module CLI.CommandCFSApp
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, optional, short,
-                             showDefault, strOption, value )
+import Options.Applicative ( Parser, help, long, many, metavar, optional,
+                             short, showDefault, strOption, value )
 
 -- External imports: command results
 import Command.Result ( Result )
@@ -45,7 +45,7 @@ import qualified Command.CFSApp
 -- | Options needed to generate the cFS application.
 data CommandOpts = CommandOpts
   { cFSAppConditionExpr  :: Maybe String
-  , cFSAppInputFile    :: Maybe String
+  , cFSAppInputFiles   :: [String]
   , cFSAppTarget       :: String
   , cFSAppTemplateDir  :: Maybe String
   , cFSAppVarNames     :: Maybe String
@@ -67,7 +67,7 @@ command c = Command.CFSApp.command options
   where
     options = Command.CFSApp.CommandOptions
                 { Command.CFSApp.commandConditionExpr = cFSAppConditionExpr c
-                , Command.CFSApp.commandInputFile   = cFSAppInputFile c
+                , Command.CFSApp.commandInputFiles  = cFSAppInputFiles c
                 , Command.CFSApp.commandTargetDir   = cFSAppTarget c
                 , Command.CFSApp.commandTemplateDir = cFSAppTemplateDir c
                 , Command.CFSApp.commandVariables   = cFSAppVarNames c
@@ -96,7 +96,7 @@ commandOptsParser = CommandOpts
             <> help strCFSAppConditionExprArgDesc
             )
         )
-  <*> optional
+  <*> many
         ( strOption
             (  long "input-file"
             <> metavar "FILENAME"

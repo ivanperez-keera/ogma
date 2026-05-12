@@ -30,8 +30,8 @@ module CLI.CommandFPrimeApp
   where
 
 -- External imports
-import Options.Applicative ( Parser, help, long, metavar, optional, short,
-                             showDefault, strOption, value )
+import Options.Applicative ( Parser, help, long, many, metavar, optional,
+                             short, showDefault, strOption, value )
 
 -- External imports: command results
 import Command.Result ( Result )
@@ -45,7 +45,7 @@ import qualified Command.FPrimeApp
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
   { fprimeAppConditionExpr  :: Maybe String
-  , fprimeAppInputFile    :: Maybe String
+  , fprimeAppInputFiles   :: [String]
   , fprimeAppTarget       :: String
   , fprimeAppTemplateDir  :: Maybe String
   , fprimeAppVariables    :: Maybe String
@@ -68,7 +68,7 @@ command c = Command.FPrimeApp.command options
     options =
       Command.FPrimeApp.CommandOptions
         { Command.FPrimeApp.commandConditionExpr = fprimeAppConditionExpr c
-        , Command.FPrimeApp.commandInputFile   = fprimeAppInputFile c
+        , Command.FPrimeApp.commandInputFiles  = fprimeAppInputFiles c
         , Command.FPrimeApp.commandTargetDir   = fprimeAppTarget c
         , Command.FPrimeApp.commandTemplateDir = fprimeAppTemplateDir c
         , Command.FPrimeApp.commandVariables   = fprimeAppVariables c
@@ -97,7 +97,7 @@ commandOptsParser = CommandOpts
             <> help strFPrimeAppConditionExprArgDesc
             )
         )
-  <*> optional
+  <*> many
         ( strOption
             (  long "input-file"
             <> metavar "FILENAME"
