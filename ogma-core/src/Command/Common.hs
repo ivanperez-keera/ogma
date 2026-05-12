@@ -22,6 +22,7 @@
 -- | Shared functions across multiple backends.
 module Command.Common
     ( InputFile(..)
+    , combineInputFiles
     , parseInputFile
     , parseVariablesFile
     , parseRequirementsListFile
@@ -73,6 +74,41 @@ import Paths_ogma_core     (getDataDir)
 -- diagram).
 data InputFile a = InputFileDiagram Diagram
                  | InputFileSpec    (Spec a)
+
+-- | Merge a list of input files into a smaller list of input files.
+--
+-- PRE: If there is more than one input file, all input files are specs.
+combineInputFiles :: [InputFile a] -> [InputFile a]
+combineInputFiles []  = []
+combineInputFiles [x] = [x]
+combineInputFiles xs
+    | any isInputDiagram xs
+    = []
+
+    | otherwise
+    = [ InputFileSpec $ foldr1 mergeSpecs $ map getSpec xs ]
+
+  where
+
+    -- True if the given argument is a diagram.
+    isInputDiagram :: InputFile a -> Bool
+    isInputDiagram (InputFileDiagram _) = True
+    isInputDiagram _                    = False
+
+    -- Merge two specifications.
+    mergeSpecs :: Spec a -> Spec a -> Spec a
+    mergeSpecs s1 s2 = Spec
+      { internalVariables = internalVariables s1 ++ internalVariables s2
+      , externalVariables = externalVariables s2 ++ externalVariables s2
+      , requirements      = requirements s1 ++ requirements s2
+      }
+
+    -- Unsafely unwrap the spec in an input file.
+    --
+    -- PRE: The argument input file contains a spec.
+    getSpec :: InputFile a -> Spec a
+    getSpec (InputFileSpec s) = s
+    getSpec _                 = error "The input file provided is not a spec"
 
 -- | Process input file, it contains a valid diagram or specification, and
 -- return its abstract representation.
