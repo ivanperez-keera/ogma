@@ -106,6 +106,7 @@ library
     Command.Diagram
     Command.FPrimeApp
     Command.Overview
+    Command.Report
     Command.Result
     Command.ROSApp
     Command.Standalone
