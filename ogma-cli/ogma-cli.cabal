@@ -85,6 +85,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >  ros                      Generate a ROS 2 monitoring application
                      >  standalone               Generate a Copilot file from an input specification
                      >  diagram                  Generate a monitor from a state machine diagram
+                     >  report                   Generate a report of the input specification(s).
                      .
                      For further information, see:
                      .
