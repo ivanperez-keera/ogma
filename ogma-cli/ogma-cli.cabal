@@ -131,6 +131,7 @@ executable ogma
     CLI.CommandDiagram
     CLI.CommandFPrimeApp
     CLI.CommandOverview
+    CLI.CommandReport
     CLI.CommandROSApp
     CLI.CommandStandalone
     CLI.CommandTop
