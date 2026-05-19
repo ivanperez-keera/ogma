@@ -73,6 +73,7 @@ data-files:          templates/cfs/Dockerfile
                      templates/fprime/Copilot.hpp
                      templates/fprime/Dockerfile
                      templates/fprime/instance-copilot
+                     templates/report/Report.md
                      templates/standalone/Copilot.hs
                      data/formats/fcs_smv
                      data/formats/fcs_lustre
@@ -105,6 +106,7 @@ library
     Command.Diagram
     Command.FPrimeApp
     Command.Overview
+    Command.Report
     Command.Result
     Command.ROSApp
     Command.Standalone

@@ -42,9 +42,12 @@ import Copilot.Language.Reify.Extra (reifySpec)
 
 -- | Result of analyzing a specification.
 data AnalysisResult = AnalysisResult
-  { numAlwaysTrue  :: Int  -- ^ Number of always true requirements.
-  , numAlwaysFalse :: Int  -- ^ Number of always false requirements.
-  , consistent     :: Bool -- ^ Whether requirements are mutually consistent.
+  { numAlwaysTrue  :: Int      -- ^ Number of always true requirements.
+  , numAlwaysFalse :: Int      -- ^ Number of always false requirements.
+  , alwaysTrueReq  :: [String] -- ^ List of always true requirements.
+  , alwaysFalseReq :: [String] -- ^ List of always false requirements.
+  , consistent     :: Bool     -- ^ Whether requirements are mutually
+                               -- consistent.
   }
 
 -- | Formally analyze a specification for redundancies, conflicts, etc.
@@ -66,8 +69,13 @@ specAnalyze typeMaps exprTransform showExpr spec = do
 
   constantProperties <- mapM (uncurry $ exprIsConstant coreSpec) properties
 
+  let constantProperties' = zip propertyNames constantProperties
+
   let numTrue  = length $ filter fst constantProperties
       numFalse = length $ filter snd constantProperties
+
+      trueReqs  = map fst $ filter (fst . snd) constantProperties'
+      falseReqs = map fst $ filter (snd . snd) constantProperties'
 
   let negatedConjunction = Core.Op1 Core.Not
                          $ foldr (Core.Op2 Core.And) true propertyGuards
@@ -80,7 +88,8 @@ specAnalyze typeMaps exprTransform showExpr spec = do
   -- prove that their conjunction is always false.
   let consistent = not $ fst provedNegatedConjunction
 
-  return $ Right $ AnalysisResult numTrue numFalse consistent
+  return $ Right $
+    AnalysisResult numTrue numFalse trueReqs falseReqs consistent
 
 -- * Auxiliary
 
