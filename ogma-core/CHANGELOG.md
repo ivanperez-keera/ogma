@@ -1,7 +1,8 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-05-18
+## [1.14.0] - 2026-05-21
 
+* Version bump (1.14.0) (#425).
 * Bump upper version constraints on Copilot packages (#377).
 * Lower upper version bound on `megaparsec` (#380).
 * Bump upper version constraint on Quickcheck (#382).
