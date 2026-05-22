@@ -16,21 +16,16 @@
 -- under the License.
 
 -- | Formally analyze specifications and provide information about them.
-module Language.Trans.SpecAnalysis
+module Data.Spec.Analysis
     ( AnalysisResult(..)
     , specAnalyze
     )
   where
 
 -- External imports
-import qualified Copilot.Core                 as Core
-import qualified Copilot.Language             as Copilot
-import qualified Copilot.Language.Reify       as Copilot
-import           Copilot.Theorem.What4        (SatResult (..), Solver (Z3),
-                                               prove)
-import           Data.List                    (intercalate, lookup)
-import           Data.Maybe                   (fromMaybe)
-import qualified Language.Haskell.Interpreter as HI
+import qualified Copilot.Core as Core
+import           Data.List    (intercalate, lookup)
+import           Data.Maybe   (fromMaybe)
 
 -- External imports: auxiliary
 import Data.String.Extra (sanitizeLCIdentifier, sanitizeUCIdentifier)
@@ -39,13 +34,20 @@ import Data.String.Extra (sanitizeLCIdentifier, sanitizeUCIdentifier)
 import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
                       Requirement (..), Spec (..))
 
+-- Internal imports
+import Copilot.Core.Analysis        (exprIsConstant)
+import Copilot.Language.Reify.Extra (reifySpec)
+
 -- * Analysis of Specs
 
 -- | Result of analyzing a specification.
 data AnalysisResult = AnalysisResult
-  { numAlwaysTrue  :: Int  -- ^ Number of always true requirements.
-  , numAlwaysFalse :: Int  -- ^ Number of always false requirements.
-  , consistent     :: Bool -- ^ Whether requirements are mutually consistent.
+  { numAlwaysTrue  :: Int      -- ^ Number of always true requirements.
+  , numAlwaysFalse :: Int      -- ^ Number of always false requirements.
+  , alwaysTrueReq  :: [String] -- ^ List of always true requirements.
+  , alwaysFalseReq :: [String] -- ^ List of always false requirements.
+  , consistent     :: Bool     -- ^ Whether requirements are mutually
+                               -- consistent.
   }
 
 -- | Formally analyze a specification for redundancies, conflicts, etc.
@@ -67,8 +69,13 @@ specAnalyze typeMaps exprTransform showExpr spec = do
 
   constantProperties <- mapM (uncurry $ exprIsConstant coreSpec) properties
 
+  let constantProperties' = zip propertyNames constantProperties
+
   let numTrue  = length $ filter fst constantProperties
       numFalse = length $ filter snd constantProperties
+
+      trueReqs  = map fst $ filter (fst . snd) constantProperties'
+      falseReqs = map fst $ filter (snd . snd) constantProperties'
 
   let negatedConjunction = Core.Op1 Core.Not
                          $ foldr (Core.Op2 Core.And) true propertyGuards
@@ -81,7 +88,8 @@ specAnalyze typeMaps exprTransform showExpr spec = do
   -- prove that their conjunction is always false.
   let consistent = not $ fst provedNegatedConjunction
 
-  return $ Right $ AnalysisResult numTrue numFalse consistent
+  return $ Right $
+    AnalysisResult numTrue numFalse trueReqs falseReqs consistent
 
 -- * Auxiliary
 
@@ -248,59 +256,6 @@ defaultSpecImports =
   , ("Copilot.Library.PTLTL", Just "PTLTL")
   , ("Prelude",               Just "P")
   ]
-
--- ** Typechecking of Copilot specs
-
--- | Read a specification from a 'String' and reify it.
---
--- This function receives a list of possibly qualified imports.
-reifySpec :: [(String, Maybe String)] -> String -> IO Core.Spec
-reifySpec imports specText = do
-  coreSpecE <- HI.runInterpreter $ do
-                 HI.setImportsQ imports
-                 copilotSpec <- HI.interpret specText (HI.as :: Copilot.Spec)
-                 HI.liftIO $ Copilot.reify copilotSpec
-
-  case coreSpecE of
-    Left err -> do putStrLn $ "Error: " ++ show err
-                   error $ show err
-
-    Right coreSpec -> return coreSpec
-
--- ** Analysis of Copilot specs
-
--- | Determine if a boolean expression is always 'True' or always 'False'.
---
--- The first boolean in the result is 'True' if the expression can be proven
--- always 'True'. The second boolean in the expression is 'True' is the
--- expression can be proven always 'False'.
---
--- They values in the tuple cannot both 'True' at the same time.
-exprIsConstant :: Core.Spec
-               -> Core.Name
-               -> Core.Expr Bool
-               -> IO (Bool, Bool)
-exprIsConstant spec name expr = do
-  r1 <- propIsValid spec name (Core.Forall expr)
-  r2 <- propIsValid spec name (Core.Forall (Core.Op1 Core.Not expr))
-  pure (r1, r2)
-
--- | 'True' if the Copilot 'Prop' with the given name and expression is
--- constantly 'True', or valid, and 'False' otherwise (not always 'True' or
--- unknown).
-propIsValid :: Core.Spec
-            -> Core.Name
-            -> Core.Prop
-            -> IO Bool
-propIsValid spec name expr =
-    maybe False isValid . lookup name <$> prove Z3 spec'
-  where
-    spec' = spec { Core.specProperties = prop' : Core.specProperties spec }
-    prop' = Core.Property name expr
-
-    isValid :: SatResult -> Bool
-    isValid Valid = True
-    isValid _     = False
 
 -- ** Auxiliary list functions
 

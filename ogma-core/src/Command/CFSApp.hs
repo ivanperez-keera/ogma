@@ -59,6 +59,10 @@ import Command.Errors     (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB (Connection (..), TopicDef (..), TypeDef (..),
                            VariableDB, findConnection, findInput, findTopic,
                            findType, findTypeByType)
+import Data.Aeson.Extra   (mergeObjects)
+import Data.ExprPair      (ExprPair(..), exprPair)
+import Data.Location      (Location (..))
+import Data.Spec.Parser   (readInputExpr)
 
 -- | Generate a new CFS application connected to Copilot.
 command :: CommandOptions
@@ -93,20 +97,24 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- openVarDBFilesWithDefault varDBFile
 
-    specT <- maybe (return Nothing) (\e -> Just <$> parseInputExpr' e) cExpr
-    specF <- maybe (return Nothing) (\f -> Just <$> parseInputFile' f) fp
+    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) cExpr
+    specF <- if null fpA
+                  then return Nothing
+                  else do
+                    fpA' <- mapM readInputFile' fpA
+                    let fpA'' = combineInputFiles fpA'
+                    if length fpA'' > 1
+                      then liftEither $ Left commandMultipleInputTypes
+                      else pure $ Just $ head fpA''
 
     let spec = specT <|> specF
 
     liftEither $ checkArguments spec vs rs
 
-    copilotM <- sequenceA $ (\spec' -> processSpec spec' fp cExpr) <$> spec
+    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA) <$> spec
 
-    let varNames = fromMaybe (specExtractExternalVariables spec) vs
-        monitors = maybe
-                     (specExtractHandlers spec)
-                     (map (\x -> (x, Nothing)))
-                     rs
+    let varNames = fromMaybe (defaultVarNames spec) vs
+        monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
 
     let appData   = commandLogic varDB varNames monitors' copilotM
         monitors' = mapMaybe (monitorMap varDB) monitors
@@ -116,7 +124,7 @@ command' options (ExprPair exprT) = do
   where
 
     cExpr          = commandConditionExpr options
-    fp             = commandInputFile options
+    fpA            = commandInputFiles options
     varNameFile    = commandVariables options
     varDBFile      = maybeToList $ commandVariableDB options
     handlersFile   = commandHandlers options
@@ -124,14 +132,25 @@ command' options (ExprPair exprT) = do
     propFormatName = commandPropFormat options
     propVia        = commandPropVia options
 
-    parseInputExpr' e =
-      parseInputExpr e propFormatName propVia exprT
+    readInputExpr' e =
+      readInputExpr e propFormatName propVia exprT
 
-    parseInputFile' f =
+    readInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
     processSpec spec' expr' fp' =
       Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
+
+    defaultVarNames spec = case spec of
+      Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
+      Just (InputFileDiagram _)  -> []
+      Nothing                    -> specExtractExternalVariables Nothing
+
+
+    defaultMonitors spec = case spec of
+      Just (InputFileSpec spec') -> specExtractHandlers (Just spec')
+      Just (InputFileDiagram _)  -> [ ("handler", Just "uint8_t" ) ]
+      Nothing                    -> specExtractHandlers Nothing
 
 -- | Generate a variable substitution map for a cFS application.
 commandLogic :: VariableDB
@@ -158,7 +177,7 @@ commandLogic varDB varNames handlers copilotM =
 -- applications.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String   -- ^ Trigger condition.
-  , commandInputFile   :: Maybe FilePath -- ^ Input specification file.
+  , commandInputFiles  :: [FilePath]     -- ^ Input specification files.
   , commandTargetDir   :: FilePath       -- ^ Target directory where the
                                          -- application should be created.
   , commandTemplateDir :: Maybe FilePath -- ^ Directory where the template is
@@ -280,3 +299,15 @@ data AppData = AppData
 
 instance ToJSON AppData
 
+-- | Error message associated to having multiple input files of incompatible
+-- types.
+commandMultipleInputTypes :: ErrorTriplet
+commandMultipleInputTypes =
+    ErrorTriplet ecMultipleInputTypes msg LocationNothing
+  where
+    msg =
+      "Too many inputs provided. Provide one diagram or multiple specs."
+
+-- | Error: multiple inputs of incompatible types.
+ecMultipleInputTypes :: ErrorCode
+ecMultipleInputTypes = 1

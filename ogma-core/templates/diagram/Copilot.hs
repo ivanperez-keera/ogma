@@ -24,7 +24,7 @@ input = extern "{{{input}}}" Nothing
 -- violated.
 spec :: Spec
 spec = do
-  trigger "handler" stateMachineProp {{{handlerInputs}}}
+{{{triggers}}}
 
 main :: IO ()
 main = reify spec >>= compile "{{{specName}}}"

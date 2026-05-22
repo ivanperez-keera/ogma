@@ -31,20 +31,23 @@ module Command.Overview
 -- External imports
 import Control.Monad.Except (runExceptT)
 import Data.Aeson           (ToJSON (..))
-import Data.List            (nub, (\\))
 import GHC.Generics         (Generic)
 
 -- External imports: Ogma
-import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
-                      Requirement (..), Spec (..))
+import Data.OgmaSpec (Spec (..))
 
 -- Internal imports
-import           Command.Common
+import           Command.Common              (InputFile(..), parseInputFile)
 import           Command.Errors              (ErrorCode, ErrorTriplet (..))
 import           Command.Result              (Result (..))
+import           Data.Diagram.Analysis       (AnalysisResult (..),
+                                              analyzeDiagram)
+import           Data.ExprPair               (ExprPair(..), ExprPairT(..),
+                                              exprPair)
 import           Data.Location               (Location (..))
+import qualified Data.Spec.Analysis          as SpecAnalysis
+import           Data.Spec.Extra             (addMissingIdentifiers)
 import qualified Language.Trans.Spec2Copilot as Spec2Copilot
-import qualified Language.Trans.SpecAnalysis as SpecAnalysis
 
 -- | Generate overview of a spec given in an input file.
 --
@@ -77,11 +80,19 @@ command' :: FilePath
           -> ExprPair
           -> IO (Either String CommandSummary)
 command' fp options (ExprPair exprT) = do
-    spec <- runExceptT $ parseInputFile' fp
-    case spec of
-      Left (ErrorTriplet _ec msg _loc) -> return $ Left msg
+    res <- runExceptT $
+             parseInputFile fp formatName propFormatName propVia exprT
+    case res of
+      Left (ErrorTriplet _ s _) -> return $ Left s
 
-      Right spec' -> do
+      Right (InputFileDiagram diagramR) -> do
+        analysisResult <- analyzeDiagram diagramR
+        pure $ Right $
+          CommandSummaryDiagram
+            (numStates analysisResult)
+            (deterministic analysisResult)
+
+      Right (InputFileSpec spec') -> do
         let specCompleted = addMissingIdentifiers ids spec'
             specAnalyzed  = Spec2Copilot.specAnalyze specCompleted
 
@@ -97,26 +108,30 @@ command' fp options (ExprPair exprT) = do
           consistent  <- SpecAnalysis.consistent     <$> specFormalAnalysis
 
           pure $
-            CommandSummary
+            CommandSummaryRequirement
               numExterns numInternal numReqs numTrues numFalses consistent
 
   where
 
-    parseInputFile' f = parseInputFile f formatName propFormatName propVia exprT
-    formatName        = commandFormat options
-    propFormatName    = commandPropFormat options
-    propVia           = commandPropVia options
+    formatName     = commandFormat options
+    propFormatName = commandPropFormat options
+    propVia        = commandPropVia options
 
     ExprPairT _parse replace printExpr ids _def = exprT
 
-data CommandSummary = CommandSummary
-  { commandExternalVariables      :: Int
-  , commandInternalVariables      :: Int
-  , commandRequirements           :: Int
-  , commandRequirementsTrue       :: Int
-  , commandRequirementsFalse      :: Int
-  , commandRequirementsConsistent :: Bool
-  }
+data CommandSummary
+    = CommandSummaryRequirement
+        { commandExternalVariables      :: Int
+        , commandInternalVariables      :: Int
+        , commandRequirements           :: Int
+        , commandRequirementsTrue       :: Int
+        , commandRequirementsFalse      :: Int
+        , commandRequirementsConsistent :: Bool
+        }
+    | CommandSummaryDiagram
+        { commandNumStates     :: Int
+        , commandDeterministic :: Bool
+        }
   deriving (Generic, Show)
 
 instance ToJSON CommandSummary
@@ -145,21 +160,3 @@ commandResult :: CommandOptions
 commandResult _options fp result = case result of
   Left msg -> (Nothing, Error ecOverviewError msg (LocationFile fp))
   Right t  -> (Just t,  Success)
-
--- | Add to a spec external variables for all identifiers mentioned in
--- expressions that are not defined anywhere.
-addMissingIdentifiers :: (a -> [String]) -> Spec a -> Spec a
-addMissingIdentifiers f s = s { externalVariables = vars' }
-  where
-    vars'   = externalVariables s ++ newVars
-    newVars = map (\n -> ExternalVariableDef n "") newVarNames
-
-    -- Names that are not defined anywhere
-    newVarNames = identifiers \\ existingNames
-
-    -- Identifiers being mentioned in the requirements.
-    identifiers = nub $ concatMap (f . requirementExpr) (requirements s)
-
-    -- Names that are defined in variables.
-    existingNames = map externalVariableName (externalVariables s)
-                 ++ map internalVariableName (internalVariables s)

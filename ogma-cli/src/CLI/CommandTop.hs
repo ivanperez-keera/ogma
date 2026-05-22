@@ -79,6 +79,7 @@ import qualified CLI.CommandCStructs2MsgHandlers
 import qualified CLI.CommandDiagram
 import qualified CLI.CommandFPrimeApp
 import qualified CLI.CommandOverview
+import qualified CLI.CommandReport
 import qualified CLI.CommandROSApp
 import qualified CLI.CommandStandalone
 
@@ -98,6 +99,7 @@ data CommandOpts =
   | CommandOptsOverview                  CLI.CommandOverview.CommandOpts
   | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
   | CommandOptsStandalone                CLI.CommandStandalone.CommandOpts
+  | CommandOptsReport                    CLI.CommandReport.CommandOpts
 
 -- * CLI
 
@@ -117,6 +119,7 @@ commandOptsParser = subparser
   <> subcommandROSApp
   <> subcommandStandalone
   <> subcommandDiagram
+  <> subcommandReport
   )
 
 -- | Modifier for the overview subcommand, linking the subcommand options and
@@ -194,6 +197,15 @@ subcommandDiagram =
     (CommandOptsDiagram <$> CLI.CommandDiagram.commandOptsParser)
     CLI.CommandDiagram.commandDesc
 
+-- | Modifier for the report subcommand, linking the subcommand options and
+-- description to the command @report@ at top level.
+subcommandReport :: Mod CommandFields CommandOpts
+subcommandReport =
+  subcommand
+    "report"
+    (CommandOptsReport <$> CLI.CommandReport.commandOptsParser)
+    CLI.CommandReport.commandDesc
+
 -- * Command dispatcher
 
 -- | Command dispatcher that obtains the parameters from the command line and
@@ -232,6 +244,8 @@ command (CommandOptsStandalone c) =
   id <$> CLI.CommandStandalone.command c
 command (CommandOptsDiagram c) =
   id <$> CLI.CommandDiagram.command c
+command (CommandOptsReport c) =
+  id <$> CLI.CommandReport.command c
 
 -- We indicate to HLint that the use of (id <$>) above should not trigger a
 -- warning. Conceptually, there is a transformation taking place, but no change

@@ -45,7 +45,7 @@ import qualified Command.ROSApp
 -- | Options needed to generate the ROS application.
 data CommandOpts = CommandOpts
   { rosAppConditionExpr  :: Maybe String
-  , rosAppInputFile    :: Maybe String
+  , rosAppInputFiles   :: [String]
   , rosAppTarget       :: String
   , rosAppTemplateDir  :: Maybe String
   , rosAppVarNames     :: Maybe String
@@ -69,7 +69,7 @@ command c = Command.ROSApp.command options
   where
     options = Command.ROSApp.CommandOptions
                 { Command.ROSApp.commandConditionExpr = rosAppConditionExpr c
-                , Command.ROSApp.commandInputFile   = rosAppInputFile c
+                , Command.ROSApp.commandInputFiles  = rosAppInputFiles c
                 , Command.ROSApp.commandTargetDir   = rosAppTarget c
                 , Command.ROSApp.commandTemplateDir = rosAppTemplateDir c
                 , Command.ROSApp.commandVariables   = rosAppVarNames c
@@ -107,7 +107,7 @@ commandOptsParser = CommandOpts
             <> help strROSAppConditionExprArgDesc
             )
         )
-  <*> optional
+  <*> many
         ( strOption
             (  long "input-file"
             <> metavar "FILENAME"

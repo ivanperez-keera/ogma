@@ -1,5 +1,10 @@
 # Revision history for ogma-language-lustre
 
+## [1.14.0] - 2026-05-21
+
+* Version bump (1.14.0) (#425).
+* Bump upper version constraint on Quickcheck (#382).
+
 ## [1.13.0] - 2026-03-21
 
 * Version bump (1.13.0) (#373).

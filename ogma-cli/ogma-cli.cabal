@@ -19,7 +19,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-cli
-version:             1.13.0
+version:             1.14.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             Apache-2.0
@@ -85,6 +85,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >  ros                      Generate a ROS 2 monitoring application
                      >  standalone               Generate a Copilot file from an input specification
                      >  diagram                  Generate a monitor from a state machine diagram
+                     >  report                   Generate a report of the input specification(s).
                      .
                      For further information, see:
                      .
@@ -131,6 +132,7 @@ executable ogma
     CLI.CommandDiagram
     CLI.CommandFPrimeApp
     CLI.CommandOverview
+    CLI.CommandReport
     CLI.CommandROSApp
     CLI.CommandStandalone
     CLI.CommandTop
@@ -143,7 +145,7 @@ executable ogma
     , microstache          >= 1.0      && < 1.1
     , text                 >= 1.2.3.1  && < 2.2
 
-    , ogma-core            >= 1.13.0 && < 1.14
+    , ogma-core            >= 1.14.0 && < 1.15
 
   hs-source-dirs:
     src

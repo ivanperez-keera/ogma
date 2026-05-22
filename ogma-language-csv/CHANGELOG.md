@@ -1,5 +1,9 @@
 # Revision history for ogma-language-csv
 
+## [1.14.0] - 2026-05-21
+
+* Version bump (1.14.0) (#425).
+
 ## [1.13.0] - 2026-03-21
 
 * Version bump (1.13.0) (#373).
