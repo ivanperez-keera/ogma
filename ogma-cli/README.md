@@ -823,7 +823,7 @@ that the state machine is in.
 
 - `safeguard`: Check whether transitioning to a given state would be safe. Under
   this mode, the monitor always fires, and it provides as arguments booleans
-indicating whether transitioning to each state would be allowed or note.  For
+indicating whether transitioning to each state would be allowed or not.  For
 example, for the diagram above, the arguments passed to the external handler
 would be three booleans, indicating, respectively, if transitioning to state 0
 would be legal, if transitioning to state 1 would be legal, and if
