@@ -125,7 +125,6 @@ readInputFile fp formatName propFormatName propVia exprT =
                    content <- readFile fp
                    parseXMLSpec
                      (wrapper) (def) xmlFormat content
-                     -- (fmap (fmap print) . wrapper) (print def) xmlFormat content
              | isPrefixOf "CSVFormat" format
              -> do let csvFormat = read format
                    content <- readFile fp
