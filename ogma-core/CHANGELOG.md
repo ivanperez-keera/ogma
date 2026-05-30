@@ -1,5 +1,9 @@
 # Revision history for ogma-core
 
+## [1.X.Y] - 2026-05-30
+
+* Remove commented code from `Data.Spec.Parser` (#430).
+
 ## [1.14.0] - 2026-05-21
 
 * Version bump (1.14.0) (#425).
