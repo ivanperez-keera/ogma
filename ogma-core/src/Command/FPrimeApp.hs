@@ -224,10 +224,10 @@ instance ToJSON Monitor
 
 -- | Data that may be relevant to generate a ROS application.
 data AppData = AppData
-  { variables :: [VarDecl]
-  , monitors  :: [Monitor]
-  , copilot   :: Maybe Command.Standalone.AppData
-  }
+    { variables :: [VarDecl]
+    , monitors  :: [Monitor]
+    , copilot   :: Maybe Command.Standalone.AppData
+    }
   deriving (Generic)
 
 instance ToJSON AppData
