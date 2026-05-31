@@ -44,7 +44,7 @@ jobs:
 
     - name: Install ogma
       run: |
-        cabal v1-install copilot-4.6 ogma-**/ --constraint="aeson >= 2.0.3.0"
+        cabal v1-install copilot-4.7.1 ogma-**/ --constraint="aeson >= 2.0.3.0"
 
     - name: Generate and enable app from diagram
       run: |

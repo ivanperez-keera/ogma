@@ -44,7 +44,7 @@ jobs:
 
     - name: Install ogma
       run: |
-        cabal v1-install ogma-**/ copilot --constraint="aeson >= 2.0.3.0" --constraint="copilot>=4.6.1"
+        cabal v1-install ogma-**/ copilot --constraint="aeson >= 2.0.3.0" --constraint="copilot>=4.7.1"
 
     - name: Generate Copilot module
       run: |
