@@ -1,8 +1,9 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-05-30
+## [1.X.Y] - 2026-05-31
 
 * Remove commented code from `Data.Spec.Parser` (#430).
+* Remove redundant `where` block (#432).
 
 ## [1.14.0] - 2026-05-21
 
