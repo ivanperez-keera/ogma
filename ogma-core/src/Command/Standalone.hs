@@ -195,7 +195,7 @@ data CommandOptions = CommandOptions
                                          -- template.
   }
 
--- * Mapping of types from input format to Copilot
+-- | Mapping of types from input format to Copilot.
 typeToCopilotTypeMapping :: [(String, String)] -> [(String, String)]
 typeToCopilotTypeMapping types =
     [ ("bool",    "Bool")
