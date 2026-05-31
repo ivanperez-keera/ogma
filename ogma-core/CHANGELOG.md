@@ -4,6 +4,7 @@
 
 * Remove commented code from `Data.Spec.Parser` (#430).
 * Remove redundant `where` block (#432).
+* Fix incorrect Haddock comment syntax (#434).
 
 ## [1.14.0] - 2026-05-21
 
