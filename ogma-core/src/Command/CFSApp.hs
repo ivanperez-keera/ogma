@@ -208,27 +208,25 @@ variableMap :: VariableDB
             -> String
             -> Maybe (VarDecl, MsgInfoId, MsgInfo, MsgData)
 variableMap varDB varName = do
-    inputDef  <- findInput varDB varName
-    mid       <- connectionTopic <$> findConnection inputDef "cfs"
-    topicDef  <- findTopic varDB "cfs" mid
+  inputDef  <- findInput varDB varName
+  mid       <- connectionTopic <$> findConnection inputDef "cfs"
+  topicDef  <- findTopic varDB "cfs" mid
 
-    let typeDef = findType varDB varName "cfs" "C"
+  let typeDef = findType varDB varName "cfs" "C"
 
-    let typeMsgFromType  = typeFromType <$> typeDef
-        typeMsgFromField = typeFromField =<< typeDef
+  let typeMsgFromType  = typeFromType <$> typeDef
+      typeMsgFromField = typeFromField =<< typeDef
 
-    let typeVar' = fromMaybe (topicType topicDef) (typeToType <$> typeDef)
+  let typeVar' = fromMaybe (topicType topicDef) (typeToType <$> typeDef)
 
-    -- Pick name for the function to process a message ID.
-    let mn = pascalCase $ stripSuffix "_MID" mid
+  -- Pick name for the function to process a message ID.
+  let mn = pascalCase $ stripSuffix "_MID" mid
 
-    return ( VarDecl varName typeVar'
-           , mid
-           , MsgInfo mid mn
-           , MsgData mn typeMsgFromType typeMsgFromField varName typeVar'
-           )
-
-  where
+  return ( VarDecl varName typeVar'
+         , mid
+         , MsgInfo mid mn
+         , MsgData mn typeMsgFromType typeMsgFromField varName typeVar'
+         )
 
 -- | Return the monitor information needed to generate declarations and
 -- publishers for the given monitor info, and variable database.
