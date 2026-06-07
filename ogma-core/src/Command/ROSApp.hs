@@ -261,12 +261,12 @@ instance ToJSON Node
 
 -- | Data that may be relevant to generate a ROS application.
 data AppData = AppData
-  { variables        :: [VarDecl]
-  , monitors         :: [Monitor]
-  , copilot          :: Maybe Command.Standalone.AppData
-  , testingApps      :: [Node]
-  , testingVariables :: [VarDecl]
-  }
+    { variables        :: [VarDecl]
+    , monitors         :: [Monitor]
+    , copilot          :: Maybe Command.Standalone.AppData
+    , testingApps      :: [Node]
+    , testingVariables :: [VarDecl]
+    }
   deriving (Generic)
 
 instance ToJSON AppData
