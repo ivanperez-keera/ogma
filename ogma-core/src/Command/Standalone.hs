@@ -147,27 +147,29 @@ commandLogic expr fps name typeMaps exprT (InputFileDiagram d) =
   where
     (int, trigs) = diagram2CopilotSpec d ComputeState
 
-commandLogic expr fps name typeMaps exprT (InputFileSpec input) = do
-    let spec = addMissingIdentifiers ids input
-    -- Analyze the spec for incorrect identifiers and convert it to Copilot.
-    -- If there is an error, we change the error to a message we control.
-    let appData = mapLeft commandIncorrectSpec' $ do
-          spec' <- specAnalyze spec
-          res   <- spec2Copilot name typeMaps replace print spec'
-
-          -- Pack the results
-          let (ext, int, reqs, trigs, specN) = res
-
-          return $ AppData ext int reqs trigs specN
+commandLogic expr fps name typeMaps exprT (InputFileSpec input) =
 
     liftEither appData
 
   where
 
+    -- Analyze the spec for incorrect identifiers and convert it to Copilot.
+    -- If there is an error, we change the error to a message we control.
+    appData = mapLeft commandIncorrectSpec' $ do
+      spec' <- specAnalyze spec
+      res   <- spec2Copilot name typeMaps replace print spec'
+
+      -- Pack the results
+      let (ext, int, reqs, trigs, specN) = res
+
+      return $ AppData ext int reqs trigs specN
+
     commandIncorrectSpec' = case (expr, fps) of
       (Nothing,    [])   -> error "Both expression and file are missing"
       (Nothing,    fps') -> commandIncorrectSpecF
       (Just expr', _)    -> commandIncorrectSpecE expr'
+
+    spec = addMissingIdentifiers ids input
 
     ExprPairT parse replace print ids def = exprT
 

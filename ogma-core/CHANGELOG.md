@@ -7,6 +7,7 @@
 * Fix incorrect Haddock comment syntax (#434).
 * Remove redundant occurrences of `MultiWayIf` pragma (#440).
 * Fix indentation of record fields in multiple backends (#442).
+* Move expressions from `let` block into `where` clause (#444).
 
 ## [1.14.0] - 2026-05-21
 
