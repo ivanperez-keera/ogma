@@ -1,13 +1,14 @@
 import           Copilot.Compile.C99
-import           Copilot.Language          hiding (prop)
+import           Copilot.Language              hiding (prop)
 import           Copilot.Language.Prelude
-import           Copilot.Library.LTL       (next)
-import           Copilot.Library.MTL       hiding (since, alwaysBeen, trigger)
-import           Copilot.Library.PTLTL     (since, previous, alwaysBeen)
-import qualified Copilot.Library.PTLTL     as PTLTL
-import qualified Copilot.Library.MTL       as MTL
-import           Language.Copilot          (reify)
-import           Prelude                   hiding ((&&), (||), (++), (<=), (>=), (<), (>), (==), (/=), not)
+import           Copilot.Library.LTL           (next)
+import           Copilot.Library.MTL           hiding (since, alwaysBeen, trigger)
+import           Copilot.Library.PTLTL         (since, previous, alwaysBeen)
+import qualified Copilot.Library.PTLTL         as PTLTL
+import qualified Copilot.Library.MTL           as MTL
+import           Copilot.Library.StateMachines (stateMachine)
+import           Language.Copilot              (reify)
+import           Prelude                       hiding ((&&), (||), (++), (<=), (>=), (<), (>), (==), (/=), not)
 
 {{#copilot_extra_defs}}
 {{{.}}}
@@ -32,31 +33,6 @@ tpre = ([True] ++)
 
 notPreviousNot :: Stream Bool -> Stream Bool
 notPreviousNot = not . PTLTL.previous . not
-
--- Initial state, final state, no transition signal, transitions, bad state
-type StateMachineGF a = (a, a, Stream Bool, [(a, Stream Bool, a)], a)
-
-stateMachineGF :: (Eq a, Typed a)
-               => StateMachineGF a
-               -> Stream a
-stateMachineGF (initial, final, noInputData, transitions, bad) =
-    state
-  where
-    state         = ifThenElses transitions
-    previousState = [initial] ++ state
-
-    -- ifThenElses :: [(a, Stream Bool, a)] -> Stream a
-    ifThenElses [] =
-      ifThenElse
-        (previousState == constant final && noInputData)
-        (constant final)
-        (constant bad)
-
-    ifThenElses ((s1, i, s2):ss) =
-      ifThenElse
-        (previousState == constant s1 && i)
-        (constant s2)
-        (ifThenElses ss)
 
 -- | Complete specification. Calls C handler functions when properties are
 -- violated.
