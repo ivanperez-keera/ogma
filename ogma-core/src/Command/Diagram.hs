@@ -33,6 +33,7 @@ module Command.Diagram
 import Control.Exception    as E
 import Control.Monad.Except (runExceptT)
 import Data.Aeson           (object, (.=))
+import Data.Char            (toLower)
 import Data.Foldable        (for_)
 import Data.Text.Lazy       (pack)
 import System.FilePath      ((</>))
@@ -40,28 +41,17 @@ import System.FilePath      ((</>))
 -- External imports: auxiliary
 import System.Directory.Extra ( copyTemplate )
 
--- External imports: parsing expressions.
-import qualified Language.Lustre.AbsLustre as Lustre
-import qualified Language.Lustre.ParLustre as Lustre (myLexer, pBoolSpec)
-import qualified Language.SMV.AbsSMV       as SMV
-import qualified Language.SMV.ParSMV       as SMV (myLexer, pBoolSpec)
-
 -- Internal imports: auxiliary
-import Command.Errors      (ErrorTriplet (..))
-import Command.Result      (Result (..))
-import Data.Diagram.Parser (DiagramFormat (..), readDiagram)
-import Data.ExprPair       (ExprPair (..), ExprPairT (..))
-import Data.Location       (Location (..))
-import Paths_ogma_core     (getDataDir)
+import           Command.Errors      (ErrorTriplet (..))
+import           Command.Result      (Result (..))
+import           Data.Diagram.Parser (DiagramFormat (..), readDiagram)
+import           Data.ExprPair       (ExprPair (..), ExprPairT (..))
+import qualified Data.ExprPair
+import           Data.Location       (Location (..))
+import           Paths_ogma_core     (getDataDir)
 
 -- Internal imports: language ASTs, transformers
-import           Language.SMV.Substitution      (substituteBoolExpr)
-import           Language.Trans.Diagram2Copilot (DiagramMode (..),
-                                                 diagram2CopilotSpec)
-import qualified Language.Trans.Lustre2Copilot  as Lustre (boolSpec2Copilot,
-                                                           boolSpecNames)
-import           Language.Trans.SMV2Copilot     as SMV (boolSpec2Copilot,
-                                                        boolSpecNames)
+import Language.Trans.Diagram2Copilot (DiagramMode (..), diagram2CopilotSpec)
 
 -- | Generate a new Copilot monitor that implements a state machine described
 -- in a diagram given as an input file.
@@ -194,13 +184,6 @@ diagramTemplateError fp exception =
 -- | Return a handler depending on the format used for edge or transition
 -- properties.
 exprPair :: DiagramPropFormat -> ExprPair
-exprPair Lustre = ExprPair $
-  ExprPairT
-    (Lustre.pBoolSpec . Lustre.myLexer)
-    (\_ -> id)
-    Lustre.boolSpec2Copilot
-    Lustre.boolSpecNames
-    (Lustre.BoolSpecSignal (Lustre.Ident "undefined"))
 exprPair Inputs = ExprPair $
   ExprPairT
     ((Right . read) :: String -> Either String Int)
@@ -208,19 +191,8 @@ exprPair Inputs = ExprPair $
     (\x -> "input == " ++ show x)
     (const [])
     (-1)
-exprPair Literal = ExprPair $
-  ExprPairT
-    Right
-    (\_ -> id)
-    id
-    (const [])
-    "undefined"
-exprPair SMV = ExprPair $
-  ExprPairT
-    (SMV.pBoolSpec . SMV.myLexer)
-    substituteBoolExpr
-    SMV.boolSpec2Copilot
-    SMV.boolSpecNames
-    (SMV.BoolSpecSignal (SMV.Ident "undefined"))
+exprPair f = Data.ExprPair.exprPair (formatName f)
+  where
+    formatName = map toLower . show
 
 -- * Backend
