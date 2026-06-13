@@ -194,5 +194,3 @@ exprPair Inputs = ExprPair $
 exprPair f = Data.ExprPair.exprPair (formatName f)
   where
     formatName = map toLower . show
-
--- * Backend
