@@ -1,5 +1,9 @@
 # Revision history for ogma-language-xmlspec
 
+## [1.X.Y] - 2026-06-14
+
+* Remove redundant `where` block (#452).
+
 ## [1.14.0] - 2026-05-21
 
 * Version bump (1.14.0) (#425).
