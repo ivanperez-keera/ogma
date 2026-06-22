@@ -30,6 +30,9 @@ module CLI.CommandFPrimeApp
   where
 
 -- External imports
+import Control.Applicative ( (<|>) )
+import Data.Functor        ( (<&>) )
+import Data.Maybe          ( fromMaybe )
 import Options.Applicative ( Parser, help, long, many, metavar, optional,
                              short, showDefault, strOption, value )
 
@@ -39,12 +42,16 @@ import Command.Result ( Result )
 -- External imports: actions or commands supported
 import           Command.FPrimeApp (ErrorCode)
 import qualified Command.FPrimeApp
+import           Command.Result    (Result (..))
+import           Data.Location     (Location (LocationFile))
+import           Data.Project      (Project (..), readProject)
 
 -- * Command
 
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
-  { fprimeAppConditionExpr :: Maybe String
+  { fprimeAppProject       :: Maybe String
+  , fprimeAppConditionExpr :: Maybe String
   , fprimeAppInputFiles    :: [String]
   , fprimeAppTarget        :: String
   , fprimeAppTemplateDir   :: Maybe String
@@ -63,7 +70,15 @@ data CommandOpts = CommandOpts
 --
 -- This is just a wrapper around "Command.fprimeApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c = Command.FPrimeApp.command options
+command c
+    | Just p <- fprimeAppProject c
+    = do optE <- commandProjectOptions p c
+         case optE of
+           Left msg  -> return $ Error cannotReadProject msg (LocationFile p)
+           Right opt -> Command.FPrimeApp.command opt
+
+    | otherwise
+    = Command.FPrimeApp.command options
   where
     options =
       Command.FPrimeApp.CommandOptions
@@ -80,6 +95,52 @@ command c = Command.FPrimeApp.command options
         , Command.FPrimeApp.commandExtraVars     = fprimeAppTemplateVars c
         }
 
+-- | Produce default command options based on project settings.
+commandProjectOptions :: FilePath
+                      -> CommandOpts
+                      -> IO (Either String Command.FPrimeApp.CommandOptions)
+commandProjectOptions projectFile c = do
+  projectE <- readProject projectFile
+  return $ projectE <&> \project ->
+    Command.FPrimeApp.CommandOptions
+      { Command.FPrimeApp.commandConditionExpr = fprimeAppConditionExpr c
+
+      , Command.FPrimeApp.commandInputFiles = concat
+          [ map (\(f, _, _) -> f) $ projectInputFiles project
+          , fprimeAppInputFiles c
+          ]
+
+      , Command.FPrimeApp.commandTargetDir =
+          fromMaybe (fprimeAppTarget c) (projectTargetDir project)
+
+      , Command.FPrimeApp.commandTemplateDir =
+          maybe (fprimeAppTemplateDir c) Just (projectTemplateDir project)
+
+      , Command.FPrimeApp.commandVariables =
+          projectVariableFiles project <|> fprimeAppVariables c
+
+      , Command.FPrimeApp.commandVariableDB =
+          projectVariableDBFile project <|> fprimeAppVarDB c
+
+      , Command.FPrimeApp.commandHandlers =
+          projectHandlerFile project <|> fprimeAppHandlers c
+
+      , Command.FPrimeApp.commandFormat = case projectInputFiles project of
+          []            -> fprimeAppFormat c
+          ((_, f, _):_) -> f
+
+      , Command.FPrimeApp.commandPropFormat = case projectInputFiles project of
+          []            -> fprimeAppPropFormat c
+          ((_, _, f):_) -> f
+
+      , Command.FPrimeApp.commandPropVia =
+          projectCommandPropVia project <|> fprimeAppPropVia c
+
+      , Command.FPrimeApp.commandExtraVars =
+          projectExtraJSONFile project <|> fprimeAppTemplateVars c
+
+      }
+
 -- * CLI
 
 -- | FPrime command description
@@ -91,6 +152,13 @@ commandDesc = "Generate a complete F' monitoring component"
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> optional
+        ( strOption
+            (  long "project"
+            <> metavar "FILENAME"
+            <> help strFPrimeAppProjectArgDesc
+            )
+        )
+  <*> optional
         ( strOption
             (  long "condition-expr"
             <> metavar "EXPRESSION"
@@ -170,6 +238,10 @@ commandOptsParser = CommandOpts
             )
         )
 
+-- | Argument project to FPrime app generation command.
+strFPrimeAppProjectArgDesc :: String
+strFPrimeAppProjectArgDesc = "Project file"
+
 -- | Argument target directory to FPrime component generation command
 strFPrimeAppDirArgDesc :: String
 strFPrimeAppDirArgDesc = "Target directory"
@@ -220,3 +292,7 @@ strFPrimeAppPropViaDesc =
 strFPrimeAppTemplateVarsArgDesc :: String
 strFPrimeAppTemplateVarsArgDesc =
   "JSON file containing additional variables to expand in template"
+
+-- | Error code for when a project cannot be read.
+cannotReadProject :: ErrorCode
+cannotReadProject = 1
