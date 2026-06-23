@@ -45,16 +45,16 @@ import qualified Command.FPrimeApp
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
   { fprimeAppConditionExpr :: Maybe String
-  , fprimeAppInputFiles   :: [String]
-  , fprimeAppTarget       :: String
-  , fprimeAppTemplateDir  :: Maybe String
-  , fprimeAppVariables    :: Maybe String
-  , fprimeAppVarDB        :: Maybe String
-  , fprimeAppHandlers     :: Maybe String
-  , fprimeAppFormat       :: String
-  , fprimeAppPropFormat   :: String
-  , fprimeAppPropVia      :: Maybe String
-  , fprimeAppTemplateVars :: Maybe String
+  , fprimeAppInputFiles    :: [String]
+  , fprimeAppTarget        :: String
+  , fprimeAppTemplateDir   :: Maybe String
+  , fprimeAppVariables     :: Maybe String
+  , fprimeAppVarDB         :: Maybe String
+  , fprimeAppHandlers      :: Maybe String
+  , fprimeAppFormat        :: String
+  , fprimeAppPropFormat    :: String
+  , fprimeAppPropVia       :: Maybe String
+  , fprimeAppTemplateVars  :: Maybe String
   }
 
 -- | Create <https://github.com/nasa/fprime FPrime> component that subscribe
@@ -68,16 +68,16 @@ command c = Command.FPrimeApp.command options
     options =
       Command.FPrimeApp.CommandOptions
         { Command.FPrimeApp.commandConditionExpr = fprimeAppConditionExpr c
-        , Command.FPrimeApp.commandInputFiles  = fprimeAppInputFiles c
-        , Command.FPrimeApp.commandTargetDir   = fprimeAppTarget c
-        , Command.FPrimeApp.commandTemplateDir = fprimeAppTemplateDir c
-        , Command.FPrimeApp.commandVariables   = fprimeAppVariables c
-        , Command.FPrimeApp.commandVariableDB  = fprimeAppVarDB c
-        , Command.FPrimeApp.commandHandlers    = fprimeAppHandlers c
-        , Command.FPrimeApp.commandFormat      = fprimeAppFormat c
-        , Command.FPrimeApp.commandPropFormat  = fprimeAppPropFormat c
-        , Command.FPrimeApp.commandPropVia     = fprimeAppPropVia c
-        , Command.FPrimeApp.commandExtraVars   = fprimeAppTemplateVars c
+        , Command.FPrimeApp.commandInputFiles    = fprimeAppInputFiles c
+        , Command.FPrimeApp.commandTargetDir     = fprimeAppTarget c
+        , Command.FPrimeApp.commandTemplateDir   = fprimeAppTemplateDir c
+        , Command.FPrimeApp.commandVariables     = fprimeAppVariables c
+        , Command.FPrimeApp.commandVariableDB    = fprimeAppVarDB c
+        , Command.FPrimeApp.commandHandlers      = fprimeAppHandlers c
+        , Command.FPrimeApp.commandFormat        = fprimeAppFormat c
+        , Command.FPrimeApp.commandPropFormat    = fprimeAppPropFormat c
+        , Command.FPrimeApp.commandPropVia       = fprimeAppPropVia c
+        , Command.FPrimeApp.commandExtraVars     = fprimeAppTemplateVars c
         }
 
 -- * CLI
