@@ -45,16 +45,16 @@ import qualified Command.CFSApp
 -- | Options needed to generate the cFS application.
 data CommandOpts = CommandOpts
   { cFSAppConditionExpr :: Maybe String
-  , cFSAppInputFiles   :: [String]
-  , cFSAppTarget       :: String
-  , cFSAppTemplateDir  :: Maybe String
-  , cFSAppVarNames     :: Maybe String
-  , cFSAppVarDB        :: Maybe String
-  , cFSAppHandlers     :: Maybe String
-  , cFSAppFormat       :: String
-  , cFSAppPropFormat   :: String
-  , cFSAppPropVia      :: Maybe String
-  , cFSAppTemplateVars :: Maybe String
+  , cFSAppInputFiles    :: [String]
+  , cFSAppTarget        :: String
+  , cFSAppTemplateDir   :: Maybe String
+  , cFSAppVarNames      :: Maybe String
+  , cFSAppVarDB         :: Maybe String
+  , cFSAppHandlers      :: Maybe String
+  , cFSAppFormat        :: String
+  , cFSAppPropFormat    :: String
+  , cFSAppPropVia       :: Maybe String
+  , cFSAppTemplateVars  :: Maybe String
   }
 
 -- | Create <https://cfs.gsfc.nasa.gov/ NASA core Flight System> (cFS)
@@ -67,16 +67,16 @@ command c = Command.CFSApp.command options
   where
     options = Command.CFSApp.CommandOptions
                 { Command.CFSApp.commandConditionExpr = cFSAppConditionExpr c
-                , Command.CFSApp.commandInputFiles  = cFSAppInputFiles c
-                , Command.CFSApp.commandTargetDir   = cFSAppTarget c
-                , Command.CFSApp.commandTemplateDir = cFSAppTemplateDir c
-                , Command.CFSApp.commandVariables   = cFSAppVarNames c
-                , Command.CFSApp.commandVariableDB  = cFSAppVarDB c
-                , Command.CFSApp.commandHandlers    = cFSAppHandlers c
-                , Command.CFSApp.commandFormat      = cFSAppFormat c
-                , Command.CFSApp.commandPropFormat  = cFSAppPropFormat c
-                , Command.CFSApp.commandPropVia     = cFSAppPropVia c
-                , Command.CFSApp.commandExtraVars   = cFSAppTemplateVars c
+                , Command.CFSApp.commandInputFiles    = cFSAppInputFiles c
+                , Command.CFSApp.commandTargetDir     = cFSAppTarget c
+                , Command.CFSApp.commandTemplateDir   = cFSAppTemplateDir c
+                , Command.CFSApp.commandVariables     = cFSAppVarNames c
+                , Command.CFSApp.commandVariableDB    = cFSAppVarDB c
+                , Command.CFSApp.commandHandlers      = cFSAppHandlers c
+                , Command.CFSApp.commandFormat        = cFSAppFormat c
+                , Command.CFSApp.commandPropFormat    = cFSAppPropFormat c
+                , Command.CFSApp.commandPropVia       = cFSAppPropVia c
+                , Command.CFSApp.commandExtraVars     = cFSAppTemplateVars c
                 }
 
 -- * CLI
