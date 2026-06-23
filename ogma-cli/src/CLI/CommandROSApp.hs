@@ -44,7 +44,7 @@ import qualified Command.ROSApp
 
 -- | Options needed to generate the ROS application.
 data CommandOpts = CommandOpts
-  { rosAppConditionExpr  :: Maybe String
+  { rosAppConditionExpr :: Maybe String
   , rosAppInputFiles   :: [String]
   , rosAppTarget       :: String
   , rosAppTemplateDir  :: Maybe String
