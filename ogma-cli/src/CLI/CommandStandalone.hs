@@ -45,16 +45,16 @@ import qualified Command.Standalone
 
 -- | Options to generate Copilot from specification.
 data CommandOpts = CommandOpts
-  { standaloneTargetDir    :: FilePath
-  , standaloneTemplateDir  :: Maybe FilePath
-  , standaloneConditionExpr  :: Maybe String
-  , standaloneInputFiles   :: [FilePath]
-  , standaloneFormat       :: String
-  , standalonePropFormat   :: String
-  , standaloneTypes        :: [String]
-  , standaloneTarget       :: String
-  , standalonePropVia      :: Maybe String
-  , standaloneTemplateVars :: Maybe String
+  { standaloneTargetDir     :: FilePath
+  , standaloneTemplateDir   :: Maybe FilePath
+  , standaloneConditionExpr :: Maybe String
+  , standaloneInputFiles    :: [FilePath]
+  , standaloneFormat        :: String
+  , standalonePropFormat    :: String
+  , standaloneTypes         :: [String]
+  , standaloneTarget        :: String
+  , standalonePropVia       :: Maybe String
+  , standaloneTemplateVars  :: Maybe String
   }
 
 -- | Transform an input specification into a Copilot specification.
@@ -65,15 +65,15 @@ command c =
     internalCommandOpts :: Command.Standalone.CommandOptions
     internalCommandOpts = Command.Standalone.CommandOptions
       { Command.Standalone.commandConditionExpr = standaloneConditionExpr c
-      , Command.Standalone.commandInputFiles  = standaloneInputFiles c
-      , Command.Standalone.commandTargetDir   = standaloneTargetDir c
-      , Command.Standalone.commandTemplateDir = standaloneTemplateDir c
-      , Command.Standalone.commandFormat      = standaloneFormat c
-      , Command.Standalone.commandPropFormat  = standalonePropFormat c
-      , Command.Standalone.commandTypeMapping = types
-      , Command.Standalone.commandFilename    = standaloneTarget c
-      , Command.Standalone.commandPropVia     = standalonePropVia c
-      , Command.Standalone.commandExtraVars   = standaloneTemplateVars c
+      , Command.Standalone.commandInputFiles    = standaloneInputFiles c
+      , Command.Standalone.commandTargetDir     = standaloneTargetDir c
+      , Command.Standalone.commandTemplateDir   = standaloneTemplateDir c
+      , Command.Standalone.commandFormat        = standaloneFormat c
+      , Command.Standalone.commandPropFormat    = standalonePropFormat c
+      , Command.Standalone.commandTypeMapping   = types
+      , Command.Standalone.commandFilename      = standaloneTarget c
+      , Command.Standalone.commandPropVia       = standalonePropVia c
+      , Command.Standalone.commandExtraVars     = standaloneTemplateVars c
       }
 
     types :: [(String, String)]

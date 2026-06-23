@@ -44,19 +44,19 @@ import qualified Command.ROSApp
 
 -- | Options needed to generate the ROS application.
 data CommandOpts = CommandOpts
-  { rosAppConditionExpr  :: Maybe String
-  , rosAppInputFiles   :: [String]
-  , rosAppTarget       :: String
-  , rosAppTemplateDir  :: Maybe String
-  , rosAppVarNames     :: Maybe String
-  , rosAppVarDB        :: Maybe String
-  , rosAppHandlers     :: Maybe String
-  , rosAppFormat       :: String
-  , rosAppPropFormat   :: String
-  , rosAppPropVia      :: Maybe String
-  , rosAppTemplateVars :: Maybe String
-  , rosAppTestingApps  :: [String]
-  , rosAppTestingVars  :: [String]
+  { rosAppConditionExpr :: Maybe String
+  , rosAppInputFiles    :: [String]
+  , rosAppTarget        :: String
+  , rosAppTemplateDir   :: Maybe String
+  , rosAppVarNames      :: Maybe String
+  , rosAppVarDB         :: Maybe String
+  , rosAppHandlers      :: Maybe String
+  , rosAppFormat        :: String
+  , rosAppPropFormat    :: String
+  , rosAppPropVia       :: Maybe String
+  , rosAppTemplateVars  :: Maybe String
+  , rosAppTestingApps   :: [String]
+  , rosAppTestingVars   :: [String]
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
@@ -69,18 +69,18 @@ command c = Command.ROSApp.command options
   where
     options = Command.ROSApp.CommandOptions
                 { Command.ROSApp.commandConditionExpr = rosAppConditionExpr c
-                , Command.ROSApp.commandInputFiles  = rosAppInputFiles c
-                , Command.ROSApp.commandTargetDir   = rosAppTarget c
-                , Command.ROSApp.commandTemplateDir = rosAppTemplateDir c
-                , Command.ROSApp.commandVariables   = rosAppVarNames c
-                , Command.ROSApp.commandVariableDB  = rosAppVarDB c
-                , Command.ROSApp.commandHandlers    = rosAppHandlers c
-                , Command.ROSApp.commandFormat      = rosAppFormat c
-                , Command.ROSApp.commandPropFormat  = rosAppPropFormat c
-                , Command.ROSApp.commandPropVia     = rosAppPropVia c
-                , Command.ROSApp.commandExtraVars   = rosAppTemplateVars c
-                , Command.ROSApp.commandTestingApps = appNames
-                , Command.ROSApp.commandTestingVars = rosAppTestingVars c
+                , Command.ROSApp.commandInputFiles    = rosAppInputFiles c
+                , Command.ROSApp.commandTargetDir     = rosAppTarget c
+                , Command.ROSApp.commandTemplateDir   = rosAppTemplateDir c
+                , Command.ROSApp.commandVariables     = rosAppVarNames c
+                , Command.ROSApp.commandVariableDB    = rosAppVarDB c
+                , Command.ROSApp.commandHandlers      = rosAppHandlers c
+                , Command.ROSApp.commandFormat        = rosAppFormat c
+                , Command.ROSApp.commandPropFormat    = rosAppPropFormat c
+                , Command.ROSApp.commandPropVia       = rosAppPropVia c
+                , Command.ROSApp.commandExtraVars     = rosAppTemplateVars c
+                , Command.ROSApp.commandTestingApps   = appNames
+                , Command.ROSApp.commandTestingVars   = rosAppTestingVars c
                 }
 
     -- Turn the qualified app names into tuples of package and node name.
