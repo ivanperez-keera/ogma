@@ -47,7 +47,7 @@ import qualified Command.Standalone
 data CommandOpts = CommandOpts
   { standaloneTargetDir    :: FilePath
   , standaloneTemplateDir  :: Maybe FilePath
-  , standaloneConditionExpr  :: Maybe String
+  , standaloneConditionExpr :: Maybe String
   , standaloneInputFiles   :: [FilePath]
   , standaloneFormat       :: String
   , standalonePropFormat   :: String
