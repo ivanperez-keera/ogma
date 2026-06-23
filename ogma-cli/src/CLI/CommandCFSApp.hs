@@ -44,7 +44,7 @@ import qualified Command.CFSApp
 
 -- | Options needed to generate the cFS application.
 data CommandOpts = CommandOpts
-  { cFSAppConditionExpr  :: Maybe String
+  { cFSAppConditionExpr :: Maybe String
   , cFSAppInputFiles   :: [String]
   , cFSAppTarget       :: String
   , cFSAppTemplateDir  :: Maybe String
