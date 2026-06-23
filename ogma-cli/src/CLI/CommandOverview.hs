@@ -49,10 +49,10 @@ import qualified Command.Overview
 
 -- | Options to generate an overview from the input specification(s).
 data CommandOpts = CommandOpts
-  { overviewInputFile   :: FilePath
-  , overviewFormat      :: String
-  , overviewPropFormat  :: String
-  , overviewPropVia     :: Maybe String
+  { overviewInputFile  :: FilePath
+  , overviewFormat     :: String
+  , overviewPropFormat :: String
+  , overviewPropVia    :: Maybe String
   }
 
 -- | Print an overview of the input specification(s).
@@ -72,9 +72,9 @@ command c = do
   where
     internalCommandOpts :: Command.Overview.CommandOptions
     internalCommandOpts = Command.Overview.CommandOptions
-      { Command.Overview.commandFormat      = overviewFormat c
-      , Command.Overview.commandPropFormat  = overviewPropFormat c
-      , Command.Overview.commandPropVia     = overviewPropVia c
+      { Command.Overview.commandFormat     = overviewFormat c
+      , Command.Overview.commandPropFormat = overviewPropFormat c
+      , Command.Overview.commandPropVia    = overviewPropVia c
       }
 
     outputString (Command.Overview.CommandSummaryRequirement {}) =
