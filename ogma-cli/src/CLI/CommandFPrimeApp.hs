@@ -44,7 +44,7 @@ import qualified Command.FPrimeApp
 
 -- | Options needed to generate the FPrime component.
 data CommandOpts = CommandOpts
-  { fprimeAppConditionExpr  :: Maybe String
+  { fprimeAppConditionExpr :: Maybe String
   , fprimeAppInputFiles   :: [String]
   , fprimeAppTarget       :: String
   , fprimeAppTemplateDir  :: Maybe String
