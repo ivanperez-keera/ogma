@@ -23,12 +23,16 @@
 module Command.Overview
     ( command
     , CommandOptions(..)
+    , OverviewFile(..)
     , CommandSummary(..)
+    , CommandSummaryRequirements(..)
+    , CommandSummaryDiagram(..)
     , ErrorCode
     )
   where
 
 -- External imports
+import Control.Monad        (foldM)
 import Control.Monad.Except (runExceptT)
 import Data.Aeson           (ToJSON (..))
 import GHC.Generics         (Generic)
@@ -57,15 +61,29 @@ import qualified Language.Trans.Spec2Copilot as Spec2Copilot
 -- used are valid C99 identifiers. The template, if provided, exists and uses
 -- the variables needed by the overview application generator. The target
 -- directory is writable and there's enough disk space to copy the files over.
-command :: FilePath        -- ^ Path to a file containing a specification
-        -> CommandOptions -- ^ Customization options
+command :: CommandOptions -- ^ Customization options
         -> IO (Maybe CommandSummary, Result ErrorCode)
-command fp options = do
-  let functions = exprPair (commandPropFormat options)
+command options = do
+    fs <- foldM
+            processFile
+            (Right emptyCommandSummary)
+            (commandInputFiles options)
 
-  copilot <- command' fp options functions
+    return $ commandResult options fs
 
-  return $ commandResult options fp copilot
+  where
+
+    processFile :: Either (FilePath, String) CommandSummary
+                -> OverviewFile
+                -> IO (Either (FilePath, String) CommandSummary)
+    processFile acc file = case acc of
+      Left _     -> return acc
+      Right acc' -> do
+        let functions = exprPair (overviewFilePropFormat file)
+        c <- command' (overviewFilePath file) file functions
+        case c of
+          Left msg -> return $ Left (overviewFilePath file, msg)
+          Right s  -> return $ Right $ mergeCommandSummary acc' s
 
 -- | Generate overview of a spec given in an input file.
 --
@@ -76,7 +94,7 @@ command fp options = do
 -- the variables needed by the overview application generator. The target
 -- directory is writable and there's enough disk space to copy the files over.
 command' :: FilePath
-          -> CommandOptions
+          -> OverviewFile
           -> ExprPair
           -> IO (Either String CommandSummary)
 command' fp options (ExprPair exprT) = do
@@ -87,10 +105,14 @@ command' fp options (ExprPair exprT) = do
 
       Right (InputFileDiagram diagramR) -> do
         analysisResult <- analyzeDiagram diagramR
-        pure $ Right $
-          CommandSummaryDiagram
-            (numStates analysisResult)
-            (deterministic analysisResult)
+        pure $ Right $ emptyCommandSummary
+                         { commandSummaryDiagrams =
+                             [ CommandSummaryDiagram
+                                 fp
+                                 (numStates analysisResult)
+                                 (deterministic analysisResult)
+                             ]
+                         }
 
       Right (InputFileSpec spec') -> do
         let specCompleted = addMissingIdentifiers ids spec'
@@ -107,40 +129,89 @@ command' fp options (ExprPair exprT) = do
           numFalses   <- SpecAnalysis.numAlwaysFalse <$> specFormalAnalysis
           consistent  <- SpecAnalysis.consistent     <$> specFormalAnalysis
 
-          pure $
-            CommandSummaryRequirement
-              numExterns numInternal numReqs numTrues numFalses consistent
+          pure $ emptyCommandSummary
+                   { commandSummaryRequirements =
+                       [ CommandSummaryRequirements
+                           fp
+                           numExterns
+                           numInternal
+                           numReqs
+                           numTrues
+                           numFalses
+                           consistent
+                      ]
+                   }
 
   where
 
-    formatName     = commandFormat options
-    propFormatName = commandPropFormat options
-    propVia        = commandPropVia options
+    formatName     = overviewFileFormat options
+    propFormatName = overviewFilePropFormat options
+    propVia        = overviewFilePropVia options
 
     ExprPairT _parse replace printExpr ids _def = exprT
 
-data CommandSummary
-    = CommandSummaryRequirement
-        { commandExternalVariables      :: Int
-        , commandInternalVariables      :: Int
-        , commandRequirements           :: Int
-        , commandRequirementsTrue       :: Int
-        , commandRequirementsFalse      :: Int
-        , commandRequirementsConsistent :: Bool
-        }
-    | CommandSummaryDiagram
-        { commandNumStates     :: Int
-        , commandDeterministic :: Bool
-        }
+data CommandSummary = CommandSummary
+    { commandSummaryRequirements :: [CommandSummaryRequirements]
+    , commandSummaryDiagrams     :: [CommandSummaryDiagram]
+    }
   deriving (Generic, Show)
 
 instance ToJSON CommandSummary
 
+-- | Summary with empty data.
+emptyCommandSummary :: CommandSummary
+emptyCommandSummary = CommandSummary [] []
+
+-- | Merge two summaries.
+mergeCommandSummary :: CommandSummary -> CommandSummary -> CommandSummary
+mergeCommandSummary c1 c2 = CommandSummary
+  { commandSummaryRequirements =
+      commandSummaryRequirements c1 ++ commandSummaryRequirements c2
+  , commandSummaryDiagrams =
+      commandSummaryDiagrams c1 ++ commandSummaryDiagrams c2
+  }
+
+instance Semigroup CommandSummary where
+  (<>) = mergeCommandSummary
+
+instance Monoid CommandSummary where
+  mempty  = emptyCommandSummary
+
+-- | Requirement data for inclusion in the summary.
+data CommandSummaryRequirements = CommandSummaryRequirements
+    { commandRequirementsFile       :: FilePath
+    , commandExternalVariables      :: Int
+    , commandInternalVariables      :: Int
+    , commandRequirements           :: Int
+    , commandRequirementsTrue       :: Int
+    , commandRequirementsFalse      :: Int
+    , commandRequirementsConsistent :: Bool
+    }
+  deriving (Generic, Show)
+
+instance ToJSON CommandSummaryRequirements
+
+-- | Diagram Data for inclusion in the summary.
+data CommandSummaryDiagram = CommandSummaryDiagram
+    { commandDiagramFile          :: FilePath
+    , commandDiagramNumStates     :: Int
+    , commandDiagramDeterministic :: Bool
+    }
+  deriving (Generic, Show)
+
+instance ToJSON CommandSummaryDiagram
+
 -- | Options used to customize the interpretation of input specifications.
 data CommandOptions = CommandOptions
-  { commandFormat     :: String
-  , commandPropFormat :: String
-  , commandPropVia    :: Maybe String
+  { commandInputFiles :: [ OverviewFile ]
+  }
+
+-- | Information about one file in the command options.
+data OverviewFile = OverviewFile
+  { overviewFilePath       :: FilePath
+  , overviewFileFormat     :: String
+  , overviewFilePropFormat :: String
+  , overviewFilePropVia    :: Maybe String
   }
 
 -- * Error codes
@@ -154,9 +225,8 @@ ecOverviewError = 1
 
 -- | Process the result of the transformation function.
 commandResult :: CommandOptions
-              -> FilePath
-              -> Either String a
+              -> Either (FilePath, String) a
               -> (Maybe a, Result ErrorCode)
-commandResult _options fp result = case result of
-  Left msg -> (Nothing, Error ecOverviewError msg (LocationFile fp))
-  Right t  -> (Just t,  Success)
+commandResult _options result = case result of
+  Left (fp, msg) -> (Nothing, Error ecOverviewError msg (LocationFile fp))
+  Right t        -> (Just t,  Success)
