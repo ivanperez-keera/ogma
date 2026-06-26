@@ -12,6 +12,7 @@
 * Leverage `Data.ExprPair.exprPair` in `Command.Diagram.exprPair` (#448).
 * Remove empty Haddock section heading from `Command.Diagram` (#450).
 * Add missing dependency to Cabal file (#458).
+* Adjust overview command to accept multiple input files (#456).
 
 ## [1.14.0] - 2026-05-21
 
