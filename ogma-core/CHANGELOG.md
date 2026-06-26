@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-06-13
+## [1.X.Y] - 2026-06-26
 
 * Remove commented code from `Data.Spec.Parser` (#430).
 * Remove redundant `where` block (#432).
@@ -11,6 +11,7 @@
 * Update backends to use state machine module from `copilot-libraries` (#446).
 * Leverage `Data.ExprPair.exprPair` in `Command.Diagram.exprPair` (#448).
 * Remove empty Haddock section heading from `Command.Diagram` (#450).
+* Add missing dependency to Cabal file (#458).
 
 ## [1.14.0] - 2026-05-21
 
