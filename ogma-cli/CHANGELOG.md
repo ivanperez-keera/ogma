@@ -1,10 +1,11 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-06-23
+## [1.X.Y] - 2026-06-25
 
 * Fix typo in README (#428).
 * Update CI job to install Copilot 4.7.1 by default (#446).
 * Fix style of record definitions, constructions in multiple commands (#454).
+* Adjust `overview` command to accept multiple input files (#456).
 
 ## [1.14.0] - 2026-05-21
 

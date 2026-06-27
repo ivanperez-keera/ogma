@@ -32,10 +32,12 @@ module CLI.CommandOverview
 
 -- External imports
 import           Data.Aeson          (toJSON)
+import           Data.List           (dropWhileEnd)
 import qualified Data.Text.Lazy      as T
 import qualified Data.Text.Lazy.IO   as T
 import           Options.Applicative (Parser, help, long, metavar, optional,
-                                      short, showDefault, strOption, value)
+                                      short, showDefault, some, strOption,
+                                      value)
 import           Text.Microstache
 
 -- External imports: command results
@@ -49,37 +51,52 @@ import qualified Command.Overview
 
 -- | Options to generate an overview from the input specification(s).
 data CommandOpts = CommandOpts
-  { overviewInputFile  :: FilePath
-  , overviewFormat     :: String
-  , overviewPropFormat :: String
-  , overviewPropVia    :: Maybe String
+  { overviewInputFiles :: [OverviewFile]
+  }
+
+-- | Options associated to a specific input file.
+data OverviewFile = OverviewFile
+  { overviewFilePath       :: FilePath
+  , overviewFileFormat     :: String
+  , overviewFilePropFormat :: String
+  , overviewFilePropVia    :: Maybe String
   }
 
 -- | Print an overview of the input specification(s).
 command :: CommandOpts -> IO (Result ErrorCode)
 command c = do
     (mOutput, result) <-
-      Command.Overview.command (overviewInputFile c) internalCommandOpts
+      Command.Overview.command internalCommandOpts
 
     case mOutput of
       Just output ->
-        case outputString output of
-          Right template -> T.putStr $ renderMustache template (toJSON output)
+        case outputString of
+          Right template ->
+            T.putStr $ trimEnd $ renderMustache template (toJSON output)
           _              -> putStrLn "Error"
       _ -> putStrLn "Error"
     return result
 
   where
+
+    trimEnd :: T.Text -> T.Text
+    trimEnd = T.unlines . dropWhileEnd T.null . T.lines
+
     internalCommandOpts :: Command.Overview.CommandOptions
-    internalCommandOpts = Command.Overview.CommandOptions
-      { Command.Overview.commandFormat     = overviewFormat c
-      , Command.Overview.commandPropFormat = overviewPropFormat c
-      , Command.Overview.commandPropVia    = overviewPropVia c
+    internalCommandOpts = Command.Overview.CommandOptions $
+      map fileInfo (overviewInputFiles c)
+
+    fileInfo f = Command.Overview.OverviewFile
+      { Command.Overview.overviewFilePath       = overviewFilePath   f
+      , Command.Overview.overviewFileFormat     = overviewFileFormat f
+      , Command.Overview.overviewFilePropFormat = overviewFilePropFormat f
+      , Command.Overview.overviewFilePropVia    = overviewFilePropVia f
       }
 
-    outputString (Command.Overview.CommandSummaryRequirement {}) =
+    outputString =
       compileMustacheText "output" $ T.unlines
-        [ "The requirements file has:"
+        [ "{{#commandSummaryRequirements}}"
+        , "The requirements file {{commandRequirementsFile}} has:"
         , " - {{commandExternalVariables}} external variables."
         , " - {{commandInternalVariables}} internal variables."
         , " - {{commandRequirements}} requirements."
@@ -91,17 +108,19 @@ command c = do
         , "{{^commandRequirementsConsistent}}"
         , "   - The requirements are not mutually consistent."
         , "{{/commandRequirementsConsistent}}"
-        ]
-    outputString (Command.Overview.CommandSummaryDiagram {}) =
-      compileMustacheText "output" $ T.unlines
-        [ "The diagram file:"
-        , " - Has {{commandNumStates}} states."
-        , "{{#commandDeterministic}}"
+        , ""
+        , "{{/commandSummaryRequirements}}"
+        , "{{#commandSummaryDiagrams}}"
+        , "The diagram file {{commandDiagramFile}}:"
+        , " - Has {{commandDiagramNumStates}} states."
+        , "{{#commandDiagramDeterministic}}"
         , " - Is deterministic."
-        , "{{/commandDeterministic}}"
-        , "{{^commandDeterministic}}"
+        , "{{/commandDiagramDeterministic}}"
+        , "{{^commandDiagramDeterministic}}"
         , " - Is not deterministic."
-        , "{{/commandDeterministic}}"
+        , "{{/commandDiagramDeterministic}}"
+        , ""
+        , "{{/commandSummaryDiagrams}}"
         ]
 
 -- * CLI
@@ -113,7 +132,12 @@ commandDesc = "Generate an overview of the input specification(s)"
 -- | Subparser for the @overview@ command, used to generate an overview
 -- of the input specifications.
 commandOptsParser :: Parser CommandOpts
-commandOptsParser = CommandOpts
+commandOptsParser = CommandOpts <$> some overviewFileOptsParser
+
+-- | Subparser for information on one input file to be used with the @overview@
+-- command.
+overviewFileOptsParser :: Parser OverviewFile
+overviewFileOptsParser = OverviewFile
   <$> strOption
         (  long "input-file"
         <> metavar "FILENAME"
