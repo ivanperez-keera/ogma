@@ -14,6 +14,7 @@
 * Add missing dependency to Cabal file (#458).
 * Adjust overview command to accept multiple input files (#456).
 * Add Copilot file from F Prime template to data-files in Cabal file (#462).
+* Add module defining Ogma projects (#460).
 
 ## [1.14.0] - 2026-05-21
 
