@@ -32,26 +32,30 @@ module CLI.CommandOverview
 
 -- External imports
 import           Data.Aeson          (toJSON)
+import           Data.Functor        ((<&>))
 import           Data.List           (dropWhileEnd)
 import qualified Data.Text.Lazy      as T
 import qualified Data.Text.Lazy.IO   as T
-import           Options.Applicative (Parser, help, long, metavar, optional,
-                                      short, showDefault, some, strOption,
+import           Options.Applicative (Parser, help, long, many, metavar,
+                                      optional, short, showDefault, strOption,
                                       value)
 import           Text.Microstache
 
 -- External imports: command results
 import Command.Result ( Result(..) )
+import Data.Location  ( Location(..) )
 
 -- External imports: actions or commands supported
 import           Command.Overview (ErrorCode)
 import qualified Command.Overview
+import           Data.Project       (Project (..), readProject)
 
 -- * Command
 
 -- | Options to generate an overview from the input specification(s).
 data CommandOpts = CommandOpts
-  { overviewInputFiles :: [OverviewFile]
+  { overviewProject    :: Maybe String
+  , overviewInputFiles :: [OverviewFile]
   }
 
 -- | Options associated to a specific input file.
@@ -64,18 +68,34 @@ data OverviewFile = OverviewFile
 
 -- | Print an overview of the input specification(s).
 command :: CommandOpts -> IO (Result ErrorCode)
-command c = do
-    (mOutput, result) <-
-      Command.Overview.command internalCommandOpts
+command c
+    | Just p <- overviewProject c
+    = do optE <- commandProjectOptions p c
+         case optE of
+           Left msg  -> return $ Error cannotReadProject msg (LocationFile p)
+           Right opt -> do
+             (mOutput, result) <- Command.Overview.command opt
+             case mOutput of
+               Just output ->
+                 case outputString of
+                   Right template ->
+                     T.putStr $ trimEnd $ renderMustache template (toJSON output)
+                   _              -> putStrLn "Error"
+               _ -> putStrLn "Error"
+             return result
 
-    case mOutput of
-      Just output ->
-        case outputString of
-          Right template ->
-            T.putStr $ trimEnd $ renderMustache template (toJSON output)
-          _              -> putStrLn "Error"
-      _ -> putStrLn "Error"
-    return result
+     | otherwise
+     = do (mOutput, result) <-
+            Command.Overview.command internalCommandOpts
+
+          case mOutput of
+            Just output ->
+              case outputString of
+                Right template ->
+                  T.putStr $ trimEnd $ renderMustache template (toJSON output)
+                _              -> putStrLn "Error"
+            _ -> putStrLn "Error"
+          return result
 
   where
 
@@ -123,6 +143,39 @@ command c = do
         , "{{/commandSummaryDiagrams}}"
         ]
 
+-- | Produce command options based on project settings and user-provided
+-- command options.
+commandProjectOptions :: FilePath
+                      -> CommandOpts
+                      -> IO (Either String Command.Overview.CommandOptions)
+commandProjectOptions projectFile c = do
+    projectE <- readProject projectFile
+    return $ projectE <&> \project ->
+      Command.Overview.CommandOptions
+        { Command.Overview.commandInputFiles = concat
+            [ map (convertProjectFile project) $ projectInputFiles project
+            , map convertInputFile $ overviewInputFiles c
+            ]
+
+        }
+
+  where
+
+    convertProjectFile project (fp, format, propFormat) =
+      Command.Overview.OverviewFile
+        { Command.Overview.overviewFilePath       = fp
+        , Command.Overview.overviewFileFormat     = format
+        , Command.Overview.overviewFilePropFormat = propFormat
+        , Command.Overview.overviewFilePropVia    =
+            projectCommandPropVia project
+        }
+    convertInputFile f = Command.Overview.OverviewFile
+      { Command.Overview.overviewFilePath       = overviewFilePath   f
+      , Command.Overview.overviewFileFormat     = overviewFileFormat f
+      , Command.Overview.overviewFilePropFormat = overviewFilePropFormat f
+      , Command.Overview.overviewFilePropVia    = overviewFilePropVia f
+      }
+
 -- * CLI
 
 -- | Command description for CLI help.
@@ -132,7 +185,15 @@ commandDesc = "Generate an overview of the input specification(s)"
 -- | Subparser for the @overview@ command, used to generate an overview
 -- of the input specifications.
 commandOptsParser :: Parser CommandOpts
-commandOptsParser = CommandOpts <$> some overviewFileOptsParser
+commandOptsParser = CommandOpts
+  <$> optional
+        ( strOption
+            (  long "project"
+            <> metavar "FILENAME"
+            <> help strOverviewProjectArgDesc
+            )
+        )
+   <*> many overviewFileOptsParser
 
 -- | Subparser for information on one input file to be used with the @overview@
 -- command.
@@ -167,6 +228,10 @@ overviewFileOptsParser = OverviewFile
             )
         )
 
+-- | Project flag description.
+strOverviewProjectArgDesc :: String
+strOverviewProjectArgDesc = "Project file"
+
 -- | Input file flag description.
 strOverviewInputFileDesc :: String
 strOverviewInputFileDesc = "File with properties or requirements"
@@ -183,3 +248,7 @@ strOverviewPropFormatDesc = "Format of temporal or boolean properties"
 strOverviewPropViaDesc :: String
 strOverviewPropViaDesc =
   "Command to pre-process individual properties"
+
+-- | Error code for when a project cannot be read.
+cannotReadProject :: ErrorCode
+cannotReadProject = 1

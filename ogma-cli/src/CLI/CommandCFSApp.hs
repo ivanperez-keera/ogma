@@ -30,6 +30,9 @@ module CLI.CommandCFSApp
   where
 
 -- External imports
+import Control.Applicative ( (<|>) )
+import Data.Functor        ( (<&>) )
+import Data.Maybe          ( fromMaybe )
 import Options.Applicative ( Parser, help, long, many, metavar, optional,
                              short, showDefault, strOption, value )
 
@@ -39,12 +42,16 @@ import Command.Result ( Result )
 -- External imports: actions or commands supported
 import           Command.CFSApp ( ErrorCode )
 import qualified Command.CFSApp
+import           Command.Result ( Result (..) )
+import           Data.Location  ( Location ( LocationFile ) )
+import           Data.Project   ( Project (..), readProject )
 
 -- * Command
 
 -- | Options needed to generate the cFS application.
 data CommandOpts = CommandOpts
-  { cFSAppConditionExpr :: Maybe String
+  { cFSAppProject       :: Maybe String
+  , cFSAppConditionExpr :: Maybe String
   , cFSAppInputFiles    :: [String]
   , cFSAppTarget        :: String
   , cFSAppTemplateDir   :: Maybe String
@@ -63,21 +70,74 @@ data CommandOpts = CommandOpts
 --
 -- This is just an uncurried version of "Command.CFSApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c = Command.CFSApp.command options
-  where
-    options = Command.CFSApp.CommandOptions
-                { Command.CFSApp.commandConditionExpr = cFSAppConditionExpr c
-                , Command.CFSApp.commandInputFiles    = cFSAppInputFiles c
-                , Command.CFSApp.commandTargetDir     = cFSAppTarget c
-                , Command.CFSApp.commandTemplateDir   = cFSAppTemplateDir c
-                , Command.CFSApp.commandVariables     = cFSAppVarNames c
-                , Command.CFSApp.commandVariableDB    = cFSAppVarDB c
-                , Command.CFSApp.commandHandlers      = cFSAppHandlers c
-                , Command.CFSApp.commandFormat        = cFSAppFormat c
-                , Command.CFSApp.commandPropFormat    = cFSAppPropFormat c
-                , Command.CFSApp.commandPropVia       = cFSAppPropVia c
-                , Command.CFSApp.commandExtraVars     = cFSAppTemplateVars c
-                }
+command c
+  | Just p <- cFSAppProject c
+  = do optE <- commandProjectOptions p c
+       case optE of
+         Left msg  -> return $ Error cannotReadProject msg (LocationFile p)
+         Right opt -> Command.CFSApp.command opt
+
+  | otherwise
+  = Command.CFSApp.command $
+      Command.CFSApp.CommandOptions
+        { Command.CFSApp.commandConditionExpr = cFSAppConditionExpr c
+        , Command.CFSApp.commandInputFiles    = cFSAppInputFiles c
+        , Command.CFSApp.commandTargetDir     = cFSAppTarget c
+        , Command.CFSApp.commandTemplateDir   = cFSAppTemplateDir c
+        , Command.CFSApp.commandVariables     = cFSAppVarNames c
+        , Command.CFSApp.commandVariableDB    = cFSAppVarDB c
+        , Command.CFSApp.commandHandlers      = cFSAppHandlers c
+        , Command.CFSApp.commandFormat        = cFSAppFormat c
+        , Command.CFSApp.commandPropFormat    = cFSAppPropFormat c
+        , Command.CFSApp.commandPropVia       = cFSAppPropVia c
+        , Command.CFSApp.commandExtraVars     = cFSAppTemplateVars c
+        }
+
+-- | Produce default command options based on project settings.
+commandProjectOptions :: FilePath
+                      -> CommandOpts
+                      -> IO (Either String Command.CFSApp.CommandOptions)
+commandProjectOptions projectFile c = do
+  projectE <- readProject projectFile
+  return $ projectE <&> \project ->
+    Command.CFSApp.CommandOptions
+      { Command.CFSApp.commandConditionExpr = cFSAppConditionExpr c
+
+      , Command.CFSApp.commandInputFiles = concat
+          [ map (\(f, _, _) -> f) $ projectInputFiles project
+          , cFSAppInputFiles c
+          ]
+
+      , Command.CFSApp.commandTargetDir =
+          fromMaybe (cFSAppTarget c) (projectTargetDir project)
+
+      , Command.CFSApp.commandTemplateDir =
+          projectTemplateDir project <|> cFSAppTemplateDir c
+
+      , Command.CFSApp.commandVariables =
+          projectVariableFiles project <|> cFSAppVarNames c
+
+      , Command.CFSApp.commandVariableDB =
+          projectVariableDBFile project <|> cFSAppVarDB c
+
+      , Command.CFSApp.commandHandlers =
+          projectHandlerFile project <|> cFSAppHandlers c
+
+      , Command.CFSApp.commandFormat = case projectInputFiles project of
+          []            -> cFSAppFormat c
+          ((_, f, _):_) -> f
+
+      , Command.CFSApp.commandPropFormat = case projectInputFiles project of
+          []            -> cFSAppPropFormat c
+          ((_, _, f):_) -> f
+
+      , Command.CFSApp.commandPropVia =
+          projectCommandPropVia project <|> cFSAppPropVia c
+
+      , Command.CFSApp.commandExtraVars =
+          projectExtraJSONFile project <|> cFSAppTemplateVars c
+
+      }
 
 -- * CLI
 
@@ -90,6 +150,13 @@ commandDesc = "Generate a complete cFS/Copilot application"
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> optional
+        ( strOption
+            (  long "project"
+            <> metavar "FILENAME"
+            <> help strCFSAppProjectArgDesc
+            )
+        )
+  <*> optional
         ( strOption
             (  long "condition-expr"
             <> metavar "EXPRESSION"
@@ -169,6 +236,10 @@ commandOptsParser = CommandOpts
             )
         )
 
+-- | Argument project to cFS app generation command.
+strCFSAppProjectArgDesc :: String
+strCFSAppProjectArgDesc = "Project file"
+
 -- | Argument target directory to cFS app generation command
 strCFSAppDirArgDesc :: String
 strCFSAppDirArgDesc = "Target directory"
@@ -221,3 +292,7 @@ strCFSAppPropViaDesc =
 strCFSAppTemplateVarsArgDesc :: String
 strCFSAppTemplateVarsArgDesc =
   "JSON file containing additional variables to expand in template"
+
+-- | Error code for when a project cannot be read.
+cannotReadProject :: ErrorCode
+cannotReadProject = 1

@@ -113,6 +113,7 @@ library
     Command.Standalone
 
     Data.Location
+    Data.Project
 
     Language.Trans.CStruct2CopilotStruct
     Language.Trans.CStructs2Copilot

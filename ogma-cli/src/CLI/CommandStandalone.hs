@@ -30,6 +30,9 @@ module CLI.CommandStandalone
   where
 
 -- External imports
+import Control.Applicative ((<|>))
+import Data.Functor        ((<&>))
+import Data.Maybe          (fromMaybe)
 import Options.Applicative (Parser, help, long, many, metavar, optional, short,
                             showDefault, strOption, switch, value)
 
@@ -40,12 +43,14 @@ import Data.Location  ( Location(..) )
 -- External imports: actions or commands supported
 import           Command.Standalone (ErrorCode)
 import qualified Command.Standalone
+import           Data.Project       (Project (..), readProject)
 
 -- * Command
 
 -- | Options to generate Copilot from specification.
 data CommandOpts = CommandOpts
-  { standaloneTargetDir     :: FilePath
+  { standaloneProject       :: Maybe String
+  , standaloneTargetDir     :: FilePath
   , standaloneTemplateDir   :: Maybe FilePath
   , standaloneConditionExpr :: Maybe String
   , standaloneInputFiles    :: [FilePath]
@@ -59,8 +64,15 @@ data CommandOpts = CommandOpts
 
 -- | Transform an input specification into a Copilot specification.
 command :: CommandOpts -> IO (Result ErrorCode)
-command c =
-    Command.Standalone.command internalCommandOpts
+command c
+    | Just p <- standaloneProject c
+    = do optE <- commandProjectOptions p c
+         case optE of
+           Left msg  -> return $ Error cannotReadProject msg (LocationFile p)
+           Right opt -> Command.Standalone.command opt
+
+    | otherwise
+    = Command.Standalone.command internalCommandOpts
   where
     internalCommandOpts :: Command.Standalone.CommandOptions
     internalCommandOpts = Command.Standalone.CommandOptions
@@ -77,8 +89,56 @@ command c =
       }
 
     types :: [(String, String)]
-    types = map splitTypeMapping (standaloneTypes c)
+    types = typeMapping (standaloneTypes c)
 
+-- | Produce command options based on project settings and user-provided
+-- command options.
+commandProjectOptions :: FilePath
+                      -> CommandOpts
+                      -> IO (Either String Command.Standalone.CommandOptions)
+commandProjectOptions projectFile c = do
+  projectE <- readProject projectFile
+  return $ projectE <&> \project ->
+    Command.Standalone.CommandOptions
+      { Command.Standalone.commandConditionExpr = standaloneConditionExpr c
+
+      , Command.Standalone.commandInputFiles = concat
+          [ map (\(f, _, _) -> f) $ projectInputFiles project
+          , standaloneInputFiles c
+          ]
+
+      , Command.Standalone.commandTargetDir =
+          fromMaybe (standaloneTargetDir c) (projectTargetDir project)
+
+      , Command.Standalone.commandTemplateDir =
+          projectTemplateDir project <|> standaloneTemplateDir c
+
+      , Command.Standalone.commandFormat =
+          case projectInputFiles project of
+            []            -> standaloneFormat c
+            ((_, f, _):_) -> f
+
+      , Command.Standalone.commandPropFormat =
+          case projectInputFiles project of
+            []            -> standalonePropFormat c
+            ((_, _, f):_) -> f
+
+      , Command.Standalone.commandPropVia =
+          projectCommandPropVia project <|> standalonePropVia c
+
+      , Command.Standalone.commandExtraVars =
+          projectExtraJSONFile project <|> standaloneTemplateVars c
+
+      , Command.Standalone.commandFilename = standaloneTarget c
+
+      , Command.Standalone.commandTypeMapping = typeMapping (standaloneTypes c)
+
+      }
+
+-- | Parse a list of type associations, where two types are separated by ':'.
+typeMapping :: [String] -> [(String, String)]
+typeMapping = map splitTypeMapping
+  where
     splitTypeMapping :: String -> (String, String)
     splitTypeMapping s = (h, safeTail t)
       where
@@ -96,7 +156,14 @@ commandDesc =
 -- specification from an input specification file.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
-  <$> strOption
+  <$> optional
+        ( strOption
+            (  long "project"
+            <> metavar "FILENAME"
+            <> help strStandaloneProjectArgDesc
+            )
+        )
+  <*> strOption
         (  long "target-dir"
         <> metavar "DIR"
         <> showDefault
@@ -169,6 +236,10 @@ commandOptsParser = CommandOpts
             )
         )
 
+-- | Project flag description.
+strStandaloneProjectArgDesc :: String
+strStandaloneProjectArgDesc = "Project file"
+
 -- | Target dir flag description.
 strStandaloneTargetDirDesc :: String
 strStandaloneTargetDirDesc = "Target directory"
@@ -212,3 +283,7 @@ strStandalonePropViaDesc =
 strStandaloneTemplateVarsArgDesc :: String
 strStandaloneTemplateVarsArgDesc =
   "JSON file containing additional variables to expand in template"
+
+-- | Error code for when a project cannot be read.
+cannotReadProject :: ErrorCode
+cannotReadProject = 1
