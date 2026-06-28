@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-06-26
+## [1.X.Y] - 2026-06-27
 
 * Remove commented code from `Data.Spec.Parser` (#430).
 * Remove redundant `where` block (#432).
@@ -13,6 +13,7 @@
 * Remove empty Haddock section heading from `Command.Diagram` (#450).
 * Add missing dependency to Cabal file (#458).
 * Adjust overview command to accept multiple input files (#456).
+* Add Copilot file from F Prime template to data-files in Cabal file (#462).
 
 ## [1.14.0] - 2026-05-21
 

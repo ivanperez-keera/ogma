@@ -71,6 +71,7 @@ data-files:          templates/cfs/Dockerfile
                      templates/fprime/Copilot.cpp
                      templates/fprime/Copilot.fpp
                      templates/fprime/Copilot.hpp
+                     templates/fprime/Copilot.hs
                      templates/fprime/Dockerfile
                      templates/fprime/instance-copilot
                      templates/report/Report.md
