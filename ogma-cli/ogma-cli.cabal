@@ -78,6 +78,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >
                      >Available commands:
                      >  overview                 Generate an overview of the input specification(s)
+                     >  search                   List items that match search query
                      >  structs                  Generate Copilot structs from C structs
                      >  handlers                 Generate message handlers from C structs
                      >  cfs                      Generate a complete CFS/Copilot application
