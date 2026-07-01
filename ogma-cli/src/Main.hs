@@ -15,14 +15,14 @@
 -- License for the specific language governing permissions and limitations
 -- under the License.
 --
--- | Ogma: Tool to interoperate between <https://cfs.gsfc.nasa.gov/ Copilot>
--- and other languages.
+-- | Ogma: Tool to interoperate between
+-- <https://github.com/Copilot-Language/copilot Copilot> and other languages.
 --
 -- Ogma is a tool to facilitate integration of safe runtime monitors into other
 -- systems. It takes information from a system created in a language (e.g.,
 -- Lustre) and produces specifications for the runtime verification
--- framework <https://cfs.gsfc.nasa.gov/ Copilot>. Currently, features
--- supported are:
+-- framework <https://github.com/Copilot-Language/copilot Copilot>. Currently,
+-- features supported are:
 --
 -- * Translation properties defined in structured natural language into
 -- corresponding expressions in Copilot.
