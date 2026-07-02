@@ -132,7 +132,6 @@ command' options (ExprPair exprT) = do
     readInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
-
 -- | Generate the data of a new standalone Copilot monitor that implements the
 -- spec, using a subexpression handler.
 commandLogic :: Maybe String

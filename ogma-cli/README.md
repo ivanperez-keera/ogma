@@ -52,7 +52,6 @@ verification framework that generates hard real-time C99 code.
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
 
-
 # Installation
 <sup>[(Back to top)](#table-of-contents)</sup>
 
@@ -178,7 +177,6 @@ Like before, the `ogma` executable will be placed in the directory
 
 ## Troubleshooting
 <sup>[(Back to top)](#table-of-contents)</sup>
-
 
 Feel free to open an issue if you are unable to install Ogma following these
 instructions.

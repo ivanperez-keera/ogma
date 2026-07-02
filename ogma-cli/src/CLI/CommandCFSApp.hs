@@ -259,7 +259,6 @@ strCFSAppFileNameArgDesc :: String
 strCFSAppFileNameArgDesc =
   "File containing input specification"
 
-
 -- | Argument variable list to cFS app generation command
 strCFSAppVarListArgDesc :: String
 strCFSAppVarListArgDesc =

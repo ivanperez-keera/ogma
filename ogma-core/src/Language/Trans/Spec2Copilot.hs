@@ -125,7 +125,6 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
             reqBody subs = reqName ++ " = " ++
                              (showExpr (exprTransform subs (requirementExpr i)))
 
-
     -- Main specification triggers
     triggers :: String
     triggers = unlines' $ fmap reqTrigger (requirements spec)

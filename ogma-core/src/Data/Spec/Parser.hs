@@ -155,8 +155,6 @@ readInputFile fp formatName propFormatName propVia exprT =
           Left e  -> return $ Left $ cannotOpenInputFile fp
           Right x -> return $ Right x
 
-
-
 -- | Exception handler to deal with the case in which the trigger expression
 -- cannot be understood.
 cannotReadConditionExpr :: String -> String -> ErrorTriplet
