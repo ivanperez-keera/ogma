@@ -153,7 +153,6 @@ command' options (ExprPair exprT) = do
       Just (InputFileDiagram _)  -> []
       Nothing                    -> specExtractExternalVariables Nothing
 
-
     defaultMonitors spec = case spec of
       Just (InputFileSpec spec') -> specExtractHandlers (Just spec')
       Just (InputFileDiagram _)  -> [ ("handler", Just "uint8_t" ) ]
