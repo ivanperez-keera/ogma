@@ -1,5 +1,9 @@
 # Revision history for ogma-language-xlsx
 
+## [1.X.Y] - 2026-07-02
+
+* Remove unnecessary vertical space (#470).
+
 ## [1.14.0] - 2026-05-21
 
 * Version bump (1.14.0) (#425).
