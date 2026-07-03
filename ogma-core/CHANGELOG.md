@@ -17,6 +17,7 @@
 * Add module defining Ogma projects (#460).
 * Introduce search command (#464).
 * Remove unnecessary vertical space (#470).
+* Allow using file name as requirement ID in JSON or YAML files (#472).
 
 ## [1.14.0] - 2026-05-21
 
