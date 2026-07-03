@@ -34,6 +34,7 @@ import           Data.Text             (pack, unpack)
 import qualified Data.Text             as T
 import qualified Data.Text.Encoding    as T
 import qualified Data.Text.IO          as T
+import           System.FilePath       (takeBaseName, takeFileName)
 import           Text.Megaparsec       (eof, errorBundlePretty, parse)
 
 -- External imports: ogma-spec
@@ -48,13 +49,32 @@ data JSONFormat = JSONFormat
     , specExternalVarId         :: String
     , specExternalVarType       :: Maybe String
     , specRequirements          :: String
-    , specRequirementId         :: String
+    , specRequirementId         :: FieldSource
     , specRequirementDesc       :: Maybe String
     , specRequirementExpr       :: String
     , specRequirementResultType :: Maybe String
     , specRequirementResultExpr :: Maybe String
     }
   deriving (Read)
+
+-- | Source used to populate the value of a field in a spec.
+data FieldSource
+    = JSONPath String -- ^ JSON path
+    | FileName        -- ^ Filename with extension
+    | BaseName        -- ^ Filename without extension
+  deriving (Show)
+
+-- | Custom instance to read a 'FieldSource' that allows JSON paths to be
+-- written down as plain strings.
+instance Read FieldSource where
+  readsPrec prec str =
+    case lex str of
+      [("JSONPath", rest)] -> first JSONPath <$> readsPrec prec rest
+      [("FileName", rest)] -> [(FileName, rest)]
+      [("BaseName", rest)] -> [(BaseName, rest)]
+      -- If it doesn't match a constructor, we attempt to read a string and
+      -- treat it as a JSONPath.
+      _                    -> first JSONPath <$> readsPrec prec str
 
 data JSONFormatInternal = JSONFormatInternal
   { jfiInternalVars          :: Maybe [JSONPathElement]
@@ -65,12 +85,20 @@ data JSONFormatInternal = JSONFormatInternal
   , jfiExternalVarId         :: [JSONPathElement]
   , jfiExternalVarType       :: Maybe [JSONPathElement]
   , jfiRequirements          :: [JSONPathElement]
-  , jfiRequirementId         :: [JSONPathElement]
+  , jfiRequirementId         :: FieldSourceInternal
   , jfiRequirementDesc       :: Maybe [JSONPathElement]
   , jfiRequirementExpr       :: [JSONPathElement]
   , jfiRequirementResultType :: Maybe [JSONPathElement]
   , jfiRequirementResultExpr :: Maybe [JSONPathElement]
   }
+
+-- | Internal representation of the source used to populate the value of a
+-- field in a spec.
+data FieldSourceInternal
+    = FSIJSONPath [JSONPathElement] -- ^ JSON path
+    | FSIFileName                   -- ^ Filename with extension
+    | FSIBaseName                   -- ^ Filename without extension
+  deriving (Show)
 
 parseJSONFormat :: JSONFormat -> Either String JSONFormatInternal
 parseJSONFormat jsonFormat = do
@@ -82,7 +110,14 @@ parseJSONFormat jsonFormat = do
   jfi7  <- showErrors $ parseJSONPath $ pack $ specExternalVarId   jsonFormat
   jfi8  <- showErrorsM $ fmap (parseJSONPath . pack) $ specExternalVarType jsonFormat
   jfi9  <- showErrors $ parseJSONPath $ pack $ specRequirements    jsonFormat
-  jfi10 <- showErrors $ parseJSONPath $ pack $ specRequirementId   jsonFormat
+
+  -- Handle the case where the requirement ID is the file name, with or without
+  -- extension.
+  jfi10 <- case specRequirementId jsonFormat of
+    FileName   -> return FSIFileName
+    BaseName   -> return FSIBaseName
+    JSONPath p -> showErrors $ fmap FSIJSONPath $ parseJSONPath $ pack p
+
   jfi11 <- showErrorsM $ fmap (parseJSONPath . pack) $ specRequirementDesc jsonFormat
   jfi12 <- showErrors $ parseJSONPath $ pack $ specRequirementExpr jsonFormat
   jfi13 <- showErrorsM $ fmap (parseJSONPath . pack) $ specRequirementResultType jsonFormat
@@ -103,8 +138,8 @@ parseJSONFormat jsonFormat = do
              , jfiRequirementResultExpr = jfi14
              }
 
-parseJSONSpec :: (String -> IO (Either String a)) -> JSONFormat -> Value -> IO (Either String (Spec a))
-parseJSONSpec parseExpr jsonFormat value = runExceptT $ do
+parseJSONSpec :: (String -> IO (Either String a)) -> JSONFormat -> FilePath -> Value -> IO (Either String (Spec a))
+parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
   jsonFormatInternal <- except $ parseJSONFormat jsonFormat
 
   let values :: [Value]
@@ -154,7 +189,13 @@ parseJSONSpec parseExpr jsonFormat value = runExceptT $ do
       -- requirementDef :: Value -> Either String (Requirement a)
       requirementDef value = do
         let msg = "Requirement name"
-        reqId <- except $ valueToString msg =<< (listToEither msg (executeJSONPath (jfiRequirementId jsonFormatInternal) value))
+
+        -- Handle the case where the requirement ID is the file name, with or
+        -- without extension.
+        reqId <- case jfiRequirementId jsonFormatInternal of
+          FSIFileName   -> return $ takeFileName filepath
+          FSIBaseName   -> return $ takeBaseName filepath
+          FSIJSONPath p -> except $ valueToString msg =<< (listToEither msg (executeJSONPath p value))
 
         let msg = "Requirement expression"
         reqExpr <- except $ valueToString msg =<< (listToEither msg (executeJSONPath (jfiRequirementExpr jsonFormatInternal) value))
