@@ -106,7 +106,7 @@ void COPILOT_AppInit(void)
     {{#msgIds}}
     CFE_SB_Subscribe({{.}}, COPILOT_CommandPipe);
     {{/msgIds}}
-
+    CFE_SB_Subscribe(COPILOT_CFS_REEVAL_CMD_MID, COPILOT_CommandPipe);
 
     CFE_EVS_SendEvent (COPILOT_STARTUP_INF_EID, CFE_EVS_INFORMATION,
                "COPILOT App Initialized. Version %d.%d.%d.%d",
@@ -139,6 +139,10 @@ void COPILOT_ProcessCommandPacket(void)
             break;
 
         {{/msgCases}}
+
+        case COPILOT_CFS_REEVAL_CMD_MID:
+            copilot_step();
+            break;
 
         default:
             COPILOT_HkTelemetryPkt.copilot_command_error_count++;
