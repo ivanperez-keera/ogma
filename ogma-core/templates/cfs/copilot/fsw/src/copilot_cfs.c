@@ -176,8 +176,10 @@ void COPILOT_Process{{msgDataDesc}}(void)
     {{msgDataVarName}} = *msg;
     {{/msgDataFromField}}
 
+    {{#msgDataActive}}
     // Run all copilot monitors.
     copilot_step();
+    {{/msgDataActive}}
 }
 
 {{/msgHandlers}}
