@@ -25,12 +25,14 @@ import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (Value (..))
 import           Data.Aeson.Key         (fromString)
 import qualified Data.Aeson.KeyMap      as M
+import           Data.Bifunctor         (first)
 import qualified Data.ByteString        as BS
 import           Data.Char              (isSpace)
 import           Data.List              (intercalate)
 import           Data.Text              (unpack)
 import qualified Data.Vector            as V
 import qualified Data.Yaml              as Y
+import           System.FilePath        (takeBaseName, takeFileName)
 
 -- External imports: ogma-spec
 import Data.Either.Extra (mapLeft)
@@ -47,7 +49,7 @@ data YAMLFormat = YAMLFormat
     , specExternalVarId         :: String
     , specExternalVarType       :: Maybe String
     , specRequirements          :: Maybe String
-    , specRequirementId         :: Maybe String
+    , specRequirementId         :: Maybe FieldSource
     , specRequirementDesc       :: Maybe String
     , specRequirementExpr       :: String
     , specRequirementResultType :: Maybe String
@@ -55,13 +57,33 @@ data YAMLFormat = YAMLFormat
     }
   deriving (Read)
 
+-- | Source used to populate the value of a field in a spec.
+data FieldSource
+    = Field String -- ^ A field of the YAML header
+    | FileName     -- ^ Filename with extension
+    | BaseName     -- ^ Filename without extension
+  deriving (Show)
+
+-- | Custom instance to read a 'FieldSource' that allows YAML field names to be
+-- written down as plain strings.
+instance Read FieldSource where
+  readsPrec prec str =
+    case lex str of
+      [("Field", rest)]    -> first Field <$> readsPrec prec rest
+      [("FileName", rest)] -> [(FileName, rest)]
+      [("BaseName", rest)] -> [(BaseName, rest)]
+      -- If it doesn't match a constructor, we attempt to read a string and
+      -- treat it as the name of a YAML field.
+      _                    -> first Field <$> readsPrec prec str
+
 -- | Parse a spec from a YAML file.
 parseYAMLSpec :: forall a
               .  (String -> IO (Either String a))
               -> YAMLFormat
+              -> FilePath
               -> BS.ByteString
               -> IO (Either String (Spec a))
-parseYAMLSpec parseExpr yamlFormat bs = runExceptT $ do
+parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
   value <- except $ mapLeft Y.prettyPrintParseException $ Y.decodeEither' bs
 
   let values :: [Value]
@@ -111,7 +133,14 @@ parseYAMLSpec parseExpr yamlFormat bs = runExceptT $ do
 
       requirementDef value = do
         let msg = "Requirement name"
-        reqId <- except $ maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (objectFieldValues e value))) (specRequirementId yamlFormat)
+
+        -- Handle the case where the requirement ID is the file name, with or
+        -- without extension.
+        reqId <- case specRequirementId yamlFormat of
+          Nothing        -> return ""
+          Just FileName  -> return $ takeFileName filepath
+          Just BaseName  -> return $ takeBaseName filepath
+          Just (Field p) -> except $ valueToString msg =<< (listToEither msg (objectFieldValues p value))
 
         let msg = "Requirement expression"
         reqExpr <- except $ valueToString msg =<< listToEither msg (objectFieldValues (specRequirementExpr yamlFormat) value)

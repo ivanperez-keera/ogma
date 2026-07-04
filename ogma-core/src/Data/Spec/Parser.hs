@@ -138,7 +138,8 @@ readInputFile fp formatName propFormatName propVia exprT =
                    content <- B.safeReadFile fp
                    case content of
                      Left e  -> return $ Left e
-                     Right b -> parseYAMLSpec wrapper yamlFormat (L.toStrict b)
+                     Right b ->
+                       parseYAMLSpec wrapper yamlFormat fp (L.toStrict b)
              | otherwise
              -> do let jsonFormat = read format
                    content <- B.safeReadFile fp
@@ -150,6 +151,7 @@ readInputFile fp formatName propFormatName propVia exprT =
                                        parseJSONSpec
                                          (wrapper)
                                          jsonFormat
+                                         fp
                                          v
         case res of
           Left e  -> return $ Left $ cannotOpenInputFile fp
