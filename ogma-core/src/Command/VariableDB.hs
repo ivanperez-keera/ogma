@@ -64,6 +64,7 @@ data VariableDB = VariableDB
 data InputDef = InputDef
     { inputName        :: String
     , inputType        :: Maybe String
+    , inputActive      :: Bool
     , inputConnections :: [ Connection ]
     }
   deriving (Eq, Show)
