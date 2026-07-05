@@ -91,7 +91,9 @@ class CopilotRV : public rclcpp::Node {
       {{^varDeclMsgField}}
       {{varDeclName}} = msg->data;
       {{/varDeclMsgField}}
+      {{#varDeclActive}}
       step();
+      {{/varDeclActive}}
     }
 
     {{/variables}}
