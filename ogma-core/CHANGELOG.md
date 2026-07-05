@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-07-02
+## [1.X.Y] - 2026-07-04
 
 * Remove commented code from `Data.Spec.Parser` (#430).
 * Remove redundant `where` block (#432).
@@ -18,6 +18,7 @@
 * Introduce search command (#464).
 * Remove unnecessary vertical space (#470).
 * Allow using file name as requirement ID in JSON or YAML files (#472).
+* Allow controlling when monitors are re-evaluated in cFS apps (#474).
 
 ## [1.14.0] - 2026-05-21
 
