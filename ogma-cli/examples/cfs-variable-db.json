@@ -1,6 +1,7 @@
 { "inputs":
      [ { "name": "position"
        , "type": "position_t"
+       , "active": true
        , "connections":
            [ { "scope": "cfs"
              , "topic": "ICAROUS_POSITION_MID"
@@ -9,6 +10,7 @@
        }
      , { "name": "velocity"
        , "type": "velocity_t"
+       , "active": true
        , "connections":
            [ { "scope": "cfs"
              , "topic": "ICAROUS_VELOCITY_MID"

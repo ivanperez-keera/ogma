@@ -155,6 +155,7 @@ provided in a `db.json`, which, in our example, contains the following:
 { "inputs":
      [ { "name": "input_value"
        , "type": "int32_t"
+       , "active": true
        , "connections":
            [ { "scope": "ros/message"
              , "topic": "/ros2/example1"
