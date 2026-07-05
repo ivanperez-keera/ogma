@@ -13,6 +13,7 @@
 * Remove unnecessary vertical space (#470).
 * Update variable DBs in examples to indicate which inputs are active (#474).
 * Expose diagram mode argument to cFS backend (#476).
+* Add example explaining cFS app generation from state machine diagrams (#478).
 
 ## [1.14.0] - 2026-05-21
 
