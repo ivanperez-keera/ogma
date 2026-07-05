@@ -241,8 +241,17 @@ variableMap varDB varName = do
 
       fieldMsg = typeFromField =<< findType varDB varName "ros/message" "C"
 
+      active   = inputActive inputDef
+
   return $
-    VarDecl varName typeVar' mid typeMsg' fieldMsg (randomBaseType typeVar')
+    VarDecl
+      varName
+      typeVar'
+      mid
+      typeMsg'
+      fieldMsg
+      (randomBaseType typeVar')
+      active
 
 -- | Return the monitor information needed to generate declarations and
 -- publishers for the given monitor info, and variable database.
@@ -264,6 +273,7 @@ data VarDecl = VarDecl
     , varDeclMsgType  :: String
     , varDeclMsgField :: Maybe String
     , varDeclRandom   :: String
+    , varDeclActive  :: Bool
     }
   deriving Generic
 
