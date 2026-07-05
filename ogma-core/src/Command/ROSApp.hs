@@ -53,14 +53,16 @@ import Command.Result (Result (..))
 
 -- Internal imports
 import Command.Common
-import Command.Errors     (ErrorCode, ErrorTriplet (..))
-import Command.VariableDB (Connection (..), InputDef (..), TopicDef (..),
-                           TypeDef (..), VariableDB, findConnection, findInput,
-                           findTopic, findType, findTypeByType)
-import Data.Aeson.Extra   (mergeObjects)
-import Data.ExprPair      (ExprPair(..), exprPair)
-import Data.Location      (Location (..))
-import Data.Spec.Parser   (readInputExpr)
+import Command.Errors                 (ErrorCode, ErrorTriplet (..))
+import Command.VariableDB             (Connection (..), InputDef (..),
+                                       TopicDef (..), TypeDef (..), VariableDB,
+                                       findConnection, findInput, findTopic,
+                                       findType, findTypeByType)
+import Data.Aeson.Extra               (mergeObjects)
+import Data.ExprPair                  (ExprPair (..), exprPair)
+import Data.Location                  (Location (..))
+import Data.Spec.Parser               (readInputExpr)
+import Language.Trans.Diagram2Copilot (DiagramMode (..))
 
 -- | Generate a new ROS application connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.
@@ -146,7 +148,14 @@ command' options (ExprPair exprT) = do
       parseInputFile f formatName propFormatName propVia exprT
 
     processSpec spec' expr' fp' =
-      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
+      Command.Standalone.commandLogic
+        expr'
+        fp'
+        "copilot"
+        []
+        exprT
+        spec'
+        ComputeState
 
     defaultVarNames spec = case spec of
       Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
