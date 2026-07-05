@@ -57,7 +57,7 @@ import Command.Common
 import Command.Errors     (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB (Connection (..), TopicDef (..), TypeDef (..),
                            VariableDB, findConnection, findInput, findTopic,
-                           findType, findTypeByType)
+                           findType, findTypeByType, inputActive)
 import Data.Aeson.Extra   (mergeObjects)
 import Data.ExprPair      (ExprPair(..), exprPair)
 import Data.Location      (Location (..))
@@ -215,6 +215,8 @@ variableMap varDB varName = do
   let typeMsgFromType  = typeFromType <$> typeDef
       typeMsgFromField = typeFromField =<< typeDef
 
+      active = inputActive inputDef
+
   let typeVar' = fromMaybe (topicType topicDef) (typeToType <$> typeDef)
 
   -- Pick name for the function to process a message ID.
@@ -223,7 +225,7 @@ variableMap varDB varName = do
   return ( VarDecl varName typeVar'
          , mid
          , MsgInfo mid mn
-         , MsgData mn typeMsgFromType typeMsgFromField varName typeVar'
+         , MsgData mn typeMsgFromType typeMsgFromField varName typeVar' active
          )
 
 -- | Return the monitor information needed to generate declarations and
@@ -267,6 +269,7 @@ data MsgData = MsgData
     , msgDataFromField :: Maybe String
     , msgDataVarName   :: String
     , msgDataVarType   :: String
+    , msgDataActive    :: Bool
     }
   deriving (Generic)
 

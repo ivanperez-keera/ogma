@@ -174,6 +174,7 @@ provided in a `db.json`, which, in our example, contains the following:
 { "inputs":
      [ { "name": "input_value"
        , "type": "int32_t"
+       , "active": true
        , "connections":
            [ { "scope": "cfs"
              , "topic": "SAMPLE_MID"
@@ -204,7 +205,9 @@ This file indicates that:
 - The variable `input_value` can be used as an input variable in an expression.
   Its basic type in C is just `int32_t`. When targeting cFS, its values will be
   published to the topic or message ID `SAMPLE_MID`, and the value will
-  specifically be in the field `payload`.
+  specifically be in the field `payload`. The variable is `active`, meaning
+  that a change to the value of the variable will trigger a re-evaluation of
+  the Copilot monitors.
 
 - When targeting cFS, data published to the topic `SAMPLE_MID` is a message
   of type `sample_msg_t`.

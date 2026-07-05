@@ -1,6 +1,7 @@
 { "inputs":
      [ { "name": "input_value"
        , "type": "int32_t"
+       , "active": true
        , "connections":
            [ { "scope": "ros/message"
              , "topic": "/ros2/example1"
