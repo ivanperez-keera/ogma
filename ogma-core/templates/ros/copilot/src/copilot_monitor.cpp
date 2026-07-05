@@ -34,6 +34,11 @@ using std::placeholders::_1;
 class CopilotRV : public rclcpp::Node {
   public:
     CopilotRV() : Node("copilotrv") {
+
+      reeval_subscription_subscription_ = this->create_subscription<std_msgs::msg::Empty>(
+        "copilot/__step", 10,
+        std::bind(&CopilotRV::reeval_callback_, this, _1));
+
       {{#variables}}
       {{varDeclName}}_subscription_ = this->create_subscription<{{varDeclMsgType}}>(
         "{{varDeclId}}", 10,
@@ -83,6 +88,10 @@ class CopilotRV : public rclcpp::Node {
     }
 
   private:
+    void reeval_callback_(const std_msgs::msg::Empty::SharedPtr msg) const {
+      step();
+    }
+
     {{#variables}}
     void {{varDeclName}}_callback(const {{varDeclMsgType}}::SharedPtr msg) const {
       {{#varDeclMsgField}}
@@ -95,6 +104,9 @@ class CopilotRV : public rclcpp::Node {
     }
 
     {{/variables}}
+
+    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr reeval_subscription_subscription_;
+
     {{#variables}}
     rclcpp::Subscription<{{varDeclMsgType}}>::SharedPtr {{varDeclName}}_subscription_;
 
