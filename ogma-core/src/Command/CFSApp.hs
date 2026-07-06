@@ -38,7 +38,8 @@ module Command.CFSApp
 -- External imports
 import           Control.Applicative    ( liftA2, (<|>) )
 import qualified Control.Exception      as E
-import           Control.Monad.Except   ( ExceptT (..), liftEither )
+import           Control.Monad.Except   ( ExceptT (..), liftEither,
+                                          throwError )
 import           Data.Aeson             ( ToJSON (..) )
 import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
@@ -54,14 +55,16 @@ import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
 import Command.Common
-import Command.Errors     (ErrorCode, ErrorTriplet (..))
-import Command.VariableDB (Connection (..), TopicDef (..), TypeDef (..),
-                           VariableDB, findConnection, findInput, findTopic,
-                           findType, findTypeByType, inputActive)
-import Data.Aeson.Extra   (mergeObjects)
-import Data.ExprPair      (ExprPair(..), exprPair)
-import Data.Location      (Location (..))
-import Data.Spec.Parser   (readInputExpr)
+import Command.Errors                 (ErrorCode, ErrorTriplet (..))
+import Command.VariableDB             (Connection (..), TopicDef (..),
+                                       TypeDef (..), VariableDB, findConnection,
+                                       findInput, findTopic, findType,
+                                       findTypeByType, inputActive)
+import Data.Aeson.Extra               (mergeObjects)
+import Data.ExprPair                  (ExprPair (..), exprPair)
+import Data.Location                  (Location (..))
+import Data.Spec.Parser               (readInputExpr)
+import Language.Trans.Diagram2Copilot (DiagramMode (..))
 
 -- | Generate a new CFS application connected to Copilot.
 command :: CommandOptions
@@ -110,7 +113,9 @@ command' options (ExprPair exprT) = do
 
     liftEither $ checkArguments spec vs rs
 
-    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA) <$> spec
+    mode <- parseDiagramMode (commandDiagramMode options)
+
+    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA mode) <$> spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
@@ -137,8 +142,8 @@ command' options (ExprPair exprT) = do
     readInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
-    processSpec spec' expr' fp' =
-      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
+    processSpec spec' expr' fp' mode =
+      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec' mode
 
     defaultVarNames spec = case spec of
       Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
@@ -149,6 +154,11 @@ command' options (ExprPair exprT) = do
       Just (InputFileSpec spec') -> specExtractHandlers (Just spec')
       Just (InputFileDiagram _)  -> [ ("handler", Just "uint8_t" ) ]
       Nothing                    -> specExtractHandlers Nothing
+
+    parseDiagramMode :: String -> ExceptT ErrorTriplet IO DiagramMode
+    parseDiagramMode "check"     = return CheckState
+    parseDiagramMode "calculate" = return ComputeState
+    parseDiagramMode mode        = throwError $ commandWrongDiagramMode mode
 
 -- | Generate a variable substitution map for a cFS application.
 commandLogic :: VariableDB
@@ -195,6 +205,7 @@ data CommandOptions = CommandOptions
   , commandPropFormat  :: String         -- ^ Format used for input properties.
   , commandPropVia     :: Maybe String   -- ^ Use external command to
                                          -- pre-process system properties.
+  , commandDiagramMode :: String         -- ^ Diagram mode.
   , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
                                          -- variables to make available to the
                                          -- template.
@@ -310,3 +321,16 @@ commandMultipleInputTypes =
 -- | Error: multiple inputs of incompatible types.
 ecMultipleInputTypes :: ErrorCode
 ecMultipleInputTypes = 1
+
+-- | Error message associated to providing a diagram mode not supported by the
+-- cFS backend.
+commandWrongDiagramMode :: String -> ErrorTriplet
+commandWrongDiagramMode mode =
+    ErrorTriplet ecWrongDiagramMode msg LocationNothing
+  where
+    msg = "The diagram mode provided " ++ show mode ++ " is not known or is "
+       ++ "not supported by this backend."
+
+-- | Error: wrong diagram mode.
+ecWrongDiagramMode :: ErrorCode
+ecWrongDiagramMode = 1

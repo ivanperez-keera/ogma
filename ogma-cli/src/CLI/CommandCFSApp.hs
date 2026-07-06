@@ -61,6 +61,7 @@ data CommandOpts = CommandOpts
   , cFSAppFormat        :: String
   , cFSAppPropFormat    :: String
   , cFSAppPropVia       :: Maybe String
+  , cFSAppDiagramMode   :: String
   , cFSAppTemplateVars  :: Maybe String
   }
 
@@ -90,6 +91,7 @@ command c
         , Command.CFSApp.commandFormat        = cFSAppFormat c
         , Command.CFSApp.commandPropFormat    = cFSAppPropFormat c
         , Command.CFSApp.commandPropVia       = cFSAppPropVia c
+        , Command.CFSApp.commandDiagramMode   = cFSAppDiagramMode c
         , Command.CFSApp.commandExtraVars     = cFSAppTemplateVars c
         }
 
@@ -133,6 +135,8 @@ commandProjectOptions projectFile c = do
 
       , Command.CFSApp.commandPropVia =
           projectCommandPropVia project <|> cFSAppPropVia c
+
+      , Command.CFSApp.commandDiagramMode = cFSAppDiagramMode c
 
       , Command.CFSApp.commandExtraVars =
           projectExtraJSONFile project <|> cFSAppTemplateVars c
@@ -228,6 +232,13 @@ commandOptsParser = CommandOpts
             <> help strCFSAppPropViaDesc
             )
         )
+  <*> strOption
+        (  long "mode"
+        <> metavar "MODE"
+        <> help strCFSAppDiagramModeDesc
+        <> showDefault
+        <> value "calculate"
+        )
   <*> optional
         ( strOption
             (  long "template-vars"
@@ -286,6 +297,11 @@ strCFSAppPropFormatDesc = "Format of temporal or boolean properties"
 strCFSAppPropViaDesc :: String
 strCFSAppPropViaDesc =
   "Command to pre-process individual properties"
+
+-- | Mode name flag description.
+strCFSAppDiagramModeDesc :: String
+strCFSAppDiagramModeDesc =
+  "Mode of operation for diagrams (check, calculate, safeguard)"
 
 -- | Argument template variables to cFS app generation command
 strCFSAppTemplateVarsArgDesc :: String

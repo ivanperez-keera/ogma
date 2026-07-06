@@ -115,7 +115,8 @@ command' options (ExprPair exprT) = do
 
     case spec of
       Nothing    -> liftEither $ Left $ commandMissingSpec
-      Just spec' -> commandLogic triggerExprM fpA name typeMaps exprT spec'
+      Just spec' ->
+        commandLogic triggerExprM fpA name typeMaps exprT spec' ComputeState
 
   where
     triggerExprM   = commandConditionExpr options
@@ -140,13 +141,14 @@ commandLogic :: Maybe String
              -> [(String, String)]
              -> ExprPairT a
              -> InputFile a
+             -> DiagramMode
              -> ExceptT ErrorTriplet IO AppData
-commandLogic expr fps name typeMaps exprT (InputFileDiagram d) =
+commandLogic expr fps name typeMaps exprT (InputFileDiagram d) mode =
     return $ AppData [] int [] trigs name
   where
-    (int, trigs) = diagram2CopilotSpec d ComputeState
+    (int, trigs) = diagram2CopilotSpec d mode
 
-commandLogic expr fps name typeMaps exprT (InputFileSpec input) =
+commandLogic expr fps name typeMaps exprT (InputFileSpec input) _mode =
 
     liftEither appData
 
