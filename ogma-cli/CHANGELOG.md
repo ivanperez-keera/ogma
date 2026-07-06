@@ -1,6 +1,6 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-07-05
+## [1.X.Y] - 2026-07-06
 
 * Fix typo in README (#428).
 * Update CI job to install Copilot 4.7.1 by default (#446).
@@ -14,6 +14,7 @@
 * Update variable DBs in examples to indicate which inputs are active (#474).
 * Expose diagram mode argument to cFS backend (#476).
 * Add example explaining cFS app generation from state machine diagrams (#478).
+* Add example containing Doorstop requirements (#480).
 
 ## [1.14.0] - 2026-05-21
 
