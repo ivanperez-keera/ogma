@@ -1,10 +1,11 @@
 {{#commandDiagramsAny}}
 # Diagrams
 
-{{#commandDiagramList}}
+{{#commandDiagramsList}}
 ## Diagram
 
-The diagram:
+The diagram `{{summaryDiagramFile}}`:
+
  - Has {{summaryDiagramNumStates}} states.
 {{#summaryDiagramDeterministic}}
  - Is deterministic.
@@ -13,38 +14,40 @@ The diagram:
  - Is not deterministic.
 {{/summaryDiagramDeterministic}}
 
-{{/commandDiagramList}}
+{{/commandDiagramsList}}
 {{/commandDiagramsAny}}
 {{#commandRequirementsAny}}
 # Requirements
 
-## Summary
+{{#commandRequirementList}}
+## File `{{summaryRequirementsFile}}`
 
-The project has {{commandRequirements}} requirements in total.
+The file `{{summaryRequirementsFile}}` has {{summaryRequirements}} requirements
+in total.
 
 Of these requirements:
 
-- {{commandRequirementsTrue}} requirements are constantly or always true.
+- {{summaryRequirementsTrue}} requirements are constantly or always true.
 
-- {{commandRequirementsFalse}} requirements are constantly or always false.
+- {{summaryRequirementsFalse}} requirements are constantly or always false.
 
-{{#commandRequirementsConsistent}}
+{{#summaryRequirementsConsistent}}
 No inconsistencies detected in the requirements.
-{{/commandRequirementsConsistent}}
-{{^commandRequirementsConsistent}}
+{{/summaryRequirementsConsistent}}
+{{^summaryRequirementsConsistent}}
 The requirements are not mutually consistent: there is no way for all
 requirements to be true at the same time.
-{{/commandRequirementsConsistent}}
+{{/summaryRequirementsConsistent}}
 
 The requirements mention:
 
-- {{commandExternalVariables}} external variables.
+- {{summaryExternalVariables}} external variables.
 
-- {{commandInternalVariables}} internal variables.
+- {{summaryInternalVariables}} internal variables.
 
 ## Detailed list
 
-{{#commandRequirementList}}
+{{#summaryRequirementDetails}}
 ### {{summaryRequirementName}}
 
 **Description:** {{summaryRequirementDesc}}
@@ -63,5 +66,6 @@ The requirements mention:
 {{/summaryRequirementFalse}}
 {{/summaryRequirementTrue}}
 
+{{/summaryRequirementDetails}}
 {{/commandRequirementList}}
 {{/commandRequirementsAny}}
