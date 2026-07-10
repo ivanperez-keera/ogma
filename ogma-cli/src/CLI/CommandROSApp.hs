@@ -333,7 +333,7 @@ strROSAppTemplateVarsArgDesc =
 -- | Argument packages to tested list to ROS app generation command
 strROSAppROSNodesTestingListArgDesc :: String
 strROSAppROSNodesTestingListArgDesc =
-  "Turn on ROS2 package node during testing"
+  "Turn on ROS 2 package node during testing"
 
 -- | Argument variables to be tested list to ROS app generation command
 strROSAppVarsTestingListArgDesc :: String
