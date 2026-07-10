@@ -275,10 +275,10 @@ copilot-cfs-demo/copilot/fsw/src/copilot_cfs.h
 
 Users are expected to modify `Properties.hs` to adjust the property being
 monitored. In this particular example, the C code generated contains the
-following instruction to subscribe to an `ICAROUS_POSITION_MID` message to
+following instruction to subscribe to an `ASSET_POSITION_MID` message to
 obtain the vehicle position:
 ```c
-    CFE_SB_Subscribe(ICAROUS_POSITION_MID, COPILOT_CommandPipe);
+    CFE_SB_Subscribe(ASSET_POSITION_MID, COPILOT_CommandPipe);
 ```
 
 The message dispatcher included in the application detects a message
@@ -292,8 +292,8 @@ void COPILOT_ProcessCommandPacket(void)
 
     switch (MsgId)
     {
-        case ICAROUS_POSITION_MID:
-            COPILOT_ProcessIcarousPosition();
+        case ASSET_POSITION_MID:
+            COPILOT_ProcessAssetPosition();
             break;
     ...
 ```
@@ -302,7 +302,7 @@ Finally, the dedicated subroutine makes data available to the monitor
 and calls the main Copilot entry point `step`:
 
 ```c
-void COPILOT_ProcessIcarousPosition(void)
+void COPILOT_ProcessAssetPosition(void)
 {
     position_t* msg;
     msg = (position_t*) COPILOTMsgPtr;

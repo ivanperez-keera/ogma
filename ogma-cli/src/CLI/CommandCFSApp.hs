@@ -273,12 +273,12 @@ strCFSAppFileNameArgDesc =
 -- | Argument variable list to cFS app generation command
 strCFSAppVarListArgDesc :: String
 strCFSAppVarListArgDesc =
-  "File containing list of cFS/ICAROUS variables to make accessible"
+  "File containing list of cFS variables to make accessible"
 
 -- | Argument variable database to cFS app generation command
 strCFSAppVarDBArgDesc :: String
 strCFSAppVarDBArgDesc =
-  "File containing a DB of known cFS/ICAROUS variables"
+  "File containing a DB of known cFS variables"
 
 -- | Argument handler list to cFS app generation command
 strCFSAppHandlerListArgDesc :: String
