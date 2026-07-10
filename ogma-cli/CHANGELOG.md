@@ -16,6 +16,7 @@
 * Add example explaining cFS app generation from state machine diagrams (#478).
 * Add example containing Doorstop requirements (#480).
 * Remove mentions of ICAROUS (#482).
+* Replace ROS2 with ROS 2 in help message (#484).
 
 ## [1.14.0] - 2026-05-21
 
