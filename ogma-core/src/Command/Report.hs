@@ -20,6 +20,7 @@
 module Command.Report
     ( command
     , CommandOptions(..)
+    , ReportFile(..)
     , CommandSummary(..)
     , ErrorCode
     )
@@ -27,7 +28,9 @@ module Command.Report
 
 -- External imports
 import qualified Control.Exception      as E
-import           Control.Monad.Except   (ExceptT (..), liftEither, withExceptT)
+import           Control.Monad          (foldM)
+import           Control.Monad.Except   (ExceptT (..), liftEither, runExceptT,
+                                         withExceptT)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (ToJSON (..))
 import           GHC.Generics           (Generic)
@@ -67,9 +70,10 @@ command options = processResult $ do
     -- Obtain template dir
     templateDir <- locateTemplateDir mTemplateDir "report"
 
-    let functions = exprPair (commandPropFormat options)
-
-    reportData <- command' options functions
+    reportData <- foldM
+                    processFile
+                    emptyCommandSummary
+                    (commandInputFiles options)
 
     -- Expand template
     ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
@@ -79,6 +83,14 @@ command options = processResult $ do
 
     targetDir    = commandTargetDir options
     mTemplateDir = commandTemplateDir options
+
+    processFile :: CommandSummary
+                -> ReportFile
+                -> ExceptT ErrorTriplet IO CommandSummary
+    processFile acc file = do
+      let functions = exprPair (reportFilePropFormat file)
+      s <- command' options functions file
+      return $ mergeCommandSummary acc s
 
 -- | Generate report of a spec or diagram given in an input file.
 --
@@ -90,28 +102,23 @@ command options = processResult $ do
 -- copy the files over.
 command' :: CommandOptions
          -> ExprPair
+         -> ReportFile
          -> ExceptT ErrorTriplet IO CommandSummary
-command' options (ExprPair exprT) = do
+command' options (ExprPair exprT) file = do
     res <- parseInputFile fp formatName propFormatName propVia exprT
     case res of
       InputFileDiagram diagramR -> do
         analysisResult <- liftIO $ analyzeDiagram diagramR
-        let diagramDetails = DiagramDetails
+        let diagramDetails = CommandSummaryDiagram
+                               fp
                                (numStates analysisResult)
                                (deterministic analysisResult)
 
         pure $ CommandSummary
-                 { commandExternalVariables      = 0
-                 , commandInternalVariables      = 0
-                 , commandRequirementsAny        = False
-                 , commandRequirements           = 0
-                 , commandRequirementsTrue       = 0
-                 , commandRequirementsFalse      = 0
-                 , commandRequirementsConsistent = True
-                 , commandRequirementList        = []
-                 , commandDiagramsAny            = True
-                 , commandDiagrams               = 1
-                 , commandDiagramList            = [diagramDetails]
+                 { commandRequirementsAny = False
+                 , commandRequirementList = []
+                 , commandDiagramsList    = [ diagramDetails ]
+                 , commandDiagramsAny     = True
                  }
 
       InputFileSpec spec -> withExceptT commandCannotAnalyzeF $ do
@@ -140,26 +147,30 @@ command' options (ExprPair exprT) = do
             falseReqs  = SpecAnalysis.alwaysFalseReq specFormalAnalysis
             consistent = SpecAnalysis.consistent     specFormalAnalysis
 
+            fileReqs   = CommandSummaryRequirements
+                           { summaryRequirementsFile       = fp
+                           , summaryExternalVariables      = numExterns
+                           , summaryInternalVariables      = numInternal
+                           , summaryRequirements           = numReqs
+                           , summaryRequirementsTrue       = numTrues
+                           , summaryRequirementsFalse      = numFalses
+                           , summaryRequirementsConsistent = consistent
+                           , summaryRequirementsDetails    = reqListDetails
+                           }
+
         pure $ CommandSummary
-                 { commandExternalVariables      = numExterns
-                 , commandInternalVariables      = numInternal
-                 , commandRequirementsAny        = numReqs > 0
-                 , commandRequirements           = numReqs
-                 , commandRequirementsTrue       = numTrues
-                 , commandRequirementsFalse      = numFalses
-                 , commandRequirementsConsistent = consistent
-                 , commandRequirementList        = reqListDetails
-                 , commandDiagramsAny            = False
-                 , commandDiagrams               = 0
-                 , commandDiagramList            = []
+                 { commandRequirementsAny = length reqListDetails > 0
+                 , commandRequirementList = [fileReqs]
+                 , commandDiagramsAny     = False
+                 , commandDiagramsList    = []
                  }
 
   where
 
-    fp             = commandInputFile options
-    formatName     = commandFormat options
-    propFormatName = commandPropFormat options
-    propVia        = commandPropVia options
+    fp             = reportFilePath file
+    formatName     = reportFileFormat file
+    propFormatName = reportFilePropFormat file
+    propVia        = reportFilePropVia file
 
     ExprPairT _parse replace printExpr ids _def = exprT
 
@@ -168,29 +179,59 @@ command' options (ExprPair exprT) = do
 data CommandOptions = CommandOptions
   { commandTargetDir   :: String
   , commandTemplateDir :: Maybe String
-  , commandInputFile   :: String
-  , commandFormat      :: String
-  , commandPropFormat  :: String
-  , commandPropVia     :: Maybe String
+  , commandInputFiles  :: [ ReportFile ]
+  }
+
+-- | Information about one file in the command options.
+data ReportFile = ReportFile
+  { reportFilePath       :: FilePath
+  , reportFileFormat     :: String
+  , reportFilePropFormat :: String
+  , reportFilePropVia    :: Maybe String
   }
 
 -- | Summary of the files read.
 data CommandSummary = CommandSummary
-    { commandExternalVariables      :: Int
-    , commandInternalVariables      :: Int
-    , commandRequirementsAny        :: Bool
-    , commandRequirements           :: Int
-    , commandRequirementsTrue       :: Int
-    , commandRequirementsFalse      :: Int
-    , commandRequirementsConsistent :: Bool
-    , commandRequirementList        :: [RequirementDetails]
-    , commandDiagramsAny            :: Bool
-    , commandDiagrams               :: Int
-    , commandDiagramList            :: [DiagramDetails]
+    { commandRequirementsAny :: Bool
+    , commandRequirementList :: [CommandSummaryRequirements]
+    , commandDiagramsAny     :: Bool
+    , commandDiagramsList    :: [CommandSummaryDiagram]
     }
   deriving (Generic, Show)
 
 instance ToJSON CommandSummary
+
+-- | Summary with empty data.
+emptyCommandSummary :: CommandSummary
+emptyCommandSummary = CommandSummary False [] False []
+
+-- | Merge two summaries.
+mergeCommandSummary :: CommandSummary -> CommandSummary -> CommandSummary
+mergeCommandSummary c1 c2 = CommandSummary
+  { commandRequirementsAny =
+      commandRequirementsAny c1 || commandRequirementsAny c2
+  , commandRequirementList =
+      commandRequirementList c1 ++ commandRequirementList c2
+  , commandDiagramsAny =
+      commandDiagramsAny c1 || commandDiagramsAny c2
+  , commandDiagramsList =
+      commandDiagramsList c1 ++ commandDiagramsList c2
+  }
+
+-- | Requirement data for inclusion in the summary.
+data CommandSummaryRequirements = CommandSummaryRequirements
+    { summaryRequirementsFile       :: FilePath
+    , summaryExternalVariables      :: Int
+    , summaryInternalVariables      :: Int
+    , summaryRequirements           :: Int
+    , summaryRequirementsTrue       :: Int
+    , summaryRequirementsFalse      :: Int
+    , summaryRequirementsConsistent :: Bool
+    , summaryRequirementsDetails    :: [RequirementDetails]
+    }
+  deriving (Generic, Show)
+
+instance ToJSON CommandSummaryRequirements
 
 -- | Information to include in a report about a requirement.
 data RequirementDetails = RequirementDetails
@@ -204,13 +245,14 @@ data RequirementDetails = RequirementDetails
 instance ToJSON RequirementDetails
 
 -- | Information to include in a report about a diagram.
-data DiagramDetails = DiagramDetails
-    { summaryDiagramNumStates     :: Int
+data CommandSummaryDiagram = CommandSummaryDiagram
+    { summaryDiagramFile          :: FilePath
+    , summaryDiagramNumStates     :: Int
     , summaryDiagramDeterministic :: Bool
     }
   deriving (Generic, Show)
 
-instance ToJSON DiagramDetails
+instance ToJSON CommandSummaryDiagram
 
 -- * Errors
 
