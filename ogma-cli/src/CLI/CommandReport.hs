@@ -43,7 +43,7 @@ module CLI.CommandReport
   where
 
 -- External imports
-import Options.Applicative (Parser, help, long, metavar, optional, short,
+import Options.Applicative (Parser, help, long, many, metavar, optional, short,
                             showDefault, strOption, value)
 
 -- External imports: command results
@@ -61,10 +61,15 @@ data CommandOpts = CommandOpts
                                              -- reoprt should be created.
   , commandTemplateDir :: Maybe FilePath     -- ^ Directory where the template
                                              -- is to be found.
-  , commandFileName    :: FilePath
-  , commandFormat      :: String
-  , commandPropFormat  :: String
-  , commandPropVia     :: Maybe String
+  , commandInputFiles  :: [ReportFile]
+  }
+
+-- | Options associated to a specific input file.
+data ReportFile = ReportFile
+  { reportFilePath       :: FilePath
+  , reportFileFormat     :: String
+  , reportFilePropFormat :: String
+  , reportFilePropVia    :: Maybe String
   }
 
 -- | Generate a report of the input specification(s).
@@ -78,10 +83,15 @@ command options = do
     internalCommandOpts = Command.Report.CommandOptions
       { Command.Report.commandTargetDir   = commandTargetDir options
       , Command.Report.commandTemplateDir = commandTemplateDir options
-      , Command.Report.commandInputFile   = commandFileName options
-      , Command.Report.commandFormat      = commandFormat options
-      , Command.Report.commandPropFormat  = commandPropFormat options
-      , Command.Report.commandPropVia     = commandPropVia options
+      , Command.Report.commandInputFiles  =
+          map fileInfo $ commandInputFiles options
+      }
+
+    fileInfo f = Command.Report.ReportFile
+      { Command.Report.reportFilePath       = reportFilePath   f
+      , Command.Report.reportFileFormat     = reportFileFormat f
+      , Command.Report.reportFilePropFormat = reportFilePropFormat f
+      , Command.Report.reportFilePropVia    = reportFilePropVia f
       }
 
 -- * CLI
@@ -108,7 +118,13 @@ commandOptsParser = CommandOpts
             <> help strReportTemplateDirArgDesc
             )
         )
-  <*> strOption
+  <*> many reportFileOptsParser
+
+-- | Subparser for information on one input file to be used with the @report@
+-- command.
+reportFileOptsParser :: Parser ReportFile
+reportFileOptsParser = ReportFile
+  <$> strOption
         (  long "file-name"
         <> metavar "FILENAME"
         <> help strReportFilenameDesc
