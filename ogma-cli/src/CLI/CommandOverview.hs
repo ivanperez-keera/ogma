@@ -41,14 +41,14 @@ import           Options.Applicative (Parser, help, long, many, metavar,
                                       value)
 import           Text.Microstache
 
--- External imports: command results
+-- External imports: handling of input projects and command results
 import Command.Result ( Result(..) )
 import Data.Location  ( Location(..) )
+import Data.Project   ( Project (..), readProject )
 
 -- External imports: actions or commands supported
 import           Command.Overview (ErrorCode)
 import qualified Command.Overview
-import           Data.Project       (Project (..), readProject)
 
 -- * Command
 
