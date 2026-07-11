@@ -39,7 +39,7 @@ import qualified Data.Text.Lazy.IO   as T
 import           Options.Applicative (Parser, help, long, many, metavar,
                                       optional, short, showDefault, strOption,
                                       value)
-import           Text.Microstache
+import           Text.Microstache    (compileMustacheText, renderMustache)
 
 -- External imports: handling of input projects and command results
 import Command.Result ( Result(..) )
