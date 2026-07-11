@@ -1,6 +1,6 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-07-10
+## [1.X.Y] - 2026-07-11
 
 * Fix typo in README (#428).
 * Update CI job to install Copilot 4.7.1 by default (#446).
@@ -18,6 +18,7 @@
 * Remove mentions of ICAROUS (#482).
 * Replace ROS2 with ROS 2 in help message (#484).
 * Adjust `report` command to accept multiple input files (#486).
+* Adjust `report` command to support projects (#488).
 
 ## [1.14.0] - 2026-05-21
 
