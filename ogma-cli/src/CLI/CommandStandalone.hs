@@ -34,7 +34,7 @@ import Control.Applicative ((<|>))
 import Data.Functor        ((<&>))
 import Data.Maybe          (fromMaybe)
 import Options.Applicative (Parser, help, long, many, metavar, optional, short,
-                            showDefault, strOption, switch, value)
+                            showDefault, strOption, value)
 
 -- External imports: command results
 import Command.Result ( Result(..) )
