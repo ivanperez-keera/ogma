@@ -19,6 +19,7 @@
 * Replace ROS2 with ROS 2 in help message (#484).
 * Adjust `report` command to accept multiple input files (#486).
 * Adjust `report` command to support projects (#488).
+* Remove unused import from `CLI.CommandStandalone` module (#490).
 
 ## [1.14.0] - 2026-05-21
 
