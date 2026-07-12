@@ -105,13 +105,13 @@ command' options (ExprPair exprT) = do
                cExpr
 
     specF <- if null fpA
-                  then return Nothing
-                  else do
-                    fpA' <- mapM readInputFile' fpA
-                    let fpA'' = combineInputFiles fpA'
-                    if length fpA'' > 1
-                      then liftEither $ Left commandMultipleInputTypes
-                      else pure $ Just $ head fpA''
+               then return Nothing
+               else do
+                 fpA' <- mapM readInputFile' fpA
+                 let fpA'' = combineInputFiles fpA'
+                 if length fpA'' > 1
+                   then liftEither $ Left commandMultipleInputTypes
+                   else pure $ Just $ head fpA''
 
     let spec = specT <|> specF
 
