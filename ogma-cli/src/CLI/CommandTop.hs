@@ -92,16 +92,16 @@ import qualified CLI.CommandStandalone
 -- @CommandOpts@ to capture their respective arguments. These types are
 -- different for each subcommand.
 data CommandOpts =
-    CommandOptsCFSApp                    CLI.CommandCFSApp.CommandOpts
-  | CommandOptsCStructs2Copilot          CLI.CommandCStructs2Copilot.CommandOpts
-  | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
-  | CommandOptsDiagram                   CLI.CommandDiagram.CommandOpts
-  | CommandOptsFPrimeApp                 CLI.CommandFPrimeApp.CommandOpts
-  | CommandOptsOverview                  CLI.CommandOverview.CommandOpts
-  | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
-  | CommandOptsSearch                    CLI.CommandSearch.CommandOpts
-  | CommandOptsStandalone                CLI.CommandStandalone.CommandOpts
-  | CommandOptsReport                    CLI.CommandReport.CommandOpts
+    CommandOptsCFSApp               CLI.CommandCFSApp.CommandOpts
+  | CommandOptsCStructs2Copilot     CLI.CommandCStructs2Copilot.CommandOpts
+  | CommandOptsCStructs2MsgHandlers CLI.CommandCStructs2MsgHandlers.CommandOpts
+  | CommandOptsDiagram              CLI.CommandDiagram.CommandOpts
+  | CommandOptsFPrimeApp            CLI.CommandFPrimeApp.CommandOpts
+  | CommandOptsOverview             CLI.CommandOverview.CommandOpts
+  | CommandOptsROSApp               CLI.CommandROSApp.CommandOpts
+  | CommandOptsSearch               CLI.CommandSearch.CommandOpts
+  | CommandOptsStandalone           CLI.CommandStandalone.CommandOpts
+  | CommandOptsReport               CLI.CommandReport.CommandOpts
 
 -- * CLI
 
