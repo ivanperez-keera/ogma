@@ -191,9 +191,9 @@ parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
                        )
 
         return $ InternalVariableDef
-                   { internalVariableName    = varId
-                   , internalVariableType    = varType
-                   , internalVariableExpr    = varExpr
+                   { internalVariableName = varId
+                   , internalVariableType = varType
+                   , internalVariableExpr = varExpr
                    }
 
   internalVariableDefs <- except $ mapM internalVarDef values
@@ -224,8 +224,8 @@ parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
             (jfiExternalVarType jsonFormatInternal)
 
         return $ ExternalVariableDef
-                   { externalVariableName    = varId
-                   , externalVariableType    = varType
+                   { externalVariableName = varId
+                   , externalVariableType = varType
                    }
 
   externalVariableDefs <- except $ mapM externalVarDef values
