@@ -102,7 +102,7 @@ parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
         varType <- maybe
                      (Right "")
                      (\e -> valueToString msg =<<
-                              (listToEither msg (objectFieldValues e value))
+                              listToEither msg (objectFieldValues e value)
                      )
                      (specInternalVarType yamlFormat)
 
@@ -168,7 +168,7 @@ parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
           Just FileName  -> return $ takeFileName filepath
           Just BaseName  -> return $ takeBaseName filepath
           Just (Field p) -> except $
-            valueToString msg =<< (listToEither msg (objectFieldValues p value))
+            valueToString msg =<< listToEither msg (objectFieldValues p value)
 
         let msg = "Requirement expression"
         reqExpr <- except $ valueToString msg =<<
@@ -185,7 +185,7 @@ parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
                      maybe
                        (Right "")
                        (\e -> valueToString msg =<<
-                                (listToEither msg (objectFieldValues e value))
+                                listToEither msg (objectFieldValues e value)
                        )
                        (specRequirementDesc yamlFormat)
         let reqDesc' = cleanString reqDesc
@@ -193,19 +193,19 @@ parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
         let msg = "Requirement result type"
             ty :: Maybe (Either String String)
             ty = (\e -> valueToString msg =<<
-                          (listToEither msg (objectFieldValues e value))
+                          listToEither msg (objectFieldValues e value)
                  )
-             <$> (specRequirementResultType yamlFormat)
+             <$> specRequirementResultType yamlFormat
         reqResType <- except $ maybeEither ty
 
         let msg = "Requirement result expression"
             resultExpr :: Maybe (Either String String)
             resultExpr = (\e -> valueToString msg =<<
-                                  (listToEither
-                                     msg
-                                     (objectFieldValues e value))
+                                  listToEither
+                                    msg
+                                    (objectFieldValues e value)
                          )
-                     <$> (specRequirementResultExpr yamlFormat)
+                     <$> specRequirementResultExpr yamlFormat
 
         reqResExpr  <- except $ maybeEither resultExpr
         reqResExpr' <- ExceptT $ case reqResExpr of

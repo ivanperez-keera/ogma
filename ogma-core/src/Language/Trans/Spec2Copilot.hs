@@ -94,7 +94,7 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
                                 ]) implementation
           where
             propName = safeMap nameSubstitutions (internalVariableName i)
-            implementation = (internalVariableExpr i)
+            implementation = internalVariableExpr i
 
     -- Encoding of requirements as boolean streams
     reqs :: String
@@ -123,7 +123,7 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
             -- transform the implementation into Copilot, applying a
             -- substitution.
             reqBody subs = reqName ++ " = " ++
-                             (showExpr (exprTransform subs (requirementExpr i)))
+                             showExpr (exprTransform subs (requirementExpr i))
 
     -- Main specification triggers
     triggers :: String

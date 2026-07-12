@@ -124,7 +124,7 @@ readInputFile fp formatName propFormatName propVia exprT =
              -> do let xmlFormat = read format
                    content <- readFile fp
                    parseXMLSpec
-                     (wrapper) (def) xmlFormat content
+                     wrapper def xmlFormat content
              | isPrefixOf "CSVFormat" format
              -> do let csvFormat = read format
                    content <- readFile fp
@@ -149,7 +149,7 @@ readInputFile fp formatName propFormatName propVia exprT =
                                      Left e  -> return $ Left e
                                      Right v ->
                                        parseJSONSpec
-                                         (wrapper)
+                                         wrapper
                                          jsonFormat
                                          fp
                                          v
