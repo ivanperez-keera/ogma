@@ -180,33 +180,34 @@ command' options (ExprPair exprT) = do
 -- applications.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String   -- ^ Trigger condition.
-  , commandInputFiles  :: [FilePath]     -- ^ Input specification files.
-  , commandTargetDir   :: FilePath       -- ^ Target directory where the
-                                         -- application should be created.
-  , commandTemplateDir :: Maybe FilePath -- ^ Directory where the template is
-                                         -- to be found.
-  , commandVariables   :: Maybe FilePath -- ^ File containing a list of
-                                         -- variables to make available to
-                                         -- Copilot.
-  , commandVariableDB  :: Maybe FilePath -- ^ File containing a list of known
-                                         -- variables with their types and the
-                                         -- message IDs they can be obtained
-                                         -- from.
-  , commandHandlers    :: Maybe FilePath -- ^ File containing a list of
-                                         -- handlers used in the Copilot
-                                         -- specification. The handlers are
-                                         -- assumed to receive no arguments.
-  , commandFormat      :: String         -- ^ Format of the input file.
-  , commandPropFormat  :: String         -- ^ Format used for input properties.
-  , commandPropVia     :: Maybe String   -- ^ Use external command to
-                                         -- pre-process system properties.
-  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
-                                         -- variables to make available to the
-                                         -- template.
-  , commandTestingApps :: [Node]         -- ^ Additional applications to turn
-                                         -- on during testing.
-  , commandTestingVars :: [String]       -- ^ Limited list of variables to use
-                                         -- for testing.
+  , commandInputFiles    :: [FilePath]     -- ^ Input specification files.
+  , commandTargetDir     :: FilePath       -- ^ Target directory where the
+                                           -- application should be created.
+  , commandTemplateDir   :: Maybe FilePath -- ^ Directory where the template is
+                                           -- to be found.
+  , commandVariables     :: Maybe FilePath -- ^ File containing a list of
+                                           -- variables to make available to
+                                           -- Copilot.
+  , commandVariableDB    :: Maybe FilePath -- ^ File containing a list of known
+                                           -- variables with their types and
+                                           -- the message IDs they can be
+                                           -- obtained from.
+  , commandHandlers      :: Maybe FilePath -- ^ File containing a list of
+                                           -- handlers used in the Copilot
+                                           -- specification. The handlers are
+                                           -- assumed to receive no arguments.
+  , commandFormat        :: String         -- ^ Format of the input file.
+  , commandPropFormat    :: String         -- ^ Format used for input
+                                           -- properties.
+  , commandPropVia       :: Maybe String   -- ^ Use external command to
+                                           -- pre-process system properties.
+  , commandExtraVars     :: Maybe FilePath -- ^ File containing additional
+                                           -- variables to make available to
+                                           -- the template.
+  , commandTestingApps   :: [Node]         -- ^ Additional applications to turn
+                                           -- on during testing.
+  , commandTestingVars   :: [String]       -- ^ Limited list of variables to
+                                           -- use for testing.
   }
 
 -- | Return the variable information needed to generate declarations

@@ -184,21 +184,21 @@ commandLogic expr fps name typeMaps exprT (InputFileSpec input) _mode =
 -- code.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String
-  , commandInputFiles  :: [FilePath]         -- ^ Input specification file(s).
-  , commandTargetDir   :: FilePath           -- ^ Target directory where the
-                                             -- application should be created.
-  , commandTemplateDir :: Maybe FilePath     -- ^ Directory where the template
-                                             -- is to be found.
-  , commandFormat      :: String             -- ^ Format of the input file.
-  , commandPropFormat  :: String             -- ^ Format used for input
-                                             -- properties.
-  , commandTypeMapping :: [(String, String)]
-  , commandFilename    :: String
-  , commandPropVia     :: Maybe String       -- ^ Use external command to
-                                             -- pre-process system properties.
-  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
-                                         -- variables to make available to the
-                                         -- template.
+  , commandInputFiles    :: [FilePath]         -- ^ Input specification file(s).
+  , commandTargetDir     :: FilePath           -- ^ Target directory where the
+                                               -- application should be created.
+  , commandTemplateDir   :: Maybe FilePath     -- ^ Directory where the template
+                                               -- is to be found.
+  , commandFormat        :: String             -- ^ Format of the input file.
+  , commandPropFormat    :: String             -- ^ Format used for input
+                                               -- properties.
+  , commandTypeMapping   :: [(String, String)]
+  , commandFilename      :: String
+  , commandPropVia       :: Maybe String       -- ^ Use external command to
+                                               -- pre-process system properties.
+  , commandExtraVars     :: Maybe FilePath     -- ^ File containing additional
+                                               -- variables to make available
+                                               -- to the template.
   }
 
 -- | Mapping of types from input format to Copilot.
