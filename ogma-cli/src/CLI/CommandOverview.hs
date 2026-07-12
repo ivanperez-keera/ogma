@@ -158,7 +158,6 @@ commandProjectOptions projectFile c = do
             [ map (convertProjectFile project) $ projectInputFiles project
             , map convertInputFile $ overviewInputFiles c
             ]
-
         }
 
   where
