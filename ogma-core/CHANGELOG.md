@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-07-10
+## [1.X.Y] - 2026-07-12
 
 * Remove commented code from `Data.Spec.Parser` (#430).
 * Remove redundant `where` block (#432).
@@ -22,6 +22,7 @@
 * Extend cFS backend with diagram mode (#476).
 * Replace mentions of ICAROUS (#482).
 * Adjust report command to accept multiple input files (#486).
+* Apply multiple style fixes (#492).
 
 ## [1.14.0] - 2026-05-21
 
