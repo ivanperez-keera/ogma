@@ -195,7 +195,7 @@ commandOptsParser = CommandOpts
             <> help strOverviewProjectArgDesc
             )
         )
-   <*> many overviewFileOptsParser
+  <*> many overviewFileOptsParser
 
 -- | Subparser for information on one input file to be used with the @overview@
 -- command.
