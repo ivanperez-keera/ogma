@@ -78,8 +78,8 @@ command c
              case mOutput of
                Just output ->
                  case outputString of
-                   Right template ->
-                     T.putStr $ trimEnd $ renderMustache template (toJSON output)
+                   Right template -> T.putStr $ trimEnd
+                                   $ renderMustache template (toJSON output)
                    _              -> putStrLn "Error"
                _ -> putStrLn "Error"
              return result
@@ -120,8 +120,10 @@ command c
         , " - {{commandExternalVariables}} external variables."
         , " - {{commandInternalVariables}} internal variables."
         , " - {{commandRequirements}} requirements."
-        , "   - {{commandRequirementsTrue}} requirements are constantly or always true."
-        , "   - {{commandRequirementsFalse}} requirements are constantly or always false."
+        , "   - {{commandRequirementsTrue}} requirements are constantly or "
+          <> "always true."
+        , "   - {{commandRequirementsFalse}} requirements are constantly or "
+          <> "always false."
         , "{{#commandRequirementsConsistent}}"
         , "   - No inconsistencies detected in the requirements."
         , "{{/commandRequirementsConsistent}}"

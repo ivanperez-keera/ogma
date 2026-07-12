@@ -253,7 +253,8 @@ strFPrimeAppTemplateDirArgDesc =
 
 -- | Argument expression to FPrime app generation command.
 strFPrimeAppConditionExprArgDesc :: String
-strFPrimeAppConditionExprArgDesc = "Expression used as guard or trigger condition"
+strFPrimeAppConditionExprArgDesc =
+  "Expression used as guard or trigger condition"
 
 -- | Argument input file to FPrime component generation command
 strFPrimeAppFileNameArgDesc :: String

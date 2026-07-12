@@ -115,7 +115,8 @@ command c
     outputString =
       compileMustacheText "output" $ T.unlines
         [ "{{#searchResultRequirements}}"
-        , "{{requirementInfoLocation}}: requirement \"{{requirementInfoName}}\" matches"
+        , "{{requirementInfoLocation}}: requirement "
+          <> "\"{{requirementInfoName}}\" matches"
         , "{{/searchResultRequirements}}"
         , "{{#searchResultDiagrams}}"
         , "{{diagramInfoLocation}}: diagram file matches"
