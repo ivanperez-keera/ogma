@@ -27,9 +27,9 @@ import qualified Data.Aeson.KeyMap     as M
 import           Data.Aeson.Types      (prependFailure, typeMismatch)
 import           Data.Bifunctor        (first)
 import           Data.ByteString.Lazy  (fromStrict)
-import           Data.JSONPath.Execute
-import           Data.JSONPath.Parser
-import           Data.JSONPath.Types
+import           Data.JSONPath.Execute (executeJSONPath)
+import           Data.JSONPath.Parser  (jsonPath)
+import           Data.JSONPath.Types   (JSONPathElement(..))
 import           Data.Text             (pack, unpack)
 import qualified Data.Text             as T
 import qualified Data.Text.Encoding    as T
@@ -38,7 +38,8 @@ import           System.FilePath       (takeBaseName, takeFileName)
 import           Text.Megaparsec       (eof, errorBundlePretty, parse)
 
 -- External imports: ogma-spec
-import Data.OgmaSpec
+import Data.OgmaSpec (ExternalVariableDef (..), InternalVariableDef (..),
+                      Requirement (..), Spec (..))
 
 data JSONFormat = JSONFormat
     { specInternalVars          :: Maybe String
