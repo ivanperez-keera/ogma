@@ -48,7 +48,16 @@ import qualified Command.Standalone
 import Command.Result (Result (..))
 
 -- Internal imports
-import Command.Common
+import Command.Common                 (InputFile (..), cannotCopyTemplate,
+                                       checkArguments, combineInputFiles,
+                                       locateTemplateDir, makeLeftE,
+                                       openVarDBFilesWithDefault,
+                                       parseInputFile,
+                                       parseRequirementsListFile,
+                                       parseTemplateVarsFile,
+                                       parseVariablesFile, processResult,
+                                       specExtractExternalVariables,
+                                       specExtractHandlers)
 import Command.Errors                 (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB             (InputDef (..), TypeDef (..), VariableDB,
                                        findInput, findType, findTypeByType)

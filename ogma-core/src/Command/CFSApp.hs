@@ -54,7 +54,16 @@ import Data.String.Extra      ( pascalCase )
 import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
-import Command.Common
+import Command.Common                 (InputFile (..), cannotCopyTemplate,
+                                       checkArguments, combineInputFiles,
+                                       locateTemplateDir, makeLeftE,
+                                       openVarDBFilesWithDefault,
+                                       parseInputFile,
+                                       parseRequirementsListFile,
+                                       parseTemplateVarsFile,
+                                       parseVariablesFile, processResult,
+                                       specExtractExternalVariables,
+                                       specExtractHandlers)
 import Command.Errors                 (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB             (Connection (..), TopicDef (..),
                                        TypeDef (..), VariableDB, findConnection,

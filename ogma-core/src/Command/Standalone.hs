@@ -41,12 +41,15 @@ import GHC.Generics         (Generic)
 import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
-import Command.Common
-import Command.Errors                 (ErrorCode, ErrorTriplet(..))
+import Command.Common                 (InputFile (..), cannotCopyTemplate,
+                                       combineInputFiles, locateTemplateDir,
+                                       makeLeftE, parseInputFile,
+                                       parseTemplateVarsFile, processResult)
+import Command.Errors                 (ErrorCode, ErrorTriplet (..))
 import Command.Result                 (Result (..))
 import Data.Aeson.Extra               (mergeObjects)
 import Data.Either.Extra              (mapLeft)
-import Data.ExprPair                  (ExprPair(..), ExprPairT(..), exprPair)
+import Data.ExprPair                  (ExprPair (..), ExprPairT (..), exprPair)
 import Data.Location                  (Location (..))
 import Data.Spec.Extra                (addMissingIdentifiers)
 import Data.Spec.Parser               (readInputExpr)
