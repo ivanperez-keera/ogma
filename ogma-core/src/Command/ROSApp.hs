@@ -97,7 +97,11 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- openVarDBFilesWithDefault varDBFile
 
-    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) cExpr
+    specT <- maybe
+               (return Nothing)
+               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               cExpr
+
     specF <- if null fpA
                   then return Nothing
                   else do

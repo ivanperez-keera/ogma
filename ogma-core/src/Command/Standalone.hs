@@ -101,7 +101,11 @@ command' options (ExprPair exprT) = do
 
     -- Read spec and complement the specification with any missing/implicit
     -- definitions.
-    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) triggerExprM
+    specT <- maybe
+               (return Nothing)
+               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               triggerExprM
+
     specF <- if null fpA
                   then return Nothing
                   else do

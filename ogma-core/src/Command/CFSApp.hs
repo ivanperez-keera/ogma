@@ -99,7 +99,11 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- openVarDBFilesWithDefault varDBFile
 
-    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) cExpr
+    specT <- maybe
+               (return Nothing)
+               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               cExpr
+
     specF <- if null fpA
                   then return Nothing
                   else do
@@ -115,7 +119,8 @@ command' options (ExprPair exprT) = do
 
     mode <- parseDiagramMode (commandDiagramMode options)
 
-    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA mode) <$> spec
+    copilotM <- sequenceA $
+                  (\spec' -> processSpec spec' cExpr fpA mode) <$> spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
