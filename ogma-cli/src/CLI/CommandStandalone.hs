@@ -36,14 +36,14 @@ import Data.Maybe          (fromMaybe)
 import Options.Applicative (Parser, help, long, many, metavar, optional, short,
                             showDefault, strOption, value)
 
--- External imports: command results
+-- External imports: handling of input projects and command results
 import Command.Result ( Result(..) )
 import Data.Location  ( Location(..) )
+import Data.Project   ( Project (..), readProject )
 
 -- External imports: actions or commands supported
 import           Command.Standalone (ErrorCode)
 import qualified Command.Standalone
-import           Data.Project       (Project (..), readProject)
 
 -- * Command
 

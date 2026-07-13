@@ -40,14 +40,14 @@ import           Options.Applicative (Parser, help, long, many, metavar,
                                       value)
 import           Text.Microstache    (compileMustacheText, renderMustache)
 
--- External imports: command results
+-- External imports: handling of input projects and command results
 import Command.Result (Result (..))
 import Data.Location  (Location (..))
+import Data.Project   (Project (..), readProject)
 
 -- External imports: actions or commands supported
 import           Command.Search (ErrorCode)
 import qualified Command.Search
-import           Data.Project   (Project (..), readProject)
 
 -- * Command
 
@@ -115,7 +115,8 @@ command c
     outputString =
       compileMustacheText "output" $ T.unlines
         [ "{{#searchResultRequirements}}"
-        , "{{requirementInfoLocation}}: requirement \"{{requirementInfoName}}\" matches"
+        , "{{requirementInfoLocation}}: requirement "
+          <> "\"{{requirementInfoName}}\" matches"
         , "{{/searchResultRequirements}}"
         , "{{#searchResultDiagrams}}"
         , "{{diagramInfoLocation}}: diagram file matches"

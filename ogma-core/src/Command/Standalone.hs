@@ -1,5 +1,5 @@
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2020 United States Government as represented by the Administrator
@@ -41,12 +41,15 @@ import GHC.Generics         (Generic)
 import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
-import Command.Common
-import Command.Errors                 (ErrorCode, ErrorTriplet(..))
+import Command.Common                 (InputFile (..), cannotCopyTemplate,
+                                       combineInputFiles, locateTemplateDir,
+                                       makeLeftE, parseInputFile,
+                                       parseTemplateVarsFile, processResult)
+import Command.Errors                 (ErrorCode, ErrorTriplet (..))
 import Command.Result                 (Result (..))
 import Data.Aeson.Extra               (mergeObjects)
 import Data.Either.Extra              (mapLeft)
-import Data.ExprPair                  (ExprPair(..), ExprPairT(..), exprPair)
+import Data.ExprPair                  (ExprPair (..), ExprPairT (..), exprPair)
 import Data.Location                  (Location (..))
 import Data.Spec.Extra                (addMissingIdentifiers)
 import Data.Spec.Parser               (readInputExpr)
@@ -101,15 +104,19 @@ command' options (ExprPair exprT) = do
 
     -- Read spec and complement the specification with any missing/implicit
     -- definitions.
-    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) triggerExprM
+    specT <- maybe
+               (return Nothing)
+               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               triggerExprM
+
     specF <- if null fpA
-                  then return Nothing
-                  else do
-                    fpA' <- mapM readInputFile' fpA
-                    let fpA'' = combineInputFiles fpA'
-                    if length fpA'' > 1
-                      then liftEither $ Left commandMultipleInputTypes
-                      else pure $ Just $ head fpA''
+               then return Nothing
+               else do
+                 fpA' <- mapM readInputFile' fpA
+                 let fpA'' = combineInputFiles fpA'
+                 if length fpA'' > 1
+                   then liftEither $ Left commandMultipleInputTypes
+                   else pure $ Just $ head fpA''
 
     let spec = specT <|> specF
 
@@ -180,21 +187,21 @@ commandLogic expr fps name typeMaps exprT (InputFileSpec input) _mode =
 -- code.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String
-  , commandInputFiles  :: [FilePath]         -- ^ Input specification file(s).
-  , commandTargetDir   :: FilePath           -- ^ Target directory where the
-                                             -- application should be created.
-  , commandTemplateDir :: Maybe FilePath     -- ^ Directory where the template
-                                             -- is to be found.
-  , commandFormat      :: String             -- ^ Format of the input file.
-  , commandPropFormat  :: String             -- ^ Format used for input
-                                             -- properties.
-  , commandTypeMapping :: [(String, String)]
-  , commandFilename    :: String
-  , commandPropVia     :: Maybe String       -- ^ Use external command to
-                                             -- pre-process system properties.
-  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
-                                         -- variables to make available to the
-                                         -- template.
+  , commandInputFiles    :: [FilePath]         -- ^ Input specification file(s).
+  , commandTargetDir     :: FilePath           -- ^ Target directory where the
+                                               -- application should be created.
+  , commandTemplateDir   :: Maybe FilePath     -- ^ Directory where the template
+                                               -- is to be found.
+  , commandFormat        :: String             -- ^ Format of the input file.
+  , commandPropFormat    :: String             -- ^ Format used for input
+                                               -- properties.
+  , commandTypeMapping   :: [(String, String)]
+  , commandFilename      :: String
+  , commandPropVia       :: Maybe String       -- ^ Use external command to
+                                               -- pre-process system properties.
+  , commandExtraVars     :: Maybe FilePath     -- ^ File containing additional
+                                               -- variables to make available
+                                               -- to the template.
   }
 
 -- | Mapping of types from input format to Copilot.

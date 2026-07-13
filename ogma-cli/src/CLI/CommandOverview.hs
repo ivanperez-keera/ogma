@@ -39,16 +39,16 @@ import qualified Data.Text.Lazy.IO   as T
 import           Options.Applicative (Parser, help, long, many, metavar,
                                       optional, short, showDefault, strOption,
                                       value)
-import           Text.Microstache
+import           Text.Microstache    (compileMustacheText, renderMustache)
 
--- External imports: command results
+-- External imports: handling of input projects and command results
 import Command.Result ( Result(..) )
 import Data.Location  ( Location(..) )
+import Data.Project   ( Project (..), readProject )
 
 -- External imports: actions or commands supported
 import           Command.Overview (ErrorCode)
 import qualified Command.Overview
-import           Data.Project       (Project (..), readProject)
 
 -- * Command
 
@@ -78,8 +78,8 @@ command c
              case mOutput of
                Just output ->
                  case outputString of
-                   Right template ->
-                     T.putStr $ trimEnd $ renderMustache template (toJSON output)
+                   Right template -> T.putStr $ trimEnd
+                                   $ renderMustache template (toJSON output)
                    _              -> putStrLn "Error"
                _ -> putStrLn "Error"
              return result
@@ -120,8 +120,10 @@ command c
         , " - {{commandExternalVariables}} external variables."
         , " - {{commandInternalVariables}} internal variables."
         , " - {{commandRequirements}} requirements."
-        , "   - {{commandRequirementsTrue}} requirements are constantly or always true."
-        , "   - {{commandRequirementsFalse}} requirements are constantly or always false."
+        , "   - {{commandRequirementsTrue}} requirements are constantly or "
+          <> "always true."
+        , "   - {{commandRequirementsFalse}} requirements are constantly or "
+          <> "always false."
         , "{{#commandRequirementsConsistent}}"
         , "   - No inconsistencies detected in the requirements."
         , "{{/commandRequirementsConsistent}}"
@@ -156,7 +158,6 @@ commandProjectOptions projectFile c = do
             [ map (convertProjectFile project) $ projectInputFiles project
             , map convertInputFile $ overviewInputFiles c
             ]
-
         }
 
   where
@@ -193,7 +194,7 @@ commandOptsParser = CommandOpts
             <> help strOverviewProjectArgDesc
             )
         )
-   <*> many overviewFileOptsParser
+  <*> many overviewFileOptsParser
 
 -- | Subparser for information on one input file to be used with the @overview@
 -- command.

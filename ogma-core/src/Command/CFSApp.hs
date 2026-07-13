@@ -54,7 +54,16 @@ import Data.String.Extra      ( pascalCase )
 import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
-import Command.Common
+import Command.Common                 (InputFile (..), cannotCopyTemplate,
+                                       checkArguments, combineInputFiles,
+                                       locateTemplateDir, makeLeftE,
+                                       openVarDBFilesWithDefault,
+                                       parseInputFile,
+                                       parseRequirementsListFile,
+                                       parseTemplateVarsFile,
+                                       parseVariablesFile, processResult,
+                                       specExtractExternalVariables,
+                                       specExtractHandlers)
 import Command.Errors                 (ErrorCode, ErrorTriplet (..))
 import Command.VariableDB             (Connection (..), TopicDef (..),
                                        TypeDef (..), VariableDB, findConnection,
@@ -99,15 +108,19 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- openVarDBFilesWithDefault varDBFile
 
-    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) cExpr
+    specT <- maybe
+               (return Nothing)
+               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               cExpr
+
     specF <- if null fpA
-                  then return Nothing
-                  else do
-                    fpA' <- mapM readInputFile' fpA
-                    let fpA'' = combineInputFiles fpA'
-                    if length fpA'' > 1
-                      then liftEither $ Left commandMultipleInputTypes
-                      else pure $ Just $ head fpA''
+               then return Nothing
+               else do
+                 fpA' <- mapM readInputFile' fpA
+                 let fpA'' = combineInputFiles fpA'
+                 if length fpA'' > 1
+                   then liftEither $ Left commandMultipleInputTypes
+                   else pure $ Just $ head fpA''
 
     let spec = specT <|> specF
 
@@ -115,7 +128,8 @@ command' options (ExprPair exprT) = do
 
     mode <- parseDiagramMode (commandDiagramMode options)
 
-    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA mode) <$> spec
+    copilotM <- sequenceA $
+                  (\spec' -> processSpec spec' cExpr fpA mode) <$> spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
@@ -185,30 +199,31 @@ commandLogic varDB varNames handlers copilotM =
 -- applications.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String   -- ^ Trigger condition.
-  , commandInputFiles  :: [FilePath]     -- ^ Input specification files.
-  , commandTargetDir   :: FilePath       -- ^ Target directory where the
-                                         -- application should be created.
-  , commandTemplateDir :: Maybe FilePath -- ^ Directory where the template is
-                                         -- to be found.
-  , commandVariables   :: Maybe FilePath -- ^ File containing a list of
-                                         -- variables to make available to
-                                         -- Copilot.
-  , commandVariableDB  :: Maybe FilePath -- ^ File containing a list of known
-                                         -- variables with their types and the
-                                         -- message IDs they can be obtained
-                                         -- from.
-  , commandHandlers    :: Maybe FilePath -- ^ File containing a list of
-                                         -- handlers used in the Copilot
-                                         -- specification. The handlers are
-                                         -- assumed to receive no arguments.
-  , commandFormat      :: String         -- ^ Format of the input file.
-  , commandPropFormat  :: String         -- ^ Format used for input properties.
-  , commandPropVia     :: Maybe String   -- ^ Use external command to
-                                         -- pre-process system properties.
-  , commandDiagramMode :: String         -- ^ Diagram mode.
-  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
-                                         -- variables to make available to the
-                                         -- template.
+  , commandInputFiles    :: [FilePath]     -- ^ Input specification files.
+  , commandTargetDir     :: FilePath       -- ^ Target directory where the
+                                           -- application should be created.
+  , commandTemplateDir   :: Maybe FilePath -- ^ Directory where the template is
+                                           -- to be found.
+  , commandVariables     :: Maybe FilePath -- ^ File containing a list of
+                                           -- variables to make available to
+                                           -- Copilot.
+  , commandVariableDB    :: Maybe FilePath -- ^ File containing a list of known
+                                           -- variables with their types and
+                                           -- the message IDs they can be
+                                           -- obtained from.
+  , commandHandlers      :: Maybe FilePath -- ^ File containing a list of
+                                           -- handlers used in the Copilot
+                                           -- specification. The handlers are
+                                           -- assumed to receive no arguments.
+  , commandFormat        :: String         -- ^ Format of the input file.
+  , commandPropFormat    :: String         -- ^ Format used for input
+                                           -- properties.
+  , commandPropVia       :: Maybe String   -- ^ Use external command to
+                                           -- pre-process system properties.
+  , commandDiagramMode   :: String         -- ^ Diagram mode.
+  , commandExtraVars     :: Maybe FilePath -- ^ File containing additional
+                                           -- variables to make available to
+                                           -- the template.
   }
 
 -- | Return the variable information needed to generate declarations

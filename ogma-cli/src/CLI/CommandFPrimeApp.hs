@@ -36,15 +36,14 @@ import Data.Maybe          ( fromMaybe )
 import Options.Applicative ( Parser, help, long, many, metavar, optional,
                              short, showDefault, strOption, value )
 
--- External imports: command results
-import Command.Result ( Result )
+-- External imports: handling of input projects and command results
+import Command.Result ( Result (..) )
+import Data.Location  ( Location (LocationFile) )
+import Data.Project   ( Project (..), readProject )
 
 -- External imports: actions or commands supported
 import           Command.FPrimeApp (ErrorCode)
 import qualified Command.FPrimeApp
-import           Command.Result    (Result (..))
-import           Data.Location     (Location (LocationFile))
-import           Data.Project      (Project (..), readProject)
 
 -- * Command
 
@@ -253,7 +252,8 @@ strFPrimeAppTemplateDirArgDesc =
 
 -- | Argument expression to FPrime app generation command.
 strFPrimeAppConditionExprArgDesc :: String
-strFPrimeAppConditionExprArgDesc = "Expression used as guard or trigger condition"
+strFPrimeAppConditionExprArgDesc =
+  "Expression used as guard or trigger condition"
 
 -- | Argument input file to FPrime component generation command
 strFPrimeAppFileNameArgDesc :: String

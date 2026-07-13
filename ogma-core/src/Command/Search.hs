@@ -115,9 +115,9 @@ diagramResults file diagramR query = CommandSearchResults
   { searchResultRequirements = []
   , searchResultDiagrams =
       [ DiagramInfo file
-      | any (\(f, t, d) -> query `isInfixOf` (show f)
+      | any (\(f, t, d) -> query `isInfixOf` show f
                         || query `isInfixOf` t
-                        || query `isInfixOf` (show d))
+                        || query `isInfixOf` show d)
         (diagramTransitions diagramR)
       ]
   }

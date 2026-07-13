@@ -41,4 +41,5 @@ processResult (Error ec msg loc) = do
     showLocation LocationNothing        = "<no location info>: "
     showLocation (LocationFile f)       = f ++ ": "
     showLocation (LocationFileLine f l) = f ++ ":" ++ show l ++ ": "
-    showLocation (LocationFileLC f l c) = f ++ ":" ++ show l ++ ":" ++ show c ++ ": "
+    showLocation (LocationFileLC f l c) =
+      f ++ ":" ++ show l ++ ":" ++ show c ++ ": "

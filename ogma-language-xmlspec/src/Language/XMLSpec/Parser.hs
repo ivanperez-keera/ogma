@@ -162,7 +162,9 @@ parseXMLSpec parseExpr defA xmlFormat value = runExceptT $ do
         -- let msgE = "Requirement expression: " ++ take 160 def
         reqExpr <- liftIO $
                      listToMaybe <$>
-                       concatMapM (`executeXPath` def) (xfiRequirementExpr xmlFormatInternal)
+                       concatMapM
+                         (`executeXPath` def)
+                         (xfiRequirementExpr xmlFormatInternal)
 
         reqExpr' <- maybe (return defA)
                           (ExceptT . parseExpr . textUnescape)
@@ -171,7 +173,9 @@ parseXMLSpec parseExpr defA xmlFormat value = runExceptT $ do
         -- let msgD = "Requirement description"
         reqDesc <- maybe
                      (liftEither $ Right "")
-                     (\e -> liftIO $ fromMaybe "" . listToMaybe <$> executeXPath e def)
+                     (\e -> liftIO $
+                              fromMaybe "" . listToMaybe <$> executeXPath e def
+                     )
                      (xfiRequirementDesc xmlFormatInternal)
 
         reqResType <- case xfiRequirementResultType xmlFormatInternal of

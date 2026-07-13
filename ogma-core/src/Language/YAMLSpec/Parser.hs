@@ -87,18 +87,33 @@ parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
   value <- except $ mapLeft Y.prettyPrintParseException $ Y.decodeEither' bs
 
   let values :: [Value]
-      values = maybe [] (objectFieldValueList value) (specInternalVars yamlFormat)
+      values =
+        maybe [] (objectFieldValueList value) (specInternalVars yamlFormat)
 
       internalVarDef :: Value -> Either String InternalVariableDef
       internalVarDef value = do
         let msg = "internal variable name"
-        varId   <- valueToString msg =<< listToEither msg (objectFieldValues (specInternalVarId yamlFormat) value)
+        varId   <- valueToString msg =<<
+                     listToEither
+                       msg
+                       (objectFieldValues (specInternalVarId yamlFormat) value)
 
         let msg = "internal variable type"
-        varType <- maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (objectFieldValues e value))) (specInternalVarType yamlFormat)
+        varType <- maybe
+                     (Right "")
+                     (\e -> valueToString msg =<<
+                              listToEither msg (objectFieldValues e value)
+                     )
+                     (specInternalVarType yamlFormat)
 
         let msg = "internal variable expr"
-        varExpr <- valueToString msg =<< listToEither msg (objectFieldValues (specInternalVarExpr yamlFormat) value)
+        varExpr <- valueToString msg =<<
+                     listToEither
+                       msg
+                       ( objectFieldValues
+                           (specInternalVarExpr yamlFormat)
+                           value
+                       )
 
         return $ InternalVariableDef
                    { internalVariableName = varId
@@ -109,17 +124,28 @@ parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
   internalVariableDefs <- except $ mapM internalVarDef values
 
   let values :: [Value]
-      values = maybe [] (objectFieldValueList value) (specExternalVars yamlFormat)
+      values =
+        maybe [] (objectFieldValueList value) (specExternalVars yamlFormat)
 
       externalVarDef :: Value -> Either String ExternalVariableDef
       externalVarDef value = do
 
         let msg = "external variable name"
         varId   <- valueToString msg
-                      =<< listToEither msg (objectFieldValues (specExternalVarId yamlFormat) value)
+                      =<< listToEither
+                            msg
+                            ( objectFieldValues
+                                (specExternalVarId yamlFormat)
+                                value
+                            )
 
         let msg = "external variable type"
-        varType <- maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (objectFieldValues e value))) (specExternalVarType yamlFormat)
+        varType <- maybe
+                     (Right "")
+                     (\e -> valueToString msg =<<
+                              listToEither msg (objectFieldValues e value)
+                     )
+                     (specExternalVarType yamlFormat)
 
         return $ ExternalVariableDef
                    { externalVariableName = varId
@@ -129,7 +155,8 @@ parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
   externalVariableDefs <- except $ mapM externalVarDef values
 
   let values :: [Value]
-      values = maybe [value] (objectFieldValueList value) (specRequirements yamlFormat)
+      values =
+        maybe [value] (objectFieldValueList value) (specRequirements yamlFormat)
 
       requirementDef value = do
         let msg = "Requirement name"
@@ -140,24 +167,45 @@ parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
           Nothing        -> return ""
           Just FileName  -> return $ takeFileName filepath
           Just BaseName  -> return $ takeBaseName filepath
-          Just (Field p) -> except $ valueToString msg =<< (listToEither msg (objectFieldValues p value))
+          Just (Field p) -> except $
+            valueToString msg =<< listToEither msg (objectFieldValues p value)
 
         let msg = "Requirement expression"
-        reqExpr <- except $ valueToString msg =<< listToEither msg (objectFieldValues (specRequirementExpr yamlFormat) value)
+        reqExpr <- except $ valueToString msg =<<
+                              listToEither
+                                msg
+                                ( objectFieldValues
+                                    (specRequirementExpr yamlFormat)
+                                    value
+                                )
         reqExpr' <- ExceptT $ parseExpr reqExpr
 
         let msg = "Requirement description"
-        reqDesc <- except $ maybe (Right "") (\e -> valueToString msg =<< (listToEither msg (objectFieldValues e value))) (specRequirementDesc yamlFormat)
+        reqDesc <- except $
+                     maybe
+                       (Right "")
+                       (\e -> valueToString msg =<<
+                                listToEither msg (objectFieldValues e value)
+                       )
+                       (specRequirementDesc yamlFormat)
         let reqDesc' = cleanString reqDesc
 
         let msg = "Requirement result type"
             ty :: Maybe (Either String String)
-            ty = (\e -> valueToString msg =<< (listToEither msg (objectFieldValues e value))) <$> (specRequirementResultType yamlFormat)
+            ty = (\e -> valueToString msg =<<
+                          listToEither msg (objectFieldValues e value)
+                 )
+             <$> specRequirementResultType yamlFormat
         reqResType <- except $ maybeEither ty
 
         let msg = "Requirement result expression"
             resultExpr :: Maybe (Either String String)
-            resultExpr = (\e -> valueToString msg =<< (listToEither msg (objectFieldValues e value))) <$> (specRequirementResultExpr yamlFormat)
+            resultExpr = (\e -> valueToString msg =<<
+                                  listToEither
+                                    msg
+                                    (objectFieldValues e value)
+                         )
+                     <$> specRequirementResultExpr yamlFormat
 
         reqResExpr  <- except $ maybeEither resultExpr
         reqResExpr' <- ExceptT $ case reqResExpr of
@@ -183,7 +231,8 @@ parseYAMLSpec parseExpr yamlFormat filepath bs = runExceptT $ do
 -- | Convert a string JSON value into a 'String'.
 valueToString :: String -> Value -> Either String String
 valueToString msg (String x) = Right $ unpack x
-valueToString msg _          = Left $ "The YAML value provided for " ++ msg ++ " does not contain a string"
+valueToString msg _          = Left $
+  "The YAML value provided for " ++ msg ++ " does not contain a string"
 
 -- | Object the values associated to a key of an object.
 --
