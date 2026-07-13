@@ -23,6 +23,7 @@
 * Replace mentions of ICAROUS (#482).
 * Adjust report command to accept multiple input files (#486).
 * Apply multiple style fixes (#492).
+* Adjust cFS app template to allow customizing MIDs (#494).
 
 ## [1.14.0] - 2026-05-21
 
