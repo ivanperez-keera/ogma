@@ -40,7 +40,7 @@ import           Control.Applicative    ( liftA2, (<|>) )
 import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT (..), liftEither,
                                           throwError )
-import           Data.Aeson             ( ToJSON (..) )
+import           Data.Aeson             ( ToJSON (..), Value )
 import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
@@ -236,6 +236,8 @@ variableMap varDB varName = do
   mid       <- connectionTopic <$> findConnection inputDef "cfs"
   topicDef  <- findTopic varDB "cfs" mid
 
+  let extra = topicExtra topicDef
+
   let typeDef = findType varDB varName "cfs" "C"
 
   let typeMsgFromType  = typeFromType <$> typeDef
@@ -250,7 +252,7 @@ variableMap varDB varName = do
 
   return ( VarDecl varName typeVar'
          , mid
-         , MsgInfo mid mn
+         , MsgInfo mid mn extra
          , MsgData mn typeMsgFromType typeMsgFromField varName typeVar' active
          )
 
@@ -280,8 +282,9 @@ type MsgInfoId = String
 -- | A message ID to subscribe to and the name associated to it. The name is
 -- used to generate a suitable name for the message handler.
 data MsgInfo = MsgInfo
-    { msgInfoId   :: MsgInfoId
-    , msgInfoDesc :: String
+    { msgInfoId    :: MsgInfoId
+    , msgInfoDesc  :: String
+    , msgInfoExtra :: Value
     }
   deriving (Generic)
 
