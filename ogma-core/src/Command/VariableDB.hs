@@ -215,13 +215,17 @@ mergeInput (i1:is1) i2
 -- | Merge two lists of connections, so long as they do not contain
 -- contradictory information.
 mergeConnections :: Monad m
-                 => [Connection] -> [Connection] -> ExceptT ErrorTriplet m [Connection]
+                 => [Connection]
+                 -> [Connection]
+                 -> ExceptT ErrorTriplet m [Connection]
 mergeConnections = foldM mergeConnection
 
 -- | Merge a connection into a list of connections, so long as it does not
 -- contain contradictory information.
 mergeConnection ::  Monad m
-                => [Connection] -> Connection -> ExceptT ErrorTriplet m [Connection]
+                => [Connection]
+                -> Connection
+                -> ExceptT ErrorTriplet m [Connection]
 mergeConnection []       c2 = return [c2]
 mergeConnection (c1:cs1) c2
   | c1 == c2
