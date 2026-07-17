@@ -8,11 +8,21 @@
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  {{#package_extra_buildtool_depend}}
+  <buildtool_depend>{{{.}}}</buildtool_depend>
+  {{/package_extra_buildtool_depend}}
+
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
+  {{#package_extra_depend}}
+  <depend>{{{.}}}</depend>
+  {{/package_extra_depend}}
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
+  {{#package_extra_test_depend}}
+  <test_depend>{{{.}}}</test_depend>
+  {{/package_extra_test_depend}}
 
   <export>
     <build_type>ament_cmake</build_type>
