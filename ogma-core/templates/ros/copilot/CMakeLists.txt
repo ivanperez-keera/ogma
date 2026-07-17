@@ -9,9 +9,18 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+{{#target_extra_dependencies}}
+find_package({{{.}}} REQUIRED)
+{{/target_extra_dependencies}}
 
 add_executable(copilot src/copilot_monitor.cpp)
-ament_target_dependencies(copilot rclcpp std_msgs)
+ament_target_dependencies(copilot
+  rclcpp
+  std_msgs
+  {{#target_extra_dependencies}}
+  {{{.}}}
+  {{/target_extra_dependencies}}
+)
 
 # Uncomment to enable compiling the copilot logger
 # add_executable(copilot_logger src/copilot_logger.cpp)
