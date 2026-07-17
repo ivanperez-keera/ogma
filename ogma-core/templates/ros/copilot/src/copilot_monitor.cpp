@@ -82,7 +82,12 @@ class CopilotRV : public rclcpp::Node {
   private:
     {{#variables}}
     void {{varDeclName}}_callback(const {{varDeclMsgType}}::SharedPtr msg) const {
+      {{#varDeclMsgField}}
+      {{varDeclName}} = msg->{{.}};
+      {{/varDeclMsgField}}
+      {{^varDeclMsgField}}
       {{varDeclName}} = msg->data;
+      {{/varDeclMsgField}}
       step();
     }
 

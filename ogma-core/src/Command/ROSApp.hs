@@ -235,7 +235,11 @@ variableMap varDB varName = do
   let typeMsg' = fromMaybe
                    (topicType topicDef)
                    (typeFromType <$> findType varDB varName "ros/message" "C")
-  return $ VarDecl varName typeVar' mid typeMsg' (randomBaseType typeVar')
+
+      fieldMsg = typeFromField =<< findType varDB varName "ros/message" "C"
+
+  return $
+    VarDecl varName typeVar' mid typeMsg' fieldMsg (randomBaseType typeVar')
 
 -- | Return the monitor information needed to generate declarations and
 -- publishers for the given monitor info, and variable database.
@@ -251,11 +255,12 @@ monitorMap varDB (monitorName, Just ty) = do
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
-    { varDeclName    :: String
-    , varDeclType    :: String
-    , varDeclId      :: String
-    , varDeclMsgType :: String
-    , varDeclRandom  :: String
+    { varDeclName     :: String
+    , varDeclType     :: String
+    , varDeclId       :: String
+    , varDeclMsgType  :: String
+    , varDeclMsgField :: Maybe String
+    , varDeclRandom   :: String
     }
   deriving Generic
 
