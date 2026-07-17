@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-07-14
+## [1.X.Y] - 2026-07-16
 
 * Remove commented code from `Data.Spec.Parser` (#430).
 * Remove redundant `where` block (#432).
@@ -25,6 +25,7 @@
 * Apply multiple style fixes (#492).
 * Adjust cFS app template to allow customizing MIDs (#494).
 * Allow variable DB topics to carry extra info available to cFS template (#496).
+* Make variable field names available to ROS template when present (#499).
 
 ## [1.14.0] - 2026-05-21
 
