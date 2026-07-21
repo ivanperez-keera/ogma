@@ -1,0 +1,27 @@
+{ "inputs":
+     [ { "name": "input_signal"
+       , "type": "float"
+       , "active": true
+       , "connections":
+           [ { "scope": "ros/message"
+             , "topic": "/turtle1/pose"
+             , "field": "x"
+             }
+           ]
+       }
+     ]
+, "topics":
+     [ { "scope": "ros/message"
+       , "topic": "/turtle1/pose"
+       , "type":  "turtlesim::msg::Pose"
+       }
+     ]
+, "types": [
+       { "fromScope": "ros/message"
+       , "fromType":  "turtlesim::msg::Pose"
+       , "fromField": "x"
+       , "toScope":   "C"
+       , "toType":    "float"
+       }
+     ]
+}
