@@ -110,13 +110,13 @@ standard cFS header:
 
 ```C
 typedef struct sample_msg {
-   uint8_t CmdHeader[CFE_SB_CMD_HDR_SIZE];
-   uint8_t payload;
+   CFE_MSG_CommandHeader_t CmdHeader;
+   uint8_t                 payload;
 } state_msg_t;
 
 typedef struct sample_msg {
-   uint8_t CmdHeader[CFE_SB_CMD_HDR_SIZE];
-   int32_t payload;
+   CFE_MSG_CommandHeader_t CmdHeader;
+   int32_t                 payload;
 } sample_msg_t;
 ```
 
@@ -369,15 +369,15 @@ following:
 #define STATE_MID 0x1878
 
 typedef struct state_msg {
-   uint8_t CmdHeader[CFE_SB_CMD_HDR_SIZE];
-   uint8_t payload;
+   CFE_MSG_CommandHeader_t CmdHeader;
+   uint8_t                 payload;
 } state_msg_t;
 
 #define SAMPLE_MID 0x1879
 
 typedef struct sample_msg {
-   uint8_t CmdHeader[CFE_SB_CMD_HDR_SIZE];
-   int32_t payload;
+   CFE_MSG_CommandHeader_t CmdHeader;
+   int32_t                 payload;
 } sample_msg_t;
 ```
 
@@ -415,9 +415,9 @@ To build the application, we must first place it within an installation of cFS.
 Assuming a clean, new installation:
 
 ```sh
-$ git clone --recursive -b v6.7.0a git@github.com:nasa/cfs.git
+$ git clone --recursive -b v7.0.1 git@github.com:nasa/cfs.git
 $ mv demo/copilot cfs/apps/copilot
-$ cp ogma-cli/examples/cfs-002-state-machines/extra.h cfs/apps/copilot/fsw/src/
+$ cp ogma-cli/examples/cfs-001-hello-ogma/extra.h cfs/apps/copilot/fsw/src/
 ```
 
 We also modify the default MIDs used by the template, to avoid clashing with
@@ -427,35 +427,27 @@ the `sample_app`:
 $ sed -i -e 's/0x188/0x189/g' cfs/apps/copilot/fsw/platform_inc/copilot_cfs_msgids.h
 ```
 
-Next, we copy the default definitions and `Makefile` provided with cFS:
-
-```sh
-$ cd cfs
-$ cp cfe/cmake/Makefile.sample Makefile
-$ cp -r cfe/cmake/sample_defs .
-```
-
 Because of how cFS applications work, we edit the file
 `sample_defs/targets.cmake` and add `copilot` to the list of applications
-compiled for `cpu1`. The setting of `TGT1_APPLIST` reads as follows:
+compiled for `cpu1`. The setting of `cpu1_APPLIST` reads as follows:
 
 ```C
-SET(TGT1_APPLIST sample_app sample_lib ci_lab to_lab sch_lab copilot)
+SET(cpu1_APPLIST ci_lab to_lab sch_lab copilot)
 ```
 
 Next, we add the generated application to the list of applications that will be
 executed upon starting cFS by modifying the file
-`sample_defs/cpu1_cfe_es_startup.scr` and adding the following to the head of
-the file (before the first `!` character):
+`sample_defs/generate_startup.cmake` and adding the following to the end of the
+list of apps that should always be present (after `sample_app`):
 
 ```csv
-CFE_APP, /cf/copilot_cfs.so, COPILOT_AppMain, COPILOT_APP, 50, 16384, 0x0, 0;
+CFE_APP, copilot_cfs, COPILOT_AppMain, COPILOT_APP, 50, 32768, 0x0, 0;
 ```
 
 To compile the application, run:
 ```sh
-$ make SIMULATION=native prep
-$ make install
+$ make native_std.prep
+$ make native_std.install -j$(nproc)
 ```
 
 # Running the cFS application
@@ -475,7 +467,7 @@ Now, in one terminal, we launch the cFS application. Note that we need to do so
 as root:
 
 ```sh
-$ cd build/exe/cpu1
+$ cd build-native_std/exe/cpu1
 $ sudo ./core-cpu1
 ```
 
