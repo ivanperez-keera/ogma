@@ -22,6 +22,7 @@
 * Remove unused import from `CLI.CommandStandalone` module (#490).
 * Apply multiple style fixes (#492).
 * Standardize option name in `report` command (#505).
+* Update CI job, examples for cFS 7.0 (#509).
 
 ## [1.14.0] - 2026-05-21
 
