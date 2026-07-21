@@ -170,9 +170,9 @@ commandOptsParser = CommandOpts
 reportFileOptsParser :: Parser ReportFile
 reportFileOptsParser = ReportFile
   <$> strOption
-        (  long "file-name"
+        (  long "input-file"
         <> metavar "FILENAME"
-        <> help strReportFilenameDesc
+        <> help strReportInputFileDesc
         )
   <*> strOption
         (  long "input-format"
@@ -210,9 +210,9 @@ strReportTargetDirDesc = "Target directory"
 strReportTemplateDirArgDesc :: String
 strReportTemplateDirArgDesc = "Directory holding report template"
 
--- | Filename flag description.
-strReportFilenameDesc :: String
-strReportFilenameDesc = "File with properties, requirements or a diagram"
+-- | Input file flag description.
+strReportInputFileDesc :: String
+strReportInputFileDesc = "File with properties, requirements or a diagram"
 
 -- | Format flag description.
 strReportFormatDesc :: String
