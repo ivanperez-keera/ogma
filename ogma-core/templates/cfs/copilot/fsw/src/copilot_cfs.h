@@ -39,13 +39,13 @@
 **       functions are not called from any other source module.
 */
 void COPILOT_AppMain(void);
-void COPILOT_AppInit(void);
+CFE_Status_t COPILOT_AppInit(void);
 void COPILOT_ProcessCommandPacket(void);
 {{#msgCases}}
 void COPILOT_Process{{msgInfoDesc}}(void);
 {{/msgCases}}
 void COPILOT_ResetCounters(void);
 
-boolean COPILOT_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 ExpectedLength);
+bool COPILOT_VerifyCmdLength(CFE_MSG_Message_t *msg, size_t ExpectedLength);
 
 #endif /* _copilot_app_h_ */

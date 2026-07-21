@@ -19,6 +19,8 @@
 #define COPILOT_COMMANDCPVIOL_INF_EID       3
 #define COPILOT_INVALID_MSGID_ERR_EID       4
 #define COPILOT_LEN_ERR_EID                 5
+#define COPILOT_CR_PIPE_ERR_EID             6
+#define COPILOT_CR_SUB_ERR_EID              7
 
 #endif /* _copilot_app_events_h_ */
 

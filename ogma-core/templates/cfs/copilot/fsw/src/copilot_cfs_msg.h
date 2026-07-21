@@ -18,7 +18,7 @@
 */
 typedef struct
 {
-   uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
+   CFE_MSG_CommandHeader_t CmdHeader;
 
 } COPILOT_NoArgsCmd_t;
 
@@ -28,12 +28,12 @@ typedef struct
 */
 typedef struct
 {
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    uint8              copilot_command_error_count;
-    uint8              copilot_command_count;
-    uint8              spare[2];
+    CFE_MSG_TelemetryHeader_t TlmHeader;
+    uint8                     copilot_command_error_count;
+    uint8                     copilot_command_count;
+    uint8                     spare[2];
 
-}   OS_PACK copilot_hk_tlm_t  ;
+}   copilot_hk_tlm_t  ;
 
 #endif /* _copilot_cfs_msg_h_ */
 
