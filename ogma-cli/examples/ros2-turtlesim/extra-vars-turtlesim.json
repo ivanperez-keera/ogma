@@ -1,0 +1,9 @@
+{ "target_extra_dependencies":
+    [ "turtlesim"
+    ]
+, "package_extra_depend":
+    [ "turtlesim"
+    ]
+, "impl_extra_header":
+    [ "#include \"turtlesim/msg/pose.hpp\"" ]
+}
