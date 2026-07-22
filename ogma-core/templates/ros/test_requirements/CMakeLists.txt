@@ -9,10 +9,19 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+{{#target_extra_dependencies}}
+find_package({{{.}}} REQUIRED)
+{{/target_extra_dependencies}}
 
 # Uncomment to enable compiling the requirement tests
 add_executable(test_requirements src/test_requirements.cpp)
-ament_target_dependencies(test_requirements rclcpp std_msgs)
+ament_target_dependencies(test_requirements
+  rclcpp
+  std_msgs
+  {{#target_extra_dependencies}}
+  {{{.}}}
+  {{/target_extra_dependencies}}
+)
 
 install(TARGETS
   test_requirements

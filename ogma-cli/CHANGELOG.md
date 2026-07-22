@@ -1,5 +1,31 @@
 # Revision history for ogma-cli
 
+## [1.15.0] - 2026-07-21
+
+* Version bump (1.15.0) (#508).
+* Fix typo in README (#428).
+* Update CI job to install Copilot 4.7.1 by default (#446).
+* Fix style of record definitions, constructions in multiple commands (#454).
+* Adjust `overview` command to accept multiple input files (#456).
+* Adjust `overview`, `standalone`, app commands to support projects (#460).
+* Expose `search` command (#464).
+* Fix syntax, grammatical errors in diagram tutorial (#466).
+* Fix links in documentation (#468).
+* Remove unnecessary vertical space (#470).
+* Update variable DBs in examples to indicate which inputs are active (#474).
+* Expose diagram mode argument to cFS backend (#476).
+* Add example explaining cFS app generation from state machine diagrams (#478).
+* Add example containing Doorstop requirements (#480).
+* Remove mentions of ICAROUS (#482).
+* Replace ROS2 with ROS 2 in help message (#484).
+* Adjust `report` command to accept multiple input files (#486).
+* Adjust `report` command to support projects (#488).
+* Remove unused import from `CLI.CommandStandalone` module (#490).
+* Apply multiple style fixes (#492).
+* Standardize option name in `report` command (#505).
+* Update CI job, examples for cFS 7.0 (#509).
+* Add example demonstrating how to generate monitor for Turtlesim demo (#507).
+
 ## [1.14.0] - 2026-05-21
 
 * Version bump (1.14.0) (#425).

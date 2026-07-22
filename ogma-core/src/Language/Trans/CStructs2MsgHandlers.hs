@@ -45,7 +45,7 @@ cstruct2MsgHandler cstruct = unlines
     [ nameCStruct ++ " " ++ nameLocalVar ++ ";"
     , ""
     , "/**"
-    , "* Make ICAROUS data available to Copilot and run monitors."
+    , "* Make cFS data available to Copilot and run monitors."
     , "*/"
     , "void COPILOT_Process" ++ nameVar ++ "Monitor(void)"
     , "{"

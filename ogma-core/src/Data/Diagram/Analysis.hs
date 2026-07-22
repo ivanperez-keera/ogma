@@ -62,12 +62,13 @@ analyzeDiagram diagram = do
 -- | Default imports for a 'Spec' that was converted into a 'Copilot.Spec'.
 defaultSpecImports :: [(String, Maybe String)]
 defaultSpecImports =
-  [ ("Control.Monad.Writer",  Nothing)
-  , ("Copilot.Language",      Nothing)
-  , ("Copilot.Language.Spec", Nothing)
-  , ("Data.Functor.Identity", Nothing)
-  , ("Data.List",             Just "L")
-  , ("Prelude",               Just "P")
+  [ ("Control.Monad.Writer",          Nothing)
+  , ("Copilot.Language",              Nothing)
+  , ("Copilot.Language.Spec",         Nothing)
+  , ("Copilot.Library.StateMachines", Nothing)
+  , ("Data.Functor.Identity",         Nothing)
+  , ("Data.List",                     Just "L")
+  , ("Prelude",                       Just "P")
   ]
 
 -- | Render a 'Diagram' as a Haskell definition of a 'Copilot.Spec'.
@@ -94,29 +95,7 @@ showDiagram diagram = unlines $
 -- | Auxiliary definitions needed in the spec.
 auxiliaryDefinitions :: String
 auxiliaryDefinitions = unlines
-  [ "stateMachine :: (Eq a, Typed a)"
-  , "             => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
-  , "             -> Stream a"
-  , "stateMachine (initial, final, noInputData, transitions, bad) ="
-  , "    state"
-  , "  where"
-  , "    state         = ifThenElses transitions"
-  , "    previousState = [initial] ++ state"
-  , ""
-  , "    -- ifThenElses :: [(a, Stream Bool, a)] -> Stream a"
-  , "    ifThenElses [] ="
-  , "      ifThenElse"
-  , "        (previousState == constant final && noInputData)"
-  , "        (constant final)"
-  , "        (constant bad)"
-  , ""
-  , "    ifThenElses ((s1, i, s2):ss) ="
-  , "      ifThenElse"
-  , "        (previousState == constant s1 && i)"
-  , "        (constant s2)"
-  , "        (ifThenElses ss)"
-  , ""
-  , "isDeterministic :: (Ord a, Eq a, Typed a)"
+  [ "isDeterministic :: (Ord a, Eq a, Typed a)"
   , "                => (a, a, Stream Bool, [(a, Stream Bool, a)], a)"
   , "                -> Stream Bool"
   , "isDeterministic (_, _, _, ts, _) = all $"

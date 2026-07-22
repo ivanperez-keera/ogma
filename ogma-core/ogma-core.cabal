@@ -19,7 +19,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-core
-version:             1.14.0
+version:             1.15.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             Apache-2.0
@@ -71,6 +71,7 @@ data-files:          templates/cfs/Dockerfile
                      templates/fprime/Copilot.cpp
                      templates/fprime/Copilot.fpp
                      templates/fprime/Copilot.hpp
+                     templates/fprime/Copilot.hs
                      templates/fprime/Dockerfile
                      templates/fprime/instance-copilot
                      templates/report/Report.md
@@ -109,9 +110,11 @@ library
     Command.Report
     Command.Result
     Command.ROSApp
+    Command.Search
     Command.Standalone
 
     Data.Location
+    Data.Project
 
     Language.Trans.CStruct2CopilotStruct
     Language.Trans.CStructs2Copilot
@@ -149,9 +152,10 @@ library
     , aeson                   >= 2.0.0.0  && < 2.3
     , bytestring              >= 0.10.8.2 && < 0.13
     , containers              >= 0.5      && < 0.8
-    , copilot-core            >= 4.6.1    && < 4.8
-    , copilot-language        >= 4.6.1    && < 4.8
-    , copilot-theorem         >= 4.6.1    && < 4.8
+    , copilot-core            >= 4.7.1    && < 4.9
+    , copilot-language        >= 4.7.1    && < 4.9
+    , copilot-libraries       >= 4.7.1    && < 4.9
+    , copilot-theorem         >= 4.7.1    && < 4.9
     , directory               >= 1.3.1.5  && < 1.4
     , filepath                >= 1.4.2    && < 1.6
     , graphviz                >= 2999.20  && < 2999.21
@@ -163,16 +167,16 @@ library
     , vector                  >= 0.12.0.1 && < 0.14
     , yaml                    >= 0.11.7.0 && < 0.12
 
-    , ogma-extra              >= 1.14.0 && < 1.15
-    , ogma-language-c         >= 1.14.0 && < 1.15
-    , ogma-language-copilot   >= 1.14.0 && < 1.15
-    , ogma-language-csv       >= 1.14.0 && < 1.15
-    , ogma-language-jsonspec  >= 1.14.0 && < 1.15
-    , ogma-language-lustre    >= 1.14.0 && < 1.15
-    , ogma-language-smv       >= 1.14.0 && < 1.15
-    , ogma-language-xlsx      >= 1.14.0 && < 1.15
-    , ogma-language-xmlspec   >= 1.14.0 && < 1.15
-    , ogma-spec               >= 1.14.0 && < 1.15
+    , ogma-extra              >= 1.15.0 && < 1.16
+    , ogma-language-c         >= 1.15.0 && < 1.16
+    , ogma-language-copilot   >= 1.15.0 && < 1.16
+    , ogma-language-csv       >= 1.15.0 && < 1.16
+    , ogma-language-jsonspec  >= 1.15.0 && < 1.16
+    , ogma-language-lustre    >= 1.15.0 && < 1.16
+    , ogma-language-smv       >= 1.15.0 && < 1.16
+    , ogma-language-xlsx      >= 1.15.0 && < 1.16
+    , ogma-language-xmlspec   >= 1.15.0 && < 1.16
+    , ogma-spec               >= 1.15.0 && < 1.16
 
   hs-source-dirs:
     src

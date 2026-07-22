@@ -1,0 +1,6 @@
+{ "copilot_extra_defs": [
+    "temperature :: Stream Int8"
+  , "temperature = extern \"temperature\" Nothing"
+  , ""
+  ]
+}

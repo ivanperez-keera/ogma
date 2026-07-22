@@ -30,11 +30,16 @@ module CLI.CommandROSApp
   where
 
 -- External imports
+import Control.Applicative ( (<|>) )
+import Data.Functor        ( (<&>) )
+import Data.Maybe          ( fromMaybe )
 import Options.Applicative ( Parser, help, long, metavar, many, optional, short,
                              showDefault, strOption, value )
 
--- External imports: command results
-import Command.Result ( Result )
+-- External imports: handling of input projects and command results
+import Command.Result ( Result (..) )
+import Data.Location  ( Location ( LocationFile ) )
+import Data.Project   ( Project (..), readProject )
 
 -- External imports: actions or commands supported
 import           Command.ROSApp (ErrorCode)
@@ -44,19 +49,20 @@ import qualified Command.ROSApp
 
 -- | Options needed to generate the ROS application.
 data CommandOpts = CommandOpts
-  { rosAppConditionExpr  :: Maybe String
-  , rosAppInputFiles   :: [String]
-  , rosAppTarget       :: String
-  , rosAppTemplateDir  :: Maybe String
-  , rosAppVarNames     :: Maybe String
-  , rosAppVarDB        :: Maybe String
-  , rosAppHandlers     :: Maybe String
-  , rosAppFormat       :: String
-  , rosAppPropFormat   :: String
-  , rosAppPropVia      :: Maybe String
-  , rosAppTemplateVars :: Maybe String
-  , rosAppTestingApps  :: [String]
-  , rosAppTestingVars  :: [String]
+  { rosAppProject       :: Maybe String
+  , rosAppConditionExpr :: Maybe String
+  , rosAppInputFiles    :: [String]
+  , rosAppTarget        :: String
+  , rosAppTemplateDir   :: Maybe String
+  , rosAppVarNames      :: Maybe String
+  , rosAppVarDB         :: Maybe String
+  , rosAppHandlers      :: Maybe String
+  , rosAppFormat        :: String
+  , rosAppPropFormat    :: String
+  , rosAppPropVia       :: Maybe String
+  , rosAppTemplateVars  :: Maybe String
+  , rosAppTestingApps   :: [String]
+  , rosAppTestingVars   :: [String]
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
@@ -65,23 +71,91 @@ data CommandOpts = CommandOpts
 --
 -- This is just a wrapper around "Command.ROSApp".
 command :: CommandOpts -> IO (Result ErrorCode)
-command c = Command.ROSApp.command options
+command c
+    | Just p <- rosAppProject c
+    = do optE <- commandProjectOptions p c
+         case optE of
+           Left msg  -> return $ Error cannotReadProject msg (LocationFile p)
+           Right opt -> Command.ROSApp.command opt
+
+    | otherwise
+    = Command.ROSApp.command options
   where
     options = Command.ROSApp.CommandOptions
                 { Command.ROSApp.commandConditionExpr = rosAppConditionExpr c
-                , Command.ROSApp.commandInputFiles  = rosAppInputFiles c
-                , Command.ROSApp.commandTargetDir   = rosAppTarget c
-                , Command.ROSApp.commandTemplateDir = rosAppTemplateDir c
-                , Command.ROSApp.commandVariables   = rosAppVarNames c
-                , Command.ROSApp.commandVariableDB  = rosAppVarDB c
-                , Command.ROSApp.commandHandlers    = rosAppHandlers c
-                , Command.ROSApp.commandFormat      = rosAppFormat c
-                , Command.ROSApp.commandPropFormat  = rosAppPropFormat c
-                , Command.ROSApp.commandPropVia     = rosAppPropVia c
-                , Command.ROSApp.commandExtraVars   = rosAppTemplateVars c
-                , Command.ROSApp.commandTestingApps = appNames
-                , Command.ROSApp.commandTestingVars = rosAppTestingVars c
+                , Command.ROSApp.commandInputFiles    = rosAppInputFiles c
+                , Command.ROSApp.commandTargetDir     = rosAppTarget c
+                , Command.ROSApp.commandTemplateDir   = rosAppTemplateDir c
+                , Command.ROSApp.commandVariables     = rosAppVarNames c
+                , Command.ROSApp.commandVariableDB    = rosAppVarDB c
+                , Command.ROSApp.commandHandlers      = rosAppHandlers c
+                , Command.ROSApp.commandFormat        = rosAppFormat c
+                , Command.ROSApp.commandPropFormat    = rosAppPropFormat c
+                , Command.ROSApp.commandPropVia       = rosAppPropVia c
+                , Command.ROSApp.commandExtraVars     = rosAppTemplateVars c
+                , Command.ROSApp.commandTestingApps   = appNames
+                , Command.ROSApp.commandTestingVars   = rosAppTestingVars c
                 }
+
+    -- Turn the qualified app names into tuples of package and node name.
+    appNames = map splitAppName $ rosAppTestingApps c
+
+    splitAppName name = Command.ROSApp.Node package (drop 1 nodeT)
+      where
+        (package, nodeT) = break (== ':') name
+
+-- | Produce default command options based on project settings.
+commandProjectOptions :: FilePath
+                      -> CommandOpts
+                      -> IO (Either String Command.ROSApp.CommandOptions)
+commandProjectOptions projectFile c = do
+    projectE <- readProject projectFile
+    return $ projectE <&> \project ->
+      Command.ROSApp.CommandOptions
+        { Command.ROSApp.commandConditionExpr = rosAppConditionExpr c
+
+        , Command.ROSApp.commandInputFiles = concat
+            [ map (\(f, _, _) -> f) $ projectInputFiles project
+            , rosAppInputFiles c
+            ]
+
+        , Command.ROSApp.commandTargetDir =
+            fromMaybe (rosAppTarget c) (projectTargetDir project)
+
+        , Command.ROSApp.commandTemplateDir =
+            projectTemplateDir project <|> rosAppTemplateDir c
+
+        , Command.ROSApp.commandVariables =
+            projectVariableFiles project <|> rosAppVarNames c
+
+        , Command.ROSApp.commandVariableDB =
+            projectVariableDBFile project <|> rosAppVarDB c
+
+        , Command.ROSApp.commandHandlers =
+            projectHandlerFile project <|> rosAppHandlers c
+
+        , Command.ROSApp.commandFormat = case projectInputFiles project of
+            []            -> rosAppFormat c
+            ((_, f, _):_) -> f
+
+        , Command.ROSApp.commandPropFormat =
+            case projectInputFiles project of
+              []            -> rosAppPropFormat c
+              ((_, _, f):_) -> f
+
+        , Command.ROSApp.commandPropVia =
+            projectCommandPropVia project <|> rosAppPropVia c
+
+        , Command.ROSApp.commandExtraVars =
+            projectExtraJSONFile project <|> rosAppTemplateVars c
+
+        , Command.ROSApp.commandTestingApps = appNames
+
+        , Command.ROSApp.commandTestingVars = rosAppTestingVars c
+
+        }
+
+  where
 
     -- Turn the qualified app names into tuples of package and node name.
     appNames = map splitAppName $ rosAppTestingApps c
@@ -101,6 +175,13 @@ commandDesc = "Generate a ROS 2 monitoring package"
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> optional
+        ( strOption
+            (  long "project"
+            <> metavar "FILENAME"
+            <> help strROSAppProjectArgDesc
+            )
+        )
+  <*> optional
         ( strOption
             (  long "condition-expr"
             <> metavar "EXPRESSION"
@@ -193,6 +274,10 @@ commandOptsParser = CommandOpts
               )
            )
 
+-- | Argument project to ROS app generation command.
+strROSAppProjectArgDesc :: String
+strROSAppProjectArgDesc = "Project file"
+
 -- | Argument target directory to ROS app generation command
 strROSAppDirArgDesc :: String
 strROSAppDirArgDesc = "Target directory"
@@ -247,9 +332,13 @@ strROSAppTemplateVarsArgDesc =
 -- | Argument packages to tested list to ROS app generation command
 strROSAppROSNodesTestingListArgDesc :: String
 strROSAppROSNodesTestingListArgDesc =
-  "Turn on ROS2 package node during testing"
+  "Turn on ROS 2 package node during testing"
 
 -- | Argument variables to be tested list to ROS app generation command
 strROSAppVarsTestingListArgDesc :: String
 strROSAppVarsTestingListArgDesc =
   "Limit random input generation to these variables"
+
+-- | Error code for when a project cannot be read.
+cannotReadProject :: ErrorCode
+cannotReadProject = 1

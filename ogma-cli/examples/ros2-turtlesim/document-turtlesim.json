@@ -1,0 +1,14 @@
+{
+  "TurtleSimCopilot": {
+    "internal_variables": [],
+    "external_variables": [
+      { "name":"input_signal", "type":"Float", "meaning": "InputF32" }
+    ],
+    "properties": [
+      { "id":      "KeepTurtleInCheck",
+        "formula": "input_signal >= 1 && input_signal < 10",
+        "text":    "The turtle stays near the central column of the screen"
+      }
+    ]
+  }
+}

@@ -81,6 +81,7 @@ import qualified CLI.CommandFPrimeApp
 import qualified CLI.CommandOverview
 import qualified CLI.CommandReport
 import qualified CLI.CommandROSApp
+import qualified CLI.CommandSearch
 import qualified CLI.CommandStandalone
 
 -- * Command
@@ -91,15 +92,16 @@ import qualified CLI.CommandStandalone
 -- @CommandOpts@ to capture their respective arguments. These types are
 -- different for each subcommand.
 data CommandOpts =
-    CommandOptsCFSApp                    CLI.CommandCFSApp.CommandOpts
-  | CommandOptsCStructs2Copilot          CLI.CommandCStructs2Copilot.CommandOpts
-  | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
-  | CommandOptsDiagram                   CLI.CommandDiagram.CommandOpts
-  | CommandOptsFPrimeApp                 CLI.CommandFPrimeApp.CommandOpts
-  | CommandOptsOverview                  CLI.CommandOverview.CommandOpts
-  | CommandOptsROSApp                    CLI.CommandROSApp.CommandOpts
-  | CommandOptsStandalone                CLI.CommandStandalone.CommandOpts
-  | CommandOptsReport                    CLI.CommandReport.CommandOpts
+    CommandOptsCFSApp               CLI.CommandCFSApp.CommandOpts
+  | CommandOptsCStructs2Copilot     CLI.CommandCStructs2Copilot.CommandOpts
+  | CommandOptsCStructs2MsgHandlers CLI.CommandCStructs2MsgHandlers.CommandOpts
+  | CommandOptsDiagram              CLI.CommandDiagram.CommandOpts
+  | CommandOptsFPrimeApp            CLI.CommandFPrimeApp.CommandOpts
+  | CommandOptsOverview             CLI.CommandOverview.CommandOpts
+  | CommandOptsROSApp               CLI.CommandROSApp.CommandOpts
+  | CommandOptsSearch               CLI.CommandSearch.CommandOpts
+  | CommandOptsStandalone           CLI.CommandStandalone.CommandOpts
+  | CommandOptsReport               CLI.CommandReport.CommandOpts
 
 -- * CLI
 
@@ -112,6 +114,7 @@ commandDesc =
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = subparser
   (  subcommandOverview
+  <> subcommandSearch
   <> subcommandCStructs
   <> subcommandMsgHandlers
   <> subcommandCFSApp
@@ -130,6 +133,15 @@ subcommandOverview =
     "overview"
     (CommandOptsOverview <$> CLI.CommandOverview.commandOptsParser)
     CLI.CommandOverview.commandDesc
+
+-- | Modifier for the search subcommand, linking the subcommand options and
+-- description to the command @search@ at top level.
+subcommandSearch :: Mod CommandFields CommandOpts
+subcommandSearch =
+  subcommand
+    "search"
+    (CommandOptsSearch <$> CLI.CommandSearch.commandOptsParser)
+    CLI.CommandSearch.commandDesc
 
 -- | Modifier for the CStruct to Copilot Struct generation subcommand, linking
 -- the subcommand options and description to the command @structs@ at top
@@ -240,6 +252,8 @@ command (CommandOptsOverview c) =
   id <$> CLI.CommandOverview.command c
 command (CommandOptsROSApp c) =
   id <$> CLI.CommandROSApp.command c
+command (CommandOptsSearch c) =
+  id <$> CLI.CommandSearch.command c
 command (CommandOptsStandalone c) =
   id <$> CLI.CommandStandalone.command c
 command (CommandOptsDiagram c) =

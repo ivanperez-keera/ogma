@@ -1,5 +1,37 @@
 # Revision history for ogma-core
 
+## [1.15.0] - 2026-07-21
+
+* Version bump (1.15.0) (#508).
+* Remove commented code from `Data.Spec.Parser` (#430).
+* Remove redundant `where` block (#432).
+* Fix incorrect Haddock comment syntax (#434).
+* Remove redundant occurrences of `MultiWayIf` pragma (#440).
+* Fix indentation of record fields in multiple backends (#442).
+* Move expressions from `let` block into `where` clause (#444).
+* Update backends to use state machine module from `copilot-libraries` (#446).
+* Leverage `Data.ExprPair.exprPair` in `Command.Diagram.exprPair` (#448).
+* Remove empty Haddock section heading from `Command.Diagram` (#450).
+* Add missing dependency to Cabal file (#458).
+* Adjust overview command to accept multiple input files (#456).
+* Add Copilot file from F Prime template to data-files in Cabal file (#462).
+* Add module defining Ogma projects (#460).
+* Introduce search command (#464).
+* Remove unnecessary vertical space (#470).
+* Allow using file name as requirement ID in JSON or YAML files (#472).
+* Allow controlling when monitors are re-evaluated in cFS apps (#474).
+* Extend cFS backend with diagram mode (#476).
+* Replace mentions of ICAROUS (#482).
+* Adjust report command to accept multiple input files (#486).
+* Apply multiple style fixes (#492).
+* Adjust cFS app template to allow customizing MIDs (#494).
+* Allow variable DB topics to carry extra info available to cFS template (#496).
+* Make variable field names available to ROS template when present (#499).
+* Adjust ROS template to enable injecting dependencies (#500).
+* Bump upper version constraints on Copilot packages (#501).
+* Update cFS template for cFS 7.0 (#509).
+* Update `Dockerfile` in ROS 2 template for Space ROS `jazzy-2026.04.0` (#512).
+
 ## [1.14.0] - 2026-05-21
 
 * Version bump (1.14.0) (#425).

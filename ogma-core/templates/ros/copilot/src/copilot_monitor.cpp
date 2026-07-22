@@ -16,6 +16,9 @@
 #include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include <cstdint>
+{{#impl_extra_header}}
+{{{.}}}
+{{/impl_extra_header}}
 {{#copilot}}
 #include "{{{copilot.specName}}}_types.h"
 #include "{{{copilot.specName}}}.h"
@@ -82,7 +85,12 @@ class CopilotRV : public rclcpp::Node {
   private:
     {{#variables}}
     void {{varDeclName}}_callback(const {{varDeclMsgType}}::SharedPtr msg) const {
+      {{#varDeclMsgField}}
+      {{varDeclName}} = msg->{{.}};
+      {{/varDeclMsgField}}
+      {{^varDeclMsgField}}
       {{varDeclName}} = msg->data;
+      {{/varDeclMsgField}}
       step();
     }
 

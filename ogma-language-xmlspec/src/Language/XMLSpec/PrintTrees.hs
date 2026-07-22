@@ -288,9 +288,8 @@ prettyValue attributeList children
       | otherwise                 = text attrType
 
     prettyAttrEnum =
-        parens $ sepBy (text " | ") $
-          map (prettyEnum . fromMaybe [] . getDTDAttrl) children
-      where
+      parens $ sepBy (text " | ") $
+        map (prettyEnum . fromMaybe [] . getDTDAttrl) children
 
     prettyAttrKind kind
       | kind == k_default

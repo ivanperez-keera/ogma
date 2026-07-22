@@ -19,7 +19,7 @@ cabal-version:       2.0
 build-type:          Simple
 
 name:                ogma-cli
-version:             1.14.0
+version:             1.15.0
 homepage:            https://github.com/nasa/ogma
 bug-reports:         https://github.com/nasa/ogma/issues
 license:             Apache-2.0
@@ -78,6 +78,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >
                      >Available commands:
                      >  overview                 Generate an overview of the input specification(s)
+                     >  search                   List items that match search query
                      >  structs                  Generate Copilot structs from C structs
                      >  handlers                 Generate message handlers from C structs
                      >  cfs                      Generate a complete CFS/Copilot application
@@ -134,6 +135,7 @@ executable ogma
     CLI.CommandOverview
     CLI.CommandReport
     CLI.CommandROSApp
+    CLI.CommandSearch
     CLI.CommandStandalone
     CLI.CommandTop
     CLI.Result
@@ -145,7 +147,7 @@ executable ogma
     , microstache          >= 1.0      && < 1.1
     , text                 >= 1.2.3.1  && < 2.2
 
-    , ogma-core            >= 1.14.0 && < 1.15
+    , ogma-core            >= 1.15.0 && < 1.16
 
   hs-source-dirs:
     src

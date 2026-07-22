@@ -52,7 +52,6 @@ verification framework that generates hard real-time C99 code.
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
 
-
 # Installation
 <sup>[(Back to top)](#table-of-contents)</sup>
 
@@ -179,7 +178,6 @@ Like before, the `ogma` executable will be placed in the directory
 ## Troubleshooting
 <sup>[(Back to top)](#table-of-contents)</sup>
 
-
 Feel free to open an issue if you are unable to install Ogma following these
 instructions.
 
@@ -277,10 +275,10 @@ copilot-cfs-demo/copilot/fsw/src/copilot_cfs.h
 
 Users are expected to modify `Properties.hs` to adjust the property being
 monitored. In this particular example, the C code generated contains the
-following instruction to subscribe to an `ICAROUS_POSITION_MID` message to
+following instruction to subscribe to an `ASSET_POSITION_MID` message to
 obtain the vehicle position:
 ```c
-    CFE_SB_Subscribe(ICAROUS_POSITION_MID, COPILOT_CommandPipe);
+    CFE_SB_Subscribe(ASSET_POSITION_MID, COPILOT_CommandPipe);
 ```
 
 The message dispatcher included in the application detects a message
@@ -294,8 +292,8 @@ void COPILOT_ProcessCommandPacket(void)
 
     switch (MsgId)
     {
-        case ICAROUS_POSITION_MID:
-            COPILOT_ProcessIcarousPosition();
+        case ASSET_POSITION_MID:
+            COPILOT_ProcessAssetPosition();
             break;
     ...
 ```
@@ -304,7 +302,7 @@ Finally, the dedicated subroutine makes data available to the monitor
 and calls the main Copilot entry point `step`:
 
 ```c
-void COPILOT_ProcessIcarousPosition(void)
+void COPILOT_ProcessAssetPosition(void)
 {
     position_t* msg;
     msg = (position_t*) COPILOTMsgPtr;
@@ -823,7 +821,7 @@ that the state machine is in.
 
 - `safeguard`: Check whether transitioning to a given state would be safe. Under
   this mode, the monitor always fires, and it provides as arguments booleans
-indicating whether transitioning to each state would be allowed or note.  For
+indicating whether transitioning to each state would be allowed or not.  For
 example, for the diagram above, the arguments passed to the external handler
 would be three booleans, indicating, respectively, if transitioning to state 0
 would be legal, if transitioning to state 1 would be legal, and if

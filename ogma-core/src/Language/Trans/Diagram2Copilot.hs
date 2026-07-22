@@ -44,7 +44,7 @@ diagram2CopilotSpec diag mode = (machine, triggers)
   where
     machine = unlines
       [ "stateMachineS :: Stream Word8"
-      , "stateMachineS = stateMachineGF stateMachine1"
+      , "stateMachineS = stateMachine stateMachine1"
       , ""
       , "stateMachineProp :: Stream Bool"
       , "stateMachineProp = " ++ propExpr

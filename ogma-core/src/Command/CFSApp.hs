@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
@@ -39,8 +38,9 @@ module Command.CFSApp
 -- External imports
 import           Control.Applicative    ( liftA2, (<|>) )
 import qualified Control.Exception      as E
-import           Control.Monad.Except   ( ExceptT (..), liftEither )
-import           Data.Aeson             ( ToJSON (..) )
+import           Control.Monad.Except   ( ExceptT (..), liftEither,
+                                          throwError )
+import           Data.Aeson             ( ToJSON (..), Value )
 import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
@@ -54,15 +54,26 @@ import Data.String.Extra      ( pascalCase )
 import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
-import Command.Common
-import Command.Errors     (ErrorCode, ErrorTriplet (..))
-import Command.VariableDB (Connection (..), TopicDef (..), TypeDef (..),
-                           VariableDB, findConnection, findInput, findTopic,
-                           findType, findTypeByType)
-import Data.Aeson.Extra   (mergeObjects)
-import Data.ExprPair      (ExprPair(..), exprPair)
-import Data.Location      (Location (..))
-import Data.Spec.Parser   (readInputExpr)
+import Command.Common                 (InputFile (..), cannotCopyTemplate,
+                                       checkArguments, combineInputFiles,
+                                       locateTemplateDir, makeLeftE,
+                                       openVarDBFilesWithDefault,
+                                       parseInputFile,
+                                       parseRequirementsListFile,
+                                       parseTemplateVarsFile,
+                                       parseVariablesFile, processResult,
+                                       specExtractExternalVariables,
+                                       specExtractHandlers)
+import Command.Errors                 (ErrorCode, ErrorTriplet (..))
+import Command.VariableDB             (Connection (..), TopicDef (..),
+                                       TypeDef (..), VariableDB, findConnection,
+                                       findInput, findTopic, findType,
+                                       findTypeByType, inputActive)
+import Data.Aeson.Extra               (mergeObjects)
+import Data.ExprPair                  (ExprPair (..), exprPair)
+import Data.Location                  (Location (..))
+import Data.Spec.Parser               (readInputExpr)
+import Language.Trans.Diagram2Copilot (DiagramMode (..))
 
 -- | Generate a new CFS application connected to Copilot.
 command :: CommandOptions
@@ -97,21 +108,28 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- openVarDBFilesWithDefault varDBFile
 
-    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) cExpr
+    specT <- maybe
+               (return Nothing)
+               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               cExpr
+
     specF <- if null fpA
-                  then return Nothing
-                  else do
-                    fpA' <- mapM readInputFile' fpA
-                    let fpA'' = combineInputFiles fpA'
-                    if length fpA'' > 1
-                      then liftEither $ Left commandMultipleInputTypes
-                      else pure $ Just $ head fpA''
+               then return Nothing
+               else do
+                 fpA' <- mapM readInputFile' fpA
+                 let fpA'' = combineInputFiles fpA'
+                 if length fpA'' > 1
+                   then liftEither $ Left commandMultipleInputTypes
+                   else pure $ Just $ head fpA''
 
     let spec = specT <|> specF
 
     liftEither $ checkArguments spec vs rs
 
-    copilotM <- sequenceA $ (\spec' -> processSpec spec' cExpr fpA) <$> spec
+    mode <- parseDiagramMode (commandDiagramMode options)
+
+    copilotM <- sequenceA $
+                  (\spec' -> processSpec spec' cExpr fpA mode) <$> spec
 
     let varNames = fromMaybe (defaultVarNames spec) vs
         monitors = maybe (defaultMonitors spec) (map (\x -> (x, Nothing))) rs
@@ -138,19 +156,23 @@ command' options (ExprPair exprT) = do
     readInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
-    processSpec spec' expr' fp' =
-      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
+    processSpec spec' expr' fp' mode =
+      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec' mode
 
     defaultVarNames spec = case spec of
       Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
       Just (InputFileDiagram _)  -> []
       Nothing                    -> specExtractExternalVariables Nothing
 
-
     defaultMonitors spec = case spec of
       Just (InputFileSpec spec') -> specExtractHandlers (Just spec')
       Just (InputFileDiagram _)  -> [ ("handler", Just "uint8_t" ) ]
       Nothing                    -> specExtractHandlers Nothing
+
+    parseDiagramMode :: String -> ExceptT ErrorTriplet IO DiagramMode
+    parseDiagramMode "check"     = return CheckState
+    parseDiagramMode "calculate" = return ComputeState
+    parseDiagramMode mode        = throwError $ commandWrongDiagramMode mode
 
 -- | Generate a variable substitution map for a cFS application.
 commandLogic :: VariableDB
@@ -177,29 +199,31 @@ commandLogic varDB varNames handlers copilotM =
 -- applications.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String   -- ^ Trigger condition.
-  , commandInputFiles  :: [FilePath]     -- ^ Input specification files.
-  , commandTargetDir   :: FilePath       -- ^ Target directory where the
-                                         -- application should be created.
-  , commandTemplateDir :: Maybe FilePath -- ^ Directory where the template is
-                                         -- to be found.
-  , commandVariables   :: Maybe FilePath -- ^ File containing a list of
-                                         -- variables to make available to
-                                         -- Copilot.
-  , commandVariableDB  :: Maybe FilePath -- ^ File containing a list of known
-                                         -- variables with their types and the
-                                         -- message IDs they can be obtained
-                                         -- from.
-  , commandHandlers    :: Maybe FilePath -- ^ File containing a list of
-                                         -- handlers used in the Copilot
-                                         -- specification. The handlers are
-                                         -- assumed to receive no arguments.
-  , commandFormat      :: String         -- ^ Format of the input file.
-  , commandPropFormat  :: String         -- ^ Format used for input properties.
-  , commandPropVia     :: Maybe String   -- ^ Use external command to
-                                         -- pre-process system properties.
-  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
-                                         -- variables to make available to the
-                                         -- template.
+  , commandInputFiles    :: [FilePath]     -- ^ Input specification files.
+  , commandTargetDir     :: FilePath       -- ^ Target directory where the
+                                           -- application should be created.
+  , commandTemplateDir   :: Maybe FilePath -- ^ Directory where the template is
+                                           -- to be found.
+  , commandVariables     :: Maybe FilePath -- ^ File containing a list of
+                                           -- variables to make available to
+                                           -- Copilot.
+  , commandVariableDB    :: Maybe FilePath -- ^ File containing a list of known
+                                           -- variables with their types and
+                                           -- the message IDs they can be
+                                           -- obtained from.
+  , commandHandlers      :: Maybe FilePath -- ^ File containing a list of
+                                           -- handlers used in the Copilot
+                                           -- specification. The handlers are
+                                           -- assumed to receive no arguments.
+  , commandFormat        :: String         -- ^ Format of the input file.
+  , commandPropFormat    :: String         -- ^ Format used for input
+                                           -- properties.
+  , commandPropVia       :: Maybe String   -- ^ Use external command to
+                                           -- pre-process system properties.
+  , commandDiagramMode   :: String         -- ^ Diagram mode.
+  , commandExtraVars     :: Maybe FilePath -- ^ File containing additional
+                                           -- variables to make available to
+                                           -- the template.
   }
 
 -- | Return the variable information needed to generate declarations
@@ -208,27 +232,29 @@ variableMap :: VariableDB
             -> String
             -> Maybe (VarDecl, MsgInfoId, MsgInfo, MsgData)
 variableMap varDB varName = do
-    inputDef  <- findInput varDB varName
-    mid       <- connectionTopic <$> findConnection inputDef "cfs"
-    topicDef  <- findTopic varDB "cfs" mid
+  inputDef  <- findInput varDB varName
+  mid       <- connectionTopic <$> findConnection inputDef "cfs"
+  topicDef  <- findTopic varDB "cfs" mid
 
-    let typeDef = findType varDB varName "cfs" "C"
+  let extra = topicExtra topicDef
 
-    let typeMsgFromType  = typeFromType <$> typeDef
-        typeMsgFromField = typeFromField =<< typeDef
+  let typeDef = findType varDB varName "cfs" "C"
 
-    let typeVar' = fromMaybe (topicType topicDef) (typeToType <$> typeDef)
+  let typeMsgFromType  = typeFromType <$> typeDef
+      typeMsgFromField = typeFromField =<< typeDef
 
-    -- Pick name for the function to process a message ID.
-    let mn = pascalCase $ stripSuffix "_MID" mid
+      active = inputActive inputDef
 
-    return ( VarDecl varName typeVar'
-           , mid
-           , MsgInfo mid mn
-           , MsgData mn typeMsgFromType typeMsgFromField varName typeVar'
-           )
+  let typeVar' = fromMaybe (topicType topicDef) (typeToType <$> typeDef)
 
-  where
+  -- Pick name for the function to process a message ID.
+  let mn = pascalCase $ stripSuffix "_MID" mid
+
+  return ( VarDecl varName typeVar'
+         , mid
+         , MsgInfo mid mn extra
+         , MsgData mn typeMsgFromType typeMsgFromField varName typeVar' active
+         )
 
 -- | Return the monitor information needed to generate declarations and
 -- publishers for the given monitor info, and variable database.
@@ -256,8 +282,9 @@ type MsgInfoId = String
 -- | A message ID to subscribe to and the name associated to it. The name is
 -- used to generate a suitable name for the message handler.
 data MsgInfo = MsgInfo
-    { msgInfoId   :: MsgInfoId
-    , msgInfoDesc :: String
+    { msgInfoId    :: MsgInfoId
+    , msgInfoDesc  :: String
+    , msgInfoExtra :: Value
     }
   deriving (Generic)
 
@@ -271,6 +298,7 @@ data MsgData = MsgData
     , msgDataFromField :: Maybe String
     , msgDataVarName   :: String
     , msgDataVarType   :: String
+    , msgDataActive    :: Bool
     }
   deriving (Generic)
 
@@ -288,13 +316,13 @@ instance ToJSON Trigger
 
 -- | Data that may be relevant to generate a cFS monitoring application.
 data AppData = AppData
-  { variables   :: [VarDecl]
-  , msgIds      :: [MsgInfoId]
-  , msgCases    :: [MsgInfo]
-  , msgHandlers :: [MsgData]
-  , triggers    :: [Trigger]
-  , copilot     :: Maybe Command.Standalone.AppData
-  }
+    { variables   :: [VarDecl]
+    , msgIds      :: [MsgInfoId]
+    , msgCases    :: [MsgInfo]
+    , msgHandlers :: [MsgData]
+    , triggers    :: [Trigger]
+    , copilot     :: Maybe Command.Standalone.AppData
+    }
   deriving (Generic)
 
 instance ToJSON AppData
@@ -311,3 +339,16 @@ commandMultipleInputTypes =
 -- | Error: multiple inputs of incompatible types.
 ecMultipleInputTypes :: ErrorCode
 ecMultipleInputTypes = 1
+
+-- | Error message associated to providing a diagram mode not supported by the
+-- cFS backend.
+commandWrongDiagramMode :: String -> ErrorTriplet
+commandWrongDiagramMode mode =
+    ErrorTriplet ecWrongDiagramMode msg LocationNothing
+  where
+    msg = "The diagram mode provided " ++ show mode ++ " is not known or is "
+       ++ "not supported by this backend."
+
+-- | Error: wrong diagram mode.
+ecWrongDiagramMode :: ErrorCode
+ecWrongDiagramMode = 1

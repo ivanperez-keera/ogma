@@ -1,0 +1,47 @@
+{ "inputs":
+     [ { "name": "state"
+       , "type": "uint8_t"
+       , "active": true
+       , "connections":
+           [ { "scope": "cfs"
+             , "topic": "STATE_MID"
+             , "field": "payload"
+             }
+           ]
+       }
+     , { "name": "input"
+       , "type": "int32_t"
+       , "active": false
+       , "connections":
+           [ { "scope": "cfs"
+             , "topic": "SAMPLE_MID"
+             , "field": "payload"
+             }
+           ]
+       }
+     ]
+, "topics":
+     [ { "scope": "cfs"
+       , "topic": "STATE_MID"
+       , "type":  "state_msg_t"
+       }
+     , { "scope": "cfs"
+       , "topic": "SAMPLE_MID"
+       , "type":  "sample_msg_t"
+       }
+     ]
+, "types": [
+       { "fromScope": "cfs"
+       , "fromType":  "state_msg_t"
+       , "fromField": "payload"
+       , "toScope":   "C"
+       , "toType":    "uint8_t"
+       }
+     , { "fromScope": "cfs"
+       , "fromType":  "sample_msg_t"
+       , "fromField": "payload"
+       , "toScope":   "C"
+       , "toType":    "int32_t"
+       }
+     ]
+}

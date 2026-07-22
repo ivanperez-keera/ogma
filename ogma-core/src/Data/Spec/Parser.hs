@@ -123,9 +123,7 @@ readInputFile fp formatName propFormatName propVia exprT =
           if | isPrefixOf "XMLFormat" format
              -> do let xmlFormat = read format
                    content <- readFile fp
-                   parseXMLSpec
-                     (wrapper) (def) xmlFormat content
-                     -- (fmap (fmap print) . wrapper) (print def) xmlFormat content
+                   parseXMLSpec wrapper def xmlFormat content
              | isPrefixOf "CSVFormat" format
              -> do let csvFormat = read format
                    content <- readFile fp
@@ -139,7 +137,8 @@ readInputFile fp formatName propFormatName propVia exprT =
                    content <- B.safeReadFile fp
                    case content of
                      Left e  -> return $ Left e
-                     Right b -> parseYAMLSpec wrapper yamlFormat (L.toStrict b)
+                     Right b ->
+                       parseYAMLSpec wrapper yamlFormat fp (L.toStrict b)
              | otherwise
              -> do let jsonFormat = read format
                    content <- B.safeReadFile fp
@@ -149,14 +148,13 @@ readInputFile fp formatName propFormatName propVia exprT =
                                      Left e  -> return $ Left e
                                      Right v ->
                                        parseJSONSpec
-                                         (wrapper)
+                                         wrapper
                                          jsonFormat
+                                         fp
                                          v
         case res of
           Left e  -> return $ Left $ cannotOpenInputFile fp
           Right x -> return $ Right x
-
-
 
 -- | Exception handler to deal with the case in which the trigger expression
 -- cannot be understood.

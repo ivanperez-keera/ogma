@@ -1,6 +1,5 @@
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE DeriveGeneric             #-}
-{-# LANGUAGE MultiWayIf                #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2022 United States Government as represented by the Administrator
@@ -49,14 +48,24 @@ import qualified Command.Standalone
 import Command.Result (Result (..))
 
 -- Internal imports
-import Command.Common
-import Command.Errors     (ErrorCode, ErrorTriplet (..))
-import Command.VariableDB (InputDef (..), TypeDef (..), VariableDB, findInput,
-                           findType, findTypeByType)
-import Data.Aeson.Extra   (mergeObjects)
-import Data.ExprPair      (ExprPair(..), exprPair)
-import Data.Location      (Location (..))
-import Data.Spec.Parser   (readInputExpr)
+import Command.Common                 (InputFile (..), cannotCopyTemplate,
+                                       checkArguments, combineInputFiles,
+                                       locateTemplateDir, makeLeftE,
+                                       openVarDBFilesWithDefault,
+                                       parseInputFile,
+                                       parseRequirementsListFile,
+                                       parseTemplateVarsFile,
+                                       parseVariablesFile, processResult,
+                                       specExtractExternalVariables,
+                                       specExtractHandlers)
+import Command.Errors                 (ErrorCode, ErrorTriplet (..))
+import Command.VariableDB             (InputDef (..), TypeDef (..), VariableDB,
+                                       findInput, findType, findTypeByType)
+import Data.Aeson.Extra               (mergeObjects)
+import Data.ExprPair                  (ExprPair (..), exprPair)
+import Data.Location                  (Location (..))
+import Data.Spec.Parser               (readInputExpr)
+import Language.Trans.Diagram2Copilot (DiagramMode (..))
 
 -- | Generate a new FPrime component connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.
@@ -91,15 +100,19 @@ command' options (ExprPair exprT) = do
     rs    <- parseRequirementsListFile handlersFile
     varDB <- openVarDBFilesWithDefault varDBFile
 
-    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) cExpr
+    specT <- maybe
+               (return Nothing)
+               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               cExpr
+
     specF <- if null fpA
-                  then return Nothing
-                  else do
-                    fpA' <- mapM readInputFile' fpA
-                    let fpA'' = combineInputFiles fpA'
-                    if length fpA'' > 1
-                      then liftEither $ Left commandMultipleInputTypes
-                      else pure $ Just $ head fpA''
+               then return Nothing
+               else do
+                 fpA' <- mapM readInputFile' fpA
+                 let fpA'' = combineInputFiles fpA'
+                 if length fpA'' > 1
+                   then liftEither $ Left commandMultipleInputTypes
+                   else pure $ Just $ head fpA''
 
     let spec = specT <|> specF
 
@@ -134,13 +147,19 @@ command' options (ExprPair exprT) = do
       parseInputFile f formatName propFormatName propVia exprT
 
     processSpec spec' expr' fp' =
-      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
+      Command.Standalone.commandLogic
+        expr'
+        fp'
+        "copilot"
+        []
+        exprT
+        spec'
+        ComputeState
 
     defaultVarNames spec = case spec of
       Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
       Just (InputFileDiagram _)  -> []
       Nothing                    -> specExtractExternalVariables Nothing
-
 
     defaultMonitors spec = case spec of
       Just (InputFileSpec spec') -> specExtractHandlers (Just spec')
@@ -153,29 +172,30 @@ command' options (ExprPair exprT) = do
 -- applications.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String   -- ^ Trigger condition.
-  , commandInputFiles  :: [FilePath]     -- ^ Input specification files.
-  , commandTargetDir   :: FilePath       -- ^ Target directory where the
-                                         -- component should be created.
-  , commandTemplateDir :: Maybe FilePath -- ^ Directory where the template is
-                                         -- to be found.
-  , commandVariables   :: Maybe FilePath -- ^ File containing a list of
-                                         -- variables to make available to
-                                         -- Copilot.
-  , commandVariableDB  :: Maybe FilePath -- ^ File containing a list of known
-                                         -- variables with their types and the
-                                         -- message IDs they can be obtained
-                                         -- from.
-  , commandHandlers    :: Maybe FilePath -- ^ File containing a list of
-                                         -- handlers used in the Copilot
-                                         -- specification. The handlers are
-                                         -- assumed to receive no arguments.
-  , commandFormat      :: String         -- ^ Format of the input file.
-  , commandPropFormat  :: String         -- ^ Format used for input properties.
-  , commandPropVia     :: Maybe String   -- ^ Use external command to
-                                         -- pre-process system properties.
-  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
-                                         -- variables to make available to the
-                                         -- template.
+  , commandInputFiles    :: [FilePath]     -- ^ Input specification files.
+  , commandTargetDir     :: FilePath       -- ^ Target directory where the
+                                           -- component should be created.
+  , commandTemplateDir   :: Maybe FilePath -- ^ Directory where the template is
+                                           -- to be found.
+  , commandVariables     :: Maybe FilePath -- ^ File containing a list of
+                                           -- variables to make available to
+                                           -- Copilot.
+  , commandVariableDB    :: Maybe FilePath -- ^ File containing a list of known
+                                           -- variables with their types and
+                                           -- the message IDs they can be
+                                           -- obtained from.
+  , commandHandlers      :: Maybe FilePath -- ^ File containing a list of
+                                           -- handlers used in the Copilot
+                                           -- specification. The handlers are
+                                           -- assumed to receive no arguments.
+  , commandFormat        :: String         -- ^ Format of the input file.
+  , commandPropFormat    :: String         -- ^ Format used for input
+                                           -- properties.
+  , commandPropVia       :: Maybe String   -- ^ Use external command to
+                                           -- pre-process system properties.
+  , commandExtraVars     :: Maybe FilePath -- ^ File containing additional
+                                           -- variables to make available to
+                                           -- the template.
   }
 
 -- | Return the variable information needed to generate declarations
@@ -225,10 +245,10 @@ instance ToJSON Monitor
 
 -- | Data that may be relevant to generate a ROS application.
 data AppData = AppData
-  { variables :: [VarDecl]
-  , monitors  :: [Monitor]
-  , copilot   :: Maybe Command.Standalone.AppData
-  }
+    { variables :: [VarDecl]
+    , monitors  :: [Monitor]
+    , copilot   :: Maybe Command.Standalone.AppData
+    }
   deriving (Generic)
 
 instance ToJSON AppData

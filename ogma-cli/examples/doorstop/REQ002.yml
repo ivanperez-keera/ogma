@@ -1,0 +1,10 @@
+active: true
+derived: false
+header: ''
+level: 1.1
+links: []
+normative: true
+ref: ''
+reviewed: null
+text: 'The temperature shall always be greater than or equal to 120 degrees'
+formula: 'temperature >= 120'

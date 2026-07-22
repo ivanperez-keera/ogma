@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveGeneric   #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- Copyright 2022 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -36,7 +37,8 @@ module Command.VariableDB
 
 -- External imports
 import Control.Monad.Except (ExceptT, throwError)
-import Data.Aeson           (FromJSON (..))
+import Data.Aeson           (FromJSON (..), Value (Object), (.:), withObject)
+import Data.Aeson.KeyMap    (filterWithKey)
 import Data.Aeson.TH        (defaultOptions, deriveFromJSON, fieldLabelModifier)
 import Data.Char            (toLower)
 import Data.List            (find)
@@ -64,6 +66,7 @@ data VariableDB = VariableDB
 data InputDef = InputDef
     { inputName        :: String
     , inputType        :: Maybe String
+    , inputActive      :: Bool
     , inputConnections :: [ Connection ]
     }
   deriving (Eq, Show)
@@ -81,6 +84,7 @@ data TopicDef = TopicDef
     { topicScope :: String
     , topicTopic :: String
     , topicType  :: String
+    , topicExtra :: Value  -- ^ Additional extra info.
     }
   deriving (Eq, Show)
 
@@ -314,15 +318,27 @@ mergeMaybe Nothing x       = x
 mergeMaybe x       Nothing = x
 mergeMaybe x       _       = x
 
--- | Implement default instances of parser to read variable DB from JSON,
--- dropping the prefix in each field name.
+-- | Implement instances of parser to read variable DB from JSON, dropping the
+-- prefix in each field name.
 deriveFromJSON
   defaultOptions {fieldLabelModifier = toHead toLower . drop 4 }
   ''TypeDef
 
-deriveFromJSON
-  defaultOptions {fieldLabelModifier = toHead toLower . drop 5 }
-  ''TopicDef
+instance FromJSON TopicDef where
+  parseJSON = withObject "TopicDef" $ \obj -> do
+    scope <- obj .: "scope"
+    topic <- obj .: "topic"
+    typeV <- obj .: "type"
+
+    let extra = Object $
+          filterWithKey (\k _ -> k `notElem` [ "scope", "topic", "type" ]) obj
+
+    pure TopicDef
+      { topicScope = scope
+      , topicTopic = topic
+      , topicType  = typeV
+      , topicExtra = extra
+      }
 
 deriveFromJSON
   defaultOptions {fieldLabelModifier = toHead toLower . drop 10 }

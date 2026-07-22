@@ -43,11 +43,16 @@ module CLI.CommandReport
   where
 
 -- External imports
-import Options.Applicative (Parser, help, long, metavar, optional, short,
+import Control.Applicative ((<|>))
+import Data.Functor        ((<&>))
+import Data.Maybe          (fromMaybe)
+import Options.Applicative (Parser, help, long, many, metavar, optional, short,
                             showDefault, strOption, value)
 
--- External imports: command results
+-- External imports: handling of input projects and command results
 import Command.Result (Result (..))
+import Data.Location  (Location (LocationFile))
+import Data.Project   (Project (..), readProject)
 
 -- External imports: actions or commands supported
 import           Command.Report (ErrorCode)
@@ -57,32 +62,75 @@ import qualified Command.Report
 
 -- | Options to generate Copilot from specification.
 data CommandOpts = CommandOpts
-  { commandTargetDir   :: FilePath           -- ^ Target directory where the
+  { commandProject     :: Maybe String       -- ^ Project file.
+  , commandTargetDir   :: FilePath           -- ^ Target directory where the
                                              -- reoprt should be created.
   , commandTemplateDir :: Maybe FilePath     -- ^ Directory where the template
                                              -- is to be found.
-  , commandFileName    :: FilePath
-  , commandFormat      :: String
-  , commandPropFormat  :: String
-  , commandPropVia     :: Maybe String
+  , commandInputFiles  :: [ReportFile]
+  }
+
+-- | Options associated to a specific input file.
+data ReportFile = ReportFile
+  { reportFilePath       :: FilePath
+  , reportFileFormat     :: String
+  , reportFilePropFormat :: String
+  , reportFilePropVia    :: Maybe String
   }
 
 -- | Generate a report of the input specification(s).
 command :: CommandOpts -- ^ Customization options
         -> IO (Result ErrorCode)
-command options = do
-    Command.Report.command internalCommandOpts
+command options
+    | Just p <- commandProject options
+    = do optE <- commandProjectOptions p options
+         case optE of
+           Left msg  -> return $ Error cannotReadProject msg (LocationFile p)
+           Right opt -> Command.Report.command opt
+
+    | otherwise
+    = Command.Report.command internalCommandOpts
 
   where
     internalCommandOpts :: Command.Report.CommandOptions
     internalCommandOpts = Command.Report.CommandOptions
       { Command.Report.commandTargetDir   = commandTargetDir options
       , Command.Report.commandTemplateDir = commandTemplateDir options
-      , Command.Report.commandInputFile   = commandFileName options
-      , Command.Report.commandFormat      = commandFormat options
-      , Command.Report.commandPropFormat  = commandPropFormat options
-      , Command.Report.commandPropVia     = commandPropVia options
+      , Command.Report.commandInputFiles  =
+          map argumentToReportFile $ commandInputFiles options
       }
+
+-- | Produce default command options based on project settings.
+commandProjectOptions :: FilePath
+                      -> CommandOpts
+                      -> IO (Either String Command.Report.CommandOptions)
+commandProjectOptions projectFile c = do
+  projectE <- readProject projectFile
+  return $ projectE <&> \project ->
+
+    let projectToReportFile (fp, c1, c2) =
+          Command.Report.ReportFile fp c1 c2 (projectCommandPropVia project)
+
+    in Command.Report.CommandOptions
+         { Command.Report.commandTargetDir   =
+             fromMaybe (commandTargetDir c) (projectTargetDir project)
+         , Command.Report.commandTemplateDir =
+             projectTemplateDir project <|> commandTemplateDir c
+         , Command.Report.commandInputFiles  = concat
+             [ map projectToReportFile  $ projectInputFiles project
+             , map argumentToReportFile $ commandInputFiles c
+             ]
+         }
+
+-- | Convert an input argument file into an internal
+-- 'Command.Report.ReportFile'.
+argumentToReportFile :: ReportFile -> Command.Report.ReportFile
+argumentToReportFile f = Command.Report.ReportFile
+  { Command.Report.reportFilePath       = reportFilePath   f
+  , Command.Report.reportFileFormat     = reportFileFormat f
+  , Command.Report.reportFilePropFormat = reportFilePropFormat f
+  , Command.Report.reportFilePropVia    = reportFilePropVia f
+  }
 
 -- * CLI
 
@@ -94,7 +142,14 @@ commandDesc = "Generate a report of the input specification(s)."
 -- specification from an input specification file.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
-  <$> strOption
+  <$> optional
+        ( strOption
+            (  long "project"
+            <> metavar "FILENAME"
+            <> help strReportProjectArgDesc
+            )
+        )
+  <*> strOption
         (  long "target-dir"
         <> metavar "DIR"
         <> showDefault
@@ -108,10 +163,16 @@ commandOptsParser = CommandOpts
             <> help strReportTemplateDirArgDesc
             )
         )
-  <*> strOption
-        (  long "file-name"
+  <*> many reportFileOptsParser
+
+-- | Subparser for information on one input file to be used with the @report@
+-- command.
+reportFileOptsParser :: Parser ReportFile
+reportFileOptsParser = ReportFile
+  <$> strOption
+        (  long "input-file"
         <> metavar "FILENAME"
-        <> help strReportFilenameDesc
+        <> help strReportInputFileDesc
         )
   <*> strOption
         (  long "input-format"
@@ -137,6 +198,10 @@ commandOptsParser = CommandOpts
             )
         )
 
+-- | Project flag description.
+strReportProjectArgDesc :: String
+strReportProjectArgDesc = "Project file"
+
 -- | Target dir flag description.
 strReportTargetDirDesc :: String
 strReportTargetDirDesc = "Target directory"
@@ -145,9 +210,9 @@ strReportTargetDirDesc = "Target directory"
 strReportTemplateDirArgDesc :: String
 strReportTemplateDirArgDesc = "Directory holding report template"
 
--- | Filename flag description.
-strReportFilenameDesc :: String
-strReportFilenameDesc = "File with properties, requirements or a diagram"
+-- | Input file flag description.
+strReportInputFileDesc :: String
+strReportInputFileDesc = "File with properties, requirements or a diagram"
 
 -- | Format flag description.
 strReportFormatDesc :: String
@@ -160,3 +225,7 @@ strReportPropFormatDesc = "Format of temporal or boolean properties"
 -- | External command to pre-process individual properties.
 strReportPropViaDesc :: String
 strReportPropViaDesc = "Command to pre-process individual properties"
+
+-- | Error code for when a project cannot be read.
+cannotReadProject :: ErrorCode
+cannotReadProject = 1

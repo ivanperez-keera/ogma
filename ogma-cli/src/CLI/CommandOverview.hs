@@ -32,14 +32,19 @@ module CLI.CommandOverview
 
 -- External imports
 import           Data.Aeson          (toJSON)
+import           Data.Functor        ((<&>))
+import           Data.List           (dropWhileEnd)
 import qualified Data.Text.Lazy      as T
 import qualified Data.Text.Lazy.IO   as T
-import           Options.Applicative (Parser, help, long, metavar, optional,
-                                      short, showDefault, strOption, value)
-import           Text.Microstache
+import           Options.Applicative (Parser, help, long, many, metavar,
+                                      optional, short, showDefault, strOption,
+                                      value)
+import           Text.Microstache    (compileMustacheText, renderMustache)
 
--- External imports: command results
+-- External imports: handling of input projects and command results
 import Command.Result ( Result(..) )
+import Data.Location  ( Location(..) )
+import Data.Project   ( Project (..), readProject )
 
 -- External imports: actions or commands supported
 import           Command.Overview (ErrorCode)
@@ -49,60 +54,128 @@ import qualified Command.Overview
 
 -- | Options to generate an overview from the input specification(s).
 data CommandOpts = CommandOpts
-  { overviewInputFile   :: FilePath
-  , overviewFormat      :: String
-  , overviewPropFormat  :: String
-  , overviewPropVia     :: Maybe String
+  { overviewProject    :: Maybe String
+  , overviewInputFiles :: [OverviewFile]
+  }
+
+-- | Options associated to a specific input file.
+data OverviewFile = OverviewFile
+  { overviewFilePath       :: FilePath
+  , overviewFileFormat     :: String
+  , overviewFilePropFormat :: String
+  , overviewFilePropVia    :: Maybe String
   }
 
 -- | Print an overview of the input specification(s).
 command :: CommandOpts -> IO (Result ErrorCode)
-command c = do
-    (mOutput, result) <-
-      Command.Overview.command (overviewInputFile c) internalCommandOpts
+command c
+    | Just p <- overviewProject c
+    = do optE <- commandProjectOptions p c
+         case optE of
+           Left msg  -> return $ Error cannotReadProject msg (LocationFile p)
+           Right opt -> do
+             (mOutput, result) <- Command.Overview.command opt
+             case mOutput of
+               Just output ->
+                 case outputString of
+                   Right template -> T.putStr $ trimEnd
+                                   $ renderMustache template (toJSON output)
+                   _              -> putStrLn "Error"
+               _ -> putStrLn "Error"
+             return result
 
-    case mOutput of
-      Just output ->
-        case outputString output of
-          Right template -> T.putStr $ renderMustache template (toJSON output)
-          _              -> putStrLn "Error"
-      _ -> putStrLn "Error"
-    return result
+     | otherwise
+     = do (mOutput, result) <-
+            Command.Overview.command internalCommandOpts
+
+          case mOutput of
+            Just output ->
+              case outputString of
+                Right template ->
+                  T.putStr $ trimEnd $ renderMustache template (toJSON output)
+                _              -> putStrLn "Error"
+            _ -> putStrLn "Error"
+          return result
 
   where
+
+    trimEnd :: T.Text -> T.Text
+    trimEnd = T.unlines . dropWhileEnd T.null . T.lines
+
     internalCommandOpts :: Command.Overview.CommandOptions
-    internalCommandOpts = Command.Overview.CommandOptions
-      { Command.Overview.commandFormat      = overviewFormat c
-      , Command.Overview.commandPropFormat  = overviewPropFormat c
-      , Command.Overview.commandPropVia     = overviewPropVia c
+    internalCommandOpts = Command.Overview.CommandOptions $
+      map fileInfo (overviewInputFiles c)
+
+    fileInfo f = Command.Overview.OverviewFile
+      { Command.Overview.overviewFilePath       = overviewFilePath   f
+      , Command.Overview.overviewFileFormat     = overviewFileFormat f
+      , Command.Overview.overviewFilePropFormat = overviewFilePropFormat f
+      , Command.Overview.overviewFilePropVia    = overviewFilePropVia f
       }
 
-    outputString (Command.Overview.CommandSummaryRequirement {}) =
+    outputString =
       compileMustacheText "output" $ T.unlines
-        [ "The requirements file has:"
+        [ "{{#commandSummaryRequirements}}"
+        , "The requirements file {{commandRequirementsFile}} has:"
         , " - {{commandExternalVariables}} external variables."
         , " - {{commandInternalVariables}} internal variables."
         , " - {{commandRequirements}} requirements."
-        , "   - {{commandRequirementsTrue}} requirements are constantly or always true."
-        , "   - {{commandRequirementsFalse}} requirements are constantly or always false."
+        , "   - {{commandRequirementsTrue}} requirements are constantly or "
+          <> "always true."
+        , "   - {{commandRequirementsFalse}} requirements are constantly or "
+          <> "always false."
         , "{{#commandRequirementsConsistent}}"
         , "   - No inconsistencies detected in the requirements."
         , "{{/commandRequirementsConsistent}}"
         , "{{^commandRequirementsConsistent}}"
         , "   - The requirements are not mutually consistent."
         , "{{/commandRequirementsConsistent}}"
-        ]
-    outputString (Command.Overview.CommandSummaryDiagram {}) =
-      compileMustacheText "output" $ T.unlines
-        [ "The diagram file:"
-        , " - Has {{commandNumStates}} states."
-        , "{{#commandDeterministic}}"
+        , ""
+        , "{{/commandSummaryRequirements}}"
+        , "{{#commandSummaryDiagrams}}"
+        , "The diagram file {{commandDiagramFile}}:"
+        , " - Has {{commandDiagramNumStates}} states."
+        , "{{#commandDiagramDeterministic}}"
         , " - Is deterministic."
-        , "{{/commandDeterministic}}"
-        , "{{^commandDeterministic}}"
+        , "{{/commandDiagramDeterministic}}"
+        , "{{^commandDiagramDeterministic}}"
         , " - Is not deterministic."
-        , "{{/commandDeterministic}}"
+        , "{{/commandDiagramDeterministic}}"
+        , ""
+        , "{{/commandSummaryDiagrams}}"
         ]
+
+-- | Produce command options based on project settings and user-provided
+-- command options.
+commandProjectOptions :: FilePath
+                      -> CommandOpts
+                      -> IO (Either String Command.Overview.CommandOptions)
+commandProjectOptions projectFile c = do
+    projectE <- readProject projectFile
+    return $ projectE <&> \project ->
+      Command.Overview.CommandOptions
+        { Command.Overview.commandInputFiles = concat
+            [ map (convertProjectFile project) $ projectInputFiles project
+            , map convertInputFile $ overviewInputFiles c
+            ]
+        }
+
+  where
+
+    convertProjectFile project (fp, format, propFormat) =
+      Command.Overview.OverviewFile
+        { Command.Overview.overviewFilePath       = fp
+        , Command.Overview.overviewFileFormat     = format
+        , Command.Overview.overviewFilePropFormat = propFormat
+        , Command.Overview.overviewFilePropVia    =
+            projectCommandPropVia project
+        }
+    convertInputFile f = Command.Overview.OverviewFile
+      { Command.Overview.overviewFilePath       = overviewFilePath   f
+      , Command.Overview.overviewFileFormat     = overviewFileFormat f
+      , Command.Overview.overviewFilePropFormat = overviewFilePropFormat f
+      , Command.Overview.overviewFilePropVia    = overviewFilePropVia f
+      }
 
 -- * CLI
 
@@ -114,6 +187,19 @@ commandDesc = "Generate an overview of the input specification(s)"
 -- of the input specifications.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
+  <$> optional
+        ( strOption
+            (  long "project"
+            <> metavar "FILENAME"
+            <> help strOverviewProjectArgDesc
+            )
+        )
+  <*> many overviewFileOptsParser
+
+-- | Subparser for information on one input file to be used with the @overview@
+-- command.
+overviewFileOptsParser :: Parser OverviewFile
+overviewFileOptsParser = OverviewFile
   <$> strOption
         (  long "input-file"
         <> metavar "FILENAME"
@@ -143,6 +229,10 @@ commandOptsParser = CommandOpts
             )
         )
 
+-- | Project flag description.
+strOverviewProjectArgDesc :: String
+strOverviewProjectArgDesc = "Project file"
+
 -- | Input file flag description.
 strOverviewInputFileDesc :: String
 strOverviewInputFileDesc = "File with properties or requirements"
@@ -159,3 +249,7 @@ strOverviewPropFormatDesc = "Format of temporal or boolean properties"
 strOverviewPropViaDesc :: String
 strOverviewPropViaDesc =
   "Command to pre-process individual properties"
+
+-- | Error code for when a project cannot be read.
+cannotReadProject :: ErrorCode
+cannotReadProject = 1

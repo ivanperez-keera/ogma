@@ -72,8 +72,8 @@ exprPair "lustre" = ExprPair $
   ExprPairT
     (Lustre.pBoolSpec . Lustre.myLexer)
     (\_ -> id)
-    (Lustre.boolSpec2Copilot)
-    (Lustre.boolSpecNames)
+    Lustre.boolSpec2Copilot
+    Lustre.boolSpecNames
     (Lustre.BoolSpecSignal (Lustre.Ident "undefined"))
 exprPair "literal" = ExprPair $
   ExprPairT
@@ -86,9 +86,9 @@ exprPair "cocospec" = exprPair "lustre"
 exprPair _ = ExprPair $
   ExprPairT
     (SMV.pBoolSpec . SMV.myLexer)
-    (substituteBoolExpr)
-    (SMV.boolSpec2Copilot)
-    (SMV.boolSpecNames)
+    substituteBoolExpr
+    SMV.boolSpec2Copilot
+    SMV.boolSpecNames
     (SMV.BoolSpecSignal (SMV.Ident "undefined"))
 
 -- | Parse and print a value using an auxiliary Expression Pair.

@@ -1,6 +1,5 @@
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE DeriveGeneric             #-}
-{-# LANGUAGE MultiWayIf                #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 -- Copyright 2020 United States Government as represented by the Administrator
@@ -42,12 +41,15 @@ import GHC.Generics         (Generic)
 import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
-import Command.Common
-import Command.Errors                 (ErrorCode, ErrorTriplet(..))
+import Command.Common                 (InputFile (..), cannotCopyTemplate,
+                                       combineInputFiles, locateTemplateDir,
+                                       makeLeftE, parseInputFile,
+                                       parseTemplateVarsFile, processResult)
+import Command.Errors                 (ErrorCode, ErrorTriplet (..))
 import Command.Result                 (Result (..))
 import Data.Aeson.Extra               (mergeObjects)
 import Data.Either.Extra              (mapLeft)
-import Data.ExprPair                  (ExprPair(..), ExprPairT(..), exprPair)
+import Data.ExprPair                  (ExprPair (..), ExprPairT (..), exprPair)
 import Data.Location                  (Location (..))
 import Data.Spec.Extra                (addMissingIdentifiers)
 import Data.Spec.Parser               (readInputExpr)
@@ -102,21 +104,26 @@ command' options (ExprPair exprT) = do
 
     -- Read spec and complement the specification with any missing/implicit
     -- definitions.
-    specT <- maybe (return Nothing) (\e -> Just . InputFileSpec <$> readInputExpr' e) triggerExprM
+    specT <- maybe
+               (return Nothing)
+               (\e -> Just . InputFileSpec <$> readInputExpr' e)
+               triggerExprM
+
     specF <- if null fpA
-                  then return Nothing
-                  else do
-                    fpA' <- mapM readInputFile' fpA
-                    let fpA'' = combineInputFiles fpA'
-                    if length fpA'' > 1
-                      then liftEither $ Left commandMultipleInputTypes
-                      else pure $ Just $ head fpA''
+               then return Nothing
+               else do
+                 fpA' <- mapM readInputFile' fpA
+                 let fpA'' = combineInputFiles fpA'
+                 if length fpA'' > 1
+                   then liftEither $ Left commandMultipleInputTypes
+                   else pure $ Just $ head fpA''
 
     let spec = specT <|> specF
 
     case spec of
       Nothing    -> liftEither $ Left $ commandMissingSpec
-      Just spec' -> commandLogic triggerExprM fpA name typeMaps exprT spec'
+      Just spec' ->
+        commandLogic triggerExprM fpA name typeMaps exprT spec' ComputeState
 
   where
     triggerExprM   = commandConditionExpr options
@@ -133,7 +140,6 @@ command' options (ExprPair exprT) = do
     readInputFile' f =
       parseInputFile f formatName propFormatName propVia exprT
 
-
 -- | Generate the data of a new standalone Copilot monitor that implements the
 -- spec, using a subexpression handler.
 commandLogic :: Maybe String
@@ -142,33 +148,36 @@ commandLogic :: Maybe String
              -> [(String, String)]
              -> ExprPairT a
              -> InputFile a
+             -> DiagramMode
              -> ExceptT ErrorTriplet IO AppData
-commandLogic expr fps name typeMaps exprT (InputFileDiagram d) =
+commandLogic expr fps name typeMaps exprT (InputFileDiagram d) mode =
     return $ AppData [] int [] trigs name
   where
-    (int, trigs) = diagram2CopilotSpec d ComputeState
+    (int, trigs) = diagram2CopilotSpec d mode
 
-commandLogic expr fps name typeMaps exprT (InputFileSpec input) = do
-    let spec = addMissingIdentifiers ids input
-    -- Analyze the spec for incorrect identifiers and convert it to Copilot.
-    -- If there is an error, we change the error to a message we control.
-    let appData = mapLeft commandIncorrectSpec' $ do
-          spec' <- specAnalyze spec
-          res   <- spec2Copilot name typeMaps replace print spec'
-
-          -- Pack the results
-          let (ext, int, reqs, trigs, specN) = res
-
-          return $ AppData ext int reqs trigs specN
+commandLogic expr fps name typeMaps exprT (InputFileSpec input) _mode =
 
     liftEither appData
 
   where
 
+    -- Analyze the spec for incorrect identifiers and convert it to Copilot.
+    -- If there is an error, we change the error to a message we control.
+    appData = mapLeft commandIncorrectSpec' $ do
+      spec' <- specAnalyze spec
+      res   <- spec2Copilot name typeMaps replace print spec'
+
+      -- Pack the results
+      let (ext, int, reqs, trigs, specN) = res
+
+      return $ AppData ext int reqs trigs specN
+
     commandIncorrectSpec' = case (expr, fps) of
       (Nothing,    [])   -> error "Both expression and file are missing"
       (Nothing,    fps') -> commandIncorrectSpecF
       (Just expr', _)    -> commandIncorrectSpecE expr'
+
+    spec = addMissingIdentifiers ids input
 
     ExprPairT parse replace print ids def = exprT
 
@@ -178,24 +187,24 @@ commandLogic expr fps name typeMaps exprT (InputFileSpec input) = do
 -- code.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String
-  , commandInputFiles  :: [FilePath]         -- ^ Input specification file(s).
-  , commandTargetDir   :: FilePath           -- ^ Target directory where the
-                                             -- application should be created.
-  , commandTemplateDir :: Maybe FilePath     -- ^ Directory where the template
-                                             -- is to be found.
-  , commandFormat      :: String             -- ^ Format of the input file.
-  , commandPropFormat  :: String             -- ^ Format used for input
-                                             -- properties.
-  , commandTypeMapping :: [(String, String)]
-  , commandFilename    :: String
-  , commandPropVia     :: Maybe String       -- ^ Use external command to
-                                             -- pre-process system properties.
-  , commandExtraVars   :: Maybe FilePath -- ^ File containing additional
-                                         -- variables to make available to the
-                                         -- template.
+  , commandInputFiles    :: [FilePath]         -- ^ Input specification file(s).
+  , commandTargetDir     :: FilePath           -- ^ Target directory where the
+                                               -- application should be created.
+  , commandTemplateDir   :: Maybe FilePath     -- ^ Directory where the template
+                                               -- is to be found.
+  , commandFormat        :: String             -- ^ Format of the input file.
+  , commandPropFormat    :: String             -- ^ Format used for input
+                                               -- properties.
+  , commandTypeMapping   :: [(String, String)]
+  , commandFilename      :: String
+  , commandPropVia       :: Maybe String       -- ^ Use external command to
+                                               -- pre-process system properties.
+  , commandExtraVars     :: Maybe FilePath     -- ^ File containing additional
+                                               -- variables to make available
+                                               -- to the template.
   }
 
--- * Mapping of types from input format to Copilot
+-- | Mapping of types from input format to Copilot.
 typeToCopilotTypeMapping :: [(String, String)] -> [(String, String)]
 typeToCopilotTypeMapping types =
     [ ("bool",    "Bool")

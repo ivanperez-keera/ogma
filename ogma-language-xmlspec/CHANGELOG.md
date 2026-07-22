@@ -1,5 +1,11 @@
 # Revision history for ogma-language-xmlspec
 
+## [1.15.0] - 2026-07-21
+
+* Version bump (1.15.0) (#508).
+* Remove redundant `where` block (#452).
+* Break lines at 80 columns (#492).
+
 ## [1.14.0] - 2026-05-21
 
 * Version bump (1.14.0) (#425).
