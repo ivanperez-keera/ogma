@@ -29,6 +29,7 @@
 * Adjust ROS template to enable injecting dependencies (#500).
 * Bump upper version constraints on Copilot packages (#501).
 * Update cFS template for cFS 7.0 (#509).
+* Update `Dockerfile` in ROS 2 template for Space ROS `jazzy-2026.04.0` (#512).
 
 ## [1.14.0] - 2026-05-21
 
