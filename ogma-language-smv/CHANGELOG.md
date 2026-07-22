@@ -1,5 +1,9 @@
 # Revision history for ogma-language-smv
 
+## [1.15.0] - 2026-07-21
+
+* Version bump (1.15.0) (#508).
+
 ## [1.14.0] - 2026-05-21
 
 * Version bump (1.14.0) (#425).
