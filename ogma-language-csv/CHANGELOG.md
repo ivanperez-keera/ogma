@@ -1,7 +1,8 @@
 # Revision history for ogma-language-csv
 
-## [1.X.Y] - 2026-07-12
+## [1.15.0] - 2026-07-21
 
+* Version bump (1.15.0) (#508).
 * Remove commented code (#492).
 
 ## [1.14.0] - 2026-05-21
