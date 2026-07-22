@@ -1,7 +1,8 @@
 # Revision history for ogma-language-jsonspec
 
-## [1.X.Y] - 2026-07-12
+## [1.15.0] - 2026-07-21
 
+* Version bump (1.15.0) (#508).
 * Allow using file name as requirement ID in JSON files (#472).
 * Apply multiple style fixes (#492).
 
