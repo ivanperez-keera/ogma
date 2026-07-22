@@ -1,4 +1,4 @@
-FROM osrf/space-ros:humble-2024.10.0
+FROM osrf/space-ros:jazzy-2026.04.0
 
 ARG USER=spaceros-user
 ARG PACKAGE_PATH=/home/${USER}/monitors
@@ -18,7 +18,7 @@ ADD --chmod=644 https://raw.githubusercontent.com/ros/rosdistro/master/ros.key /
 RUN sudo apt-get update
 
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-ENV ROS_DISTRO=humble
+ENV ROS_DISTRO=jazzy
 
 ADD manual-deps*.repos /tmp/
 RUN if [ -f "/tmp/manual-deps.repos" ]; then \
@@ -26,8 +26,9 @@ RUN if [ -f "/tmp/manual-deps.repos" ]; then \
     fi
 
 ADD excluded-pkgs*.txt /tmp/
+RUN sudo rosdep init
 RUN rosdep update
-RUN source /opt/spaceros/install/setup.bash && \
+RUN source /opt/ros/spaceros/setup.bash && \
     if [ -f "/tmp/excluded-pkgs.txt" ]; then \
       rosdep install -y \
         --from-paths src --ignore-src \
@@ -40,7 +41,7 @@ RUN source /opt/spaceros/install/setup.bash && \
     fi
 
 ADD manually-installed-pkgs*.txt /tmp/
-RUN source /opt/spaceros/install/setup.bash && \
+RUN source /opt/ros/spaceros/setup.bash && \
     colcon build --packages-select \
       copilot \
       test_requirements \
