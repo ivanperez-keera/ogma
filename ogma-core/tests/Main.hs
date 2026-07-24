@@ -14,8 +14,7 @@ import Command.Standalone       (CommandOptions (..), command)
 
 -- | Run all unit tests on ogma-core.
 main :: IO ()
-main =
-  defaultMainWithOpts tests mempty
+main = defaultMainWithOpts tests mempty
 
 -- | All unit tests for ogma-core.
 tests :: [Test.Framework.Test]
