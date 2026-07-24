@@ -142,7 +142,7 @@ commandProjectOptions projectFile c = do
 
 -- * CLI
 
--- | FPrime command description
+-- | FPrime command description.
 commandDesc :: String
 commandDesc = "Generate a complete F' monitoring component"
 
@@ -241,11 +241,11 @@ commandOptsParser = CommandOpts
 strFPrimeAppProjectArgDesc :: String
 strFPrimeAppProjectArgDesc = "Project file"
 
--- | Argument target directory to FPrime component generation command
+-- | Argument target directory to FPrime component generation command.
 strFPrimeAppDirArgDesc :: String
 strFPrimeAppDirArgDesc = "Target directory"
 
--- | Argument template directory to FPrime component generation command
+-- | Argument template directory to FPrime component generation command.
 strFPrimeAppTemplateDirArgDesc :: String
 strFPrimeAppTemplateDirArgDesc =
   "Directory holding F' component source template"
@@ -255,20 +255,20 @@ strFPrimeAppConditionExprArgDesc :: String
 strFPrimeAppConditionExprArgDesc =
   "Expression used as guard or trigger condition"
 
--- | Argument input file to FPrime component generation command
+-- | Argument input file to FPrime component generation command.
 strFPrimeAppFileNameArgDesc :: String
 strFPrimeAppFileNameArgDesc = "File containing input specification"
 
--- | Argument variable list to FPrime component generation command
+-- | Argument variable list to FPrime component generation command.
 strFPrimeAppVarListArgDesc :: String
 strFPrimeAppVarListArgDesc =
   "File containing list of F' variables to make accessible"
 
--- | Argument variable database to FPrime component generation command
+-- | Argument variable database to FPrime component generation command.
 strFPrimeAppVarDBArgDesc :: String
 strFPrimeAppVarDBArgDesc = "File containing a DB of known F' variables"
 
--- | Argument handler list to FPrime component generation command
+-- | Argument handler list to FPrime component generation command.
 strFPrimeAppHandlerListArgDesc :: String
 strFPrimeAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"

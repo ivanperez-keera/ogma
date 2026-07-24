@@ -15,7 +15,7 @@
 -- License for the specific language governing permissions and limitations
 -- under the License.
 --
--- | CLI interface to the Standalone subcommand
+-- | CLI interface to the Standalone subcommand.
 module CLI.CommandStandalone
     (
       -- * Direct command access
