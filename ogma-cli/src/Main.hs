@@ -68,5 +68,4 @@ fullCLIOpts = info (commandOptsParser <**> helper)
 
 -- | Short program description
 strProgramSummary :: String
-strProgramSummary =
-  "ogma - an anything-to-Copilot application generator"
+strProgramSummary = "ogma - an anything-to-Copilot application generator"

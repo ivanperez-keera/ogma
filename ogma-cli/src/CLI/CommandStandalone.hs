@@ -149,8 +149,7 @@ typeMapping = map splitTypeMapping
 
 -- | Command description for CLI help.
 commandDesc :: String
-commandDesc =
-  "Generate a standalone Copilot file from an input specification"
+commandDesc = "Generate a standalone Copilot file from an input specification"
 
 -- | Subparser for the @standalone@ command, used to generate a Copilot
 -- specification from an input specification file.
@@ -276,8 +275,7 @@ strStandaloneTargetDesc =
 
 -- | External command to pre-process individual properties.
 strStandalonePropViaDesc :: String
-strStandalonePropViaDesc =
-  "Command to pre-process individual properties"
+strStandalonePropViaDesc = "Command to pre-process individual properties"
 
 -- | Additional template variable file flag description.
 strStandaloneTemplateVarsArgDesc :: String

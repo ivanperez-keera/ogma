@@ -11,8 +11,7 @@ import Test.HUnit                     ( assertBool )
 
 -- | Run all unit tests on Ogma.
 main :: IO ()
-main =
-  defaultMainWithOpts tests mempty
+main = defaultMainWithOpts tests mempty
 
 -- | All unit tests for Ogma
 tests :: [Test.Framework.Test]

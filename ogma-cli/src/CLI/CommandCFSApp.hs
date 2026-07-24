@@ -261,13 +261,11 @@ strCFSAppTemplateDirArgDesc =
 
 -- | Argument expression to CFS app generation command.
 strCFSAppConditionExprArgDesc :: String
-strCFSAppConditionExprArgDesc =
-  "Expression used as guard or trigger condition"
+strCFSAppConditionExprArgDesc = "Expression used as guard or trigger condition"
 
 -- | Argument input file to CFS app generation command
 strCFSAppFileNameArgDesc :: String
-strCFSAppFileNameArgDesc =
-  "File containing input specification"
+strCFSAppFileNameArgDesc = "File containing input specification"
 
 -- | Argument variable list to cFS app generation command
 strCFSAppVarListArgDesc :: String
@@ -276,8 +274,7 @@ strCFSAppVarListArgDesc =
 
 -- | Argument variable database to cFS app generation command
 strCFSAppVarDBArgDesc :: String
-strCFSAppVarDBArgDesc =
-  "File containing a DB of known cFS variables"
+strCFSAppVarDBArgDesc = "File containing a DB of known cFS variables"
 
 -- | Argument handler list to cFS app generation command
 strCFSAppHandlerListArgDesc :: String
@@ -294,8 +291,7 @@ strCFSAppPropFormatDesc = "Format of temporal or boolean properties"
 
 -- | External command to pre-process individual properties.
 strCFSAppPropViaDesc :: String
-strCFSAppPropViaDesc =
-  "Command to pre-process individual properties"
+strCFSAppPropViaDesc = "Command to pre-process individual properties"
 
 -- | Mode name flag description.
 strCFSAppDiagramModeDesc :: String
