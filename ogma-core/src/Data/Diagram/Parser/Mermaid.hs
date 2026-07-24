@@ -176,6 +176,6 @@ pSequenceArrow = void $ choice
   , string "-)"
   ]
 
--- | Consume spaces
+-- | Consume spaces.
 spaces :: MermaidParser ()
 spaces = L.space space1 empty empty

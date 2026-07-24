@@ -35,7 +35,7 @@ import Language.Copilot.CStruct ( CField (CArray, CPlain), CStruct(..) )
 -- Internal imports
 import qualified Language.C.AbsC as C
 
--- | Convert a top-level struct declaration into a CStruct
+-- | Convert a top-level struct declaration into a CStruct.
 mkCStruct :: C.ExternalDeclaration -> Either String CStruct
 mkCStruct (C.MkExternalDeclarationFunctionDefinition _) = Left "C files must contain struct definitions only."
 mkCStruct (C.MkExternalDeclarationDeclaration (C.MkDeclaration specifiers initDecl)) =
