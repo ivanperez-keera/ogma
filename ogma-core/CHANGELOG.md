@@ -1,8 +1,9 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-07-22
+## [1.X.Y] - 2026-07-23
 
 * Replace adhoc function `mergeMaybe` with function from `base` (#516).
+* Fix malformed comments (#518).
 
 ## [1.15.0] - 2026-07-21
 
