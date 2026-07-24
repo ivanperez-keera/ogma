@@ -5,6 +5,7 @@
 * Replace adhoc function `mergeMaybe` with function from `base` (#516).
 * Fix malformed comments (#518).
 * Remove unnecessary line breaks (#520).
+* Add missing periods to Haddock comments (#524).
 
 ## [1.15.0] - 2026-07-21
 
