@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2026-07-23
 
 * Remove unnecessary line breaks (#520).
+* Update cFS examples to avoid MID collisions (#522).
 
 ## [1.15.0] - 2026-07-21
 
