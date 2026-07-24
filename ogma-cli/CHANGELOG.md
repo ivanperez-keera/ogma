@@ -4,6 +4,7 @@
 
 * Remove unnecessary line breaks (#520).
 * Update cFS examples to avoid MID collisions (#522).
+* Add missing periods to Haddock comments (#524).
 
 ## [1.15.0] - 2026-07-21
 
