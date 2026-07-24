@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2026-07-23
 
 * Remove unnecessary line breaks (#520).
+* Add missing periods to Haddock comments (#524).
 
 ## [1.15.0] - 2026-07-21
 
