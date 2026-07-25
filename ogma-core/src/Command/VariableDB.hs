@@ -36,6 +36,7 @@ module Command.VariableDB
   where
 
 -- External imports
+import Control.Applicative  ((<|>))
 import Control.Monad.Except (ExceptT, throwError)
 import Data.Aeson           (FromJSON (..), Value (Object), (.:), withObject)
 import Data.Aeson.KeyMap    (filterWithKey)
@@ -205,10 +206,8 @@ mergeInput (i1:is1) i2
        || inputType i1 == inputType i2
        )
   = do cs <- mergeConnections (inputConnections i1) (inputConnections i2)
-       let i1' = i1 { inputType =
-                        mergeMaybe (inputType i1) (inputType i2)
-                    , inputConnections =
-                        cs
+       let i1' = i1 { inputType        = inputType i1 <|> inputType i2
+                    , inputConnections = cs
                     }
        return (i1' : is1)
 
@@ -310,13 +309,6 @@ cannotMergeVariableDBs element =
 -- | Error: one of the variable DBs provided cannot be merged.
 ecCannotMergeVariableDB :: ErrorCode
 ecCannotMergeVariableDB = 1
-
--- | Merge two @Maybe@ values, prefering the left one if two @Just@s are
--- provided.
-mergeMaybe :: Maybe a -> Maybe a -> Maybe a
-mergeMaybe Nothing x       = x
-mergeMaybe x       Nothing = x
-mergeMaybe x       _       = x
 
 -- | Implement instances of parser to read variable DB from JSON, dropping the
 -- prefix in each field name.
