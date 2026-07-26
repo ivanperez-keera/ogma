@@ -25,7 +25,7 @@ import           Data.Aeson        (FromJSON, ToJSON, eitherDecodeStrict')
 import qualified Data.ByteString   as BS
 import           GHC.Generics      (Generic)
 
--- -- Internal imports
+-- Internal imports
 import Data.Either.Extra (mapLeft)
 
 data Project = Project
