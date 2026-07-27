@@ -257,8 +257,7 @@ strFPrimeAppConditionExprArgDesc =
 
 -- | Argument input file to FPrime component generation command
 strFPrimeAppFileNameArgDesc :: String
-strFPrimeAppFileNameArgDesc =
-  "File containing input specification"
+strFPrimeAppFileNameArgDesc = "File containing input specification"
 
 -- | Argument variable list to FPrime component generation command
 strFPrimeAppVarListArgDesc :: String
@@ -267,8 +266,7 @@ strFPrimeAppVarListArgDesc =
 
 -- | Argument variable database to FPrime component generation command
 strFPrimeAppVarDBArgDesc :: String
-strFPrimeAppVarDBArgDesc =
-  "File containing a DB of known F' variables"
+strFPrimeAppVarDBArgDesc = "File containing a DB of known F' variables"
 
 -- | Argument handler list to FPrime component generation command
 strFPrimeAppHandlerListArgDesc :: String
@@ -285,8 +283,7 @@ strFPrimeAppPropFormatDesc = "Format of temporal or boolean properties"
 
 -- | External command to pre-process individual properties.
 strFPrimeAppPropViaDesc :: String
-strFPrimeAppPropViaDesc =
-  "Command to pre-process individual properties"
+strFPrimeAppPropViaDesc = "Command to pre-process individual properties"
 
 -- | Additional template variable file flag description.
 strFPrimeAppTemplateVarsArgDesc :: String

@@ -105,8 +105,7 @@ emptyVariableDB = VariableDB [] [] []
 
 -- | Find an input with a given name.
 findInput :: VariableDB -> String -> Maybe InputDef
-findInput varDB name =
-  find (\x -> inputName x == name) (inputs varDB)
+findInput varDB name = find (\x -> inputName x == name) (inputs varDB)
 
 -- | Find a connection a given scope.
 findConnection :: InputDef -> String -> Maybe Connection

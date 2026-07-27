@@ -227,8 +227,7 @@ type XPathExpr = String
 resolveIndirectly :: String
                   -> (String, Maybe (String, String))
                   -> ExceptT String IO XPathExpr
-resolveIndirectly _ (query, Nothing) =
-  liftEither $ checkXPathExpr query
+resolveIndirectly _ (query, Nothing) = liftEither $ checkXPathExpr query
 
 resolveIndirectly xml (query, Just (key, val)) = do
   -- Check that the given query string parses correctly.

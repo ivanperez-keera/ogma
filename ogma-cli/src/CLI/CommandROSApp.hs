@@ -293,8 +293,7 @@ strROSAppConditionExprArgDesc = "Expression used as guard or trigger condition"
 
 -- | Argument input file to ROS app generation command
 strROSAppFileNameArgDesc :: String
-strROSAppFileNameArgDesc =
-  "File containing input specification"
+strROSAppFileNameArgDesc = "File containing input specification"
 
 -- | Argument variable list to ROS app generation command
 strROSAppVarListArgDesc :: String
@@ -303,8 +302,7 @@ strROSAppVarListArgDesc =
 
 -- | Argument variable database to ROS app generation command
 strROSAppVarDBArgDesc :: String
-strROSAppVarDBArgDesc =
-  "File containing a DB of known ROS variables"
+strROSAppVarDBArgDesc = "File containing a DB of known ROS variables"
 
 -- | Argument handler list to ROS app generation command
 strROSAppHandlerListArgDesc :: String
@@ -321,8 +319,7 @@ strROSAppPropFormatDesc = "Format of temporal or boolean properties"
 
 -- | External command to pre-process individual properties.
 strROSAppPropViaDesc :: String
-strROSAppPropViaDesc =
-  "Command to pre-process individual properties"
+strROSAppPropViaDesc = "Command to pre-process individual properties"
 
 -- | Additional template variable file flag description.
 strROSAppTemplateVarsArgDesc :: String

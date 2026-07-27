@@ -235,8 +235,7 @@ strSearchPropFormatDesc = "Format of temporal or boolean properties"
 
 -- | External command to pre-process individual properties.
 strSearchPropViaDesc :: String
-strSearchPropViaDesc =
-  "Command to pre-process individual properties"
+strSearchPropViaDesc = "Command to pre-process individual properties"
 
 -- | Error code for when a project cannot be read.
 cannotReadProject :: ErrorCode

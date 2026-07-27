@@ -1,5 +1,9 @@
 # Revision history for ogma-language-lustre
 
+## [1.X.Y] - 2026-07-27
+
+* Remove unnecessary line breaks (#520).
+
 ## [1.15.0] - 2026-07-21
 
 * Version bump (1.15.0) (#508).
