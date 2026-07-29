@@ -1,11 +1,12 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-07-23
+## [1.X.Y] - 2026-07-29
 
 * Replace adhoc function `mergeMaybe` with function from `base` (#516).
 * Fix malformed comments (#518).
 * Remove unnecessary line breaks (#520).
 * Add missing periods to Haddock comments (#524).
+* Fix spelling of F Prime (#526).
 
 ## [1.15.0] - 2026-07-21
 
