@@ -11,6 +11,7 @@
 * Add valid Haddock documentation to all top-level functions (#542).
 * Bump upper version constraints on `QuickCheck`, `megaparsec` (#545).
 * Make `Dockerfile` base image in default ROS 2 template customizable (#548).
+* Allow for inputs to be deeply nested fields in ROS 2 template (#547).
 
 ## [1.15.0] - 2026-07-21
 
