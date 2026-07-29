@@ -1,4 +1,4 @@
--- | Test ogma-core
+-- | Test ogma-core.
 module Main where
 
 import Data.Monoid                    ( mempty )

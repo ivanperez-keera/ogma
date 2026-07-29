@@ -1,4 +1,4 @@
--- | Test Ogma
+-- | Test Ogma.
 module Main where
 
 import Data.List                      ( intercalate )
@@ -13,7 +13,7 @@ import Test.HUnit                     ( assertBool )
 main :: IO ()
 main = defaultMainWithOpts tests mempty
 
--- | All unit tests for Ogma
+-- | All unit tests for Ogma.
 tests :: [Test.Framework.Test]
 tests =
   [

@@ -363,7 +363,7 @@ listToEither _   [x] = Right x
 listToEither msg []  = Left $ "Failed to find a value for " ++ msg
 listToEither msg _   = Left $ "Unexpectedly found multiple values for " ++ msg
 
--- | Replace a string by another string
+-- | Replace a string by another string.
 replace :: String -> String -> String -> String
 replace []           _k  _v    = []
 replace string@(h:t) key value

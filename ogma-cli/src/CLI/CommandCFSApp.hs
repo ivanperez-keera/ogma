@@ -144,7 +144,7 @@ commandProjectOptions projectFile c = do
 
 -- * CLI
 
--- | cFS command description
+-- | cFS command description.
 commandDesc :: String
 commandDesc = "Generate a complete cFS/Copilot application"
 
@@ -250,11 +250,11 @@ commandOptsParser = CommandOpts
 strCFSAppProjectArgDesc :: String
 strCFSAppProjectArgDesc = "Project file"
 
--- | Argument target directory to cFS app generation command
+-- | Argument target directory to cFS app generation command.
 strCFSAppDirArgDesc :: String
 strCFSAppDirArgDesc = "Target directory"
 
--- | Argument template directory to cFS app generation command
+-- | Argument template directory to cFS app generation command.
 strCFSAppTemplateDirArgDesc :: String
 strCFSAppTemplateDirArgDesc =
   "Directory holding cFS application source template"
@@ -263,20 +263,20 @@ strCFSAppTemplateDirArgDesc =
 strCFSAppConditionExprArgDesc :: String
 strCFSAppConditionExprArgDesc = "Expression used as guard or trigger condition"
 
--- | Argument input file to CFS app generation command
+-- | Argument input file to CFS app generation command.
 strCFSAppFileNameArgDesc :: String
 strCFSAppFileNameArgDesc = "File containing input specification"
 
--- | Argument variable list to cFS app generation command
+-- | Argument variable list to cFS app generation command.
 strCFSAppVarListArgDesc :: String
 strCFSAppVarListArgDesc =
   "File containing list of cFS variables to make accessible"
 
--- | Argument variable database to cFS app generation command
+-- | Argument variable database to cFS app generation command.
 strCFSAppVarDBArgDesc :: String
 strCFSAppVarDBArgDesc = "File containing a DB of known cFS variables"
 
--- | Argument handler list to cFS app generation command
+-- | Argument handler list to cFS app generation command.
 strCFSAppHandlerListArgDesc :: String
 strCFSAppHandlerListArgDesc =
   "File containing list of Copilot handlers used in the specification"
@@ -298,7 +298,7 @@ strCFSAppDiagramModeDesc :: String
 strCFSAppDiagramModeDesc =
   "Mode of operation for diagrams (check, calculate, safeguard)"
 
--- | Argument template variables to cFS app generation command
+-- | Argument template variables to cFS app generation command.
 strCFSAppTemplateVarsArgDesc :: String
 strCFSAppTemplateVarsArgDesc =
   "JSON file containing additional variables to expand in template"
