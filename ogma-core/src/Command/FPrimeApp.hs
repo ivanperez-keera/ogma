@@ -19,7 +19,7 @@
 -- License for the specific language governing permissions and limitations
 -- under the License.
 --
--- | Create <https://github.com/nasa/fprime FPrime> components that subscribe
+-- | Create <https://github.com/nasa/fprime F Prime> components that subscribe
 -- to obtain data and call Copilot when new values arrive.
 
 {- HLINT ignore "Functor law" -}
@@ -67,7 +67,7 @@ import Data.Location                  (Location (..))
 import Data.Spec.Parser               (readInputExpr)
 import Language.Trans.Diagram2Copilot (DiagramMode (..))
 
--- | Generate a new FPrime component connected to Copilot.
+-- | Generate a new F Prime component connected to Copilot.
 command :: CommandOptions -- ^ Options to the ROS backend.
         -> IO (Result ErrorCode)
 command options = processResult $ do
