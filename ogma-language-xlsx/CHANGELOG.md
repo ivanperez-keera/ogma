@@ -1,5 +1,9 @@
 # Revision history for ogma-language-xlsx
 
+## [1.X.Y] - 2026-08-01
+
+* Bump upper version constraint on `xlsx` (#528).
+
 ## [1.15.0] - 2026-07-21
 
 * Version bump (1.15.0) (#508).
