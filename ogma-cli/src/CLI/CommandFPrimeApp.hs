@@ -113,7 +113,7 @@ commandProjectOptions projectFile c = do
           fromMaybe (fprimeAppTarget c) (projectTargetDir project)
 
       , Command.FPrimeApp.commandTemplateDir =
-          maybe (fprimeAppTemplateDir c) Just (projectTemplateDir project)
+          projectTemplateDir project <|> fprimeAppTemplateDir c
 
       , Command.FPrimeApp.commandVariables =
           projectVariableFiles project <|> fprimeAppVariables c
