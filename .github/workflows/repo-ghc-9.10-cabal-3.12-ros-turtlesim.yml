@@ -1,0 +1,54 @@
+name: ros-ghc-9.10-cabal-3.12-turtlesim
+
+# Trigger the workflow on push or pull request
+on:
+  - pull_request
+  - push
+
+jobs:
+  cabal:
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        cabal: ["3.12"]
+        ghc:
+          - "9.10"
+
+    steps:
+
+    - uses: haskell-actions/setup@main
+      id: setup-haskell-cabal
+      name: Setup Haskell
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
+
+    - name: Prepare environment
+      run: |
+        echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+        echo "$HOME/.cabal/bin" >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y libbz2-dev libexpat-dev
+        cabal install --lib copilot copilot-c99 copilot-language copilot-theorem \
+          copilot-libraries copilot-interpreter
+
+    - name: Install ogma
+      run: |
+        cabal install ogma-cli:ogma
+
+    - name: Generate ROS app
+      run: |
+        ogma ros --project ogma-cli/examples/ros2-turtlesim/project.ogma
+        cp ogma-cli/examples/ros2-turtlesim/manual-deps.repos turtlesim-demo/
+        cp ogma-cli/examples/ros2-turtlesim/manually-installed-pkgs.txt turtlesim-demo/
+        cd turtlesim-demo/copilot/src/
+        runhaskell Copilot.hs
+        cd ../../
+        docker build -t ogma-turtlesim-demo .
