@@ -12,6 +12,6 @@
   "projectHandlerFile": null,
   "projectCommandPropVia": null,
   "projectTemplateDir": null,
-  "projectTargetDir": "ros2-turtlesim",
+  "projectTargetDir": "turtlesim-demo",
   "projectExtraJSONFile": "ogma-cli/examples/ros2-turtlesim/extra-vars-turtlesim.json"
 }
