@@ -37,6 +37,7 @@ module Command.VariableDB
 
 -- External imports
 import Control.Applicative  ((<|>))
+import Control.Monad        (foldM)
 import Control.Monad.Except (ExceptT, throwError)
 import Data.Aeson           (FromJSON (..), Value (Object), (.:), withObject)
 import Data.Aeson.KeyMap    (filterWithKey)
@@ -188,10 +189,7 @@ mergeVariableDB varDB1 varDB2 = do
 -- contradictory information.
 mergeInputs :: Monad m
             => [InputDef] -> [InputDef] -> ExceptT ErrorTriplet m [InputDef]
-mergeInputs is1 []     = return is1
-mergeInputs is1 (i2:is2) = do
-  is1' <- mergeInput is1 i2
-  mergeInputs is1' is2
+mergeInputs = foldM mergeInput
 
 -- | Merge an input definition into a list of input definitions, so long as it
 -- does not contain contradictory information.
@@ -218,10 +216,7 @@ mergeInput (i1:is1) i2
 -- contradictory information.
 mergeConnections :: Monad m
                  => [Connection] -> [Connection] -> ExceptT ErrorTriplet m [Connection]
-mergeConnections cs1 []       = return cs1
-mergeConnections cs1 (c2:cs2) = do
-  cs1' <- mergeConnection cs1 c2
-  mergeConnections cs1' cs2
+mergeConnections = foldM mergeConnection
 
 -- | Merge a connection into a list of connections, so long as it does not
 -- contain contradictory information.
@@ -244,10 +239,7 @@ mergeConnection (c1:cs1) c2
 -- information.
 mergeTopics :: Monad m
             => [TopicDef] -> [TopicDef] -> ExceptT ErrorTriplet m [TopicDef]
-mergeTopics ts1 [] = return ts1
-mergeTopics ts1 (t2:ts2) = do
-  ts1' <- mergeTopic ts1 t2
-  mergeTopics ts1' ts2
+mergeTopics = foldM mergeTopic
 
 -- | Merge a topic into a list of topics, so long as it does not contain
 -- contradictory information.
@@ -270,10 +262,7 @@ mergeTopic (t1:ts1) t2
 -- contradictory information.
 mergeTypes :: Monad m
            => [TypeDef] -> [TypeDef] -> ExceptT ErrorTriplet m [TypeDef]
-mergeTypes ts1 []       = return ts1
-mergeTypes ts1 (t2:ts2) = do
-  ts1' <- mergeType ts1 t2
-  mergeTypes ts1' ts2
+mergeTypes = foldM mergeType
 
 -- | Merge a type definition into a list of type definitions, so long as it
 -- does not contain contradictory information.
