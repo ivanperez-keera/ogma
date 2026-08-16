@@ -9,6 +9,7 @@
 * Fix target directory name in project file in Turtlesim example (#530).
 * Add CI job to test ROS 2 backend using Turtlesim example (#534).
 * Disable secure mode for package repo in Cabal config in CI jobs (#537).
+* Address HLint suggestions (#540).
 
 ## [1.15.0] - 2026-07-21
 
