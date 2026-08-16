@@ -30,6 +30,8 @@ jobs:
         echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
         echo "$HOME/.cabal/bin" >> $GITHUB_PATH
         echo "$HOME/.local/bin" >> $GITHUB_PATH
+        sed -i -e 's/^.*\<secure: True/  secure: False/g' $HOME/.cabal/config
+        cabal update
 
     - uses: actions/checkout@v4
 
