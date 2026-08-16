@@ -79,8 +79,8 @@ readInputExpr expr propFormatName propVia exprT =
     -- Return the spec, transforming the error message if applicable.
     pure $ mapLeft (cannotReadConditionExpr expr) spec
 
---- | Process input specification, if available, and return its abstract
---- representation.
+-- | Process input specification, if available, and return its abstract
+-- representation.
 readInputFile :: FilePath
               -> String
               -> String
