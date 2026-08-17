@@ -165,6 +165,8 @@ spec2Copilot specName typeMaps exprTransform showExpr spec =
     requirementNames = map requirementName
                      $ requirements spec
 
+-- | Check that a specification does not contain any name clashes between
+-- variables and/or requirements.
 specAnalyze :: Spec a -> Either String (Spec a)
 specAnalyze spec
     | not (null evnClash)

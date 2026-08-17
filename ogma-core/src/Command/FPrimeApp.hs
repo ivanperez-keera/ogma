@@ -91,6 +91,8 @@ command options = processResult $ do
     functions     = exprPair (commandPropFormat options)
     templateVarsF = commandExtraVars options
 
+-- | Generate application data describing core elements of a new F Prime
+-- component that implements the input requirements or diagrams.
 command' :: CommandOptions
          -> ExprPair
          -> ExceptT ErrorTriplet IO AppData
