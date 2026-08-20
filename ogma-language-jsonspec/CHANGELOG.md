@@ -1,5 +1,9 @@
 # Revision history for ogma-language-jsonspec
 
+## [1.X.Y] - 2026-08-20
+
+* Bump upper version constraint on `megaparsec` (#545).
+
 ## [1.15.0] - 2026-07-21
 
 * Version bump (1.15.0) (#508).

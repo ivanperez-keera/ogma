@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-08-16
+## [1.X.Y] - 2026-08-20
 
 * Replace adhoc function `mergeMaybe` with function from `base` (#516).
 * Fix malformed comments (#518).
@@ -9,6 +9,7 @@
 * Fix spelling of F Prime (#526).
 * Replace explicit recursion with calls to `base:Control.Monad.foldM` (#532).
 * Add valid Haddock documentation to all top-level functions (#542).
+* Bump upper version constraints on `QuickCheck`, `megaparsec` (#545).
 
 ## [1.15.0] - 2026-07-21
 

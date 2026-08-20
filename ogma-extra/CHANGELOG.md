@@ -1,8 +1,9 @@
 # Revision history for ogma-extra
 
-## [1.X.Y] - 2026-07-23
+## [1.X.Y] - 2026-08-20
 
 * Remove unnecessary line breaks (#520).
+* Bump upper version constraint on `QuickCheck` (#545).
 
 ## [1.15.0] - 2026-07-21
 
