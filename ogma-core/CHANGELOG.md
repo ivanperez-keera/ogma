@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-08-20
+## [1.X.Y] - 2026-08-25
 
 * Replace adhoc function `mergeMaybe` with function from `base` (#516).
 * Fix malformed comments (#518).
@@ -12,6 +12,7 @@
 * Bump upper version constraints on `QuickCheck`, `megaparsec` (#545).
 * Make `Dockerfile` base image in default ROS 2 template customizable (#548).
 * Allow for inputs to be deeply nested fields in ROS 2 template (#547).
+* Adjust ROS 2 `Dockerfile` to run `rosdep init` only when needed (#561).
 
 ## [1.15.0] - 2026-07-21
 
