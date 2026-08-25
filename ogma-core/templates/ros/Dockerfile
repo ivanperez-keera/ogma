@@ -31,7 +31,7 @@ RUN if [ -f "/tmp/manual-deps.repos" ]; then \
     fi
 
 ADD excluded-pkgs*.txt /tmp/
-RUN sudo rosdep init
+RUN if [ ! -f "/etc/ros/rosdep/sources.list.d/20-default.list" ]; then sudo rosdep init; fi
 RUN rosdep update
 RUN source /opt/ros/spaceros/setup.bash && \
     if [ -f "/tmp/excluded-pkgs.txt" ]; then \
