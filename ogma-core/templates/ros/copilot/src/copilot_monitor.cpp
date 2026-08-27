@@ -20,8 +20,10 @@
 {{{.}}}
 {{/impl_extra_header}}
 {{#copilot}}
+extern "C" {
 #include "{{{copilot.specName}}}_types.h"
 #include "{{{copilot.specName}}}.h"
+}
 #include "{{{copilot.specName}}}.c"
 {{/copilot}}
 
@@ -119,7 +121,7 @@ void {{monitorName}}({{.}} arg) {
 }
 {{/monitorType}}
 {{^monitorType}}
-void {{monitorName}}() {
+extern "C" void {{monitorName}}() {
   CopilotRV::getInstance()->{{monitorName}}();
 }
 {{/monitorType}}
