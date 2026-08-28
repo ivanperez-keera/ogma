@@ -49,14 +49,15 @@ import qualified Command.Standalone
 
 -- Internal imports: auxiliary
 import Command.Result         ( Result (..) )
+import Data.Either.Extra      ( mapLeft )
 import Data.List.Extra        ( stripSuffix )
 import Data.String.Extra      ( pascalCase )
 import System.Directory.Extra ( copyTemplate )
 
 -- Internal imports
-import Command.Common                 (InputFile (..), cannotCopyTemplate,
+import Command.Common                 (InputFile (..), cannotCopyTemplateF,
                                        checkArguments, combineInputFiles,
-                                       locateTemplateDir, makeLeftE,
+                                       locateTemplateDir,
                                        openVarDBFilesWithDefault,
                                        parseInputFile,
                                        parseRequirementsListFile,
@@ -89,7 +90,7 @@ command options = processResult $ do
     let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplateF) $ E.try $
       copyTemplate templateDir subst targetDir
 
   where
