@@ -16,6 +16,7 @@
 * Fix container name in call to `docker exec` in Turtlesim example (#573).
 * Update package index before installing dependencies in CI jobs (#577).
 * Update commands to use new input file format by default (#575).
+* Add template creation command.
 
 ## [1.15.0] - 2026-07-21
 
