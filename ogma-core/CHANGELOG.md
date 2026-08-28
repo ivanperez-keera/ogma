@@ -1,6 +1,6 @@
 # Revision history for ogma-core
 
-## [1.X.Y] - 2026-08-27
+## [1.X.Y] - 2026-08-28
 
 * Replace adhoc function `mergeMaybe` with function from `base` (#516).
 * Fix malformed comments (#518).
@@ -16,6 +16,7 @@
 * Fix incorrect creation of two instances of ROS 2 monitoring node (#564).
 * Increase detail in template expansion error messages (#390).
 * Use path prefixes to specify path resolution context in project files (#567).
+* Update `Dockerfile` in ROS 2 template for Space ROS `jazzy-2026.07.0` (#569).
 
 ## [1.15.0] - 2026-07-21
 
