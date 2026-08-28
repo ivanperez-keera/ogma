@@ -26,17 +26,23 @@ module System.Directory.Extra
 -- External imports
 import           Control.Exception         ( Exception, IOException, catch,
                                              throwIO )
-import           Control.Monad             ( filterM, forM_ )
+import           Control.Monad             ( forM )
 import           Data.Aeson                ( Value (..) )
+import           Data.Aeson.Key            ( Key, toText, toString )
+import qualified Data.Aeson.KeyMap         as KeyMap
 import qualified Data.ByteString.Lazy      as B
 import           Data.List                 ( isInfixOf )
-import           Data.Text.Lazy            ( pack, unpack )
+import           Data.Maybe                ( listToMaybe )
+import           Data.Text.Lazy            ( fromStrict, pack, replace,
+                                             unpack )
 import           Data.Text.Lazy.Encoding   ( encodeUtf8 )
+import qualified Data.Vector               as V
 import           Distribution.Simple.Utils ( getDirectoryContentsRecursive )
 import           System.Directory          ( createDirectoryIfMissing,
-                                             doesFileExist )
-import           System.FilePath           ( makeRelative, splitFileName,
-                                             takeDirectory, (</>) )
+                                             doesDirectoryExist,
+                                             listDirectory )
+import           System.FilePath           ( takeDirectory, takeFileName,
+                                             (</>) )
 import           Text.Microstache          ( MustacheException (..), Template,
                                              compileMustacheFile,
                                              compileMustacheText,
@@ -45,50 +51,119 @@ import           Text.Parsec.Error         ( Message (..), errorMessages,
                                              errorPos )
 import           Text.Parsec.Pos           ( sourceColumn, sourceLine )
 
--- | Copy a template directory into a target location, expanding variables
--- provided in a map in a JSON value, both in the file contents and in the
--- filepaths themselves.
+import Debug.Pretty.Simple
+import Text.Pretty.Simple
+
 copyTemplate :: FilePath -> Value -> FilePath -> IO ()
 copyTemplate templateDir subst targetDir = do
+  tree <- getTree templateDir
+  let expandedTrees = expandTree tree subst
+  mapM_ (writeTree templateDir targetDir) expandedTrees
 
-  -- Get all files (not directories) in the template dir. To keep a directory,
-  -- create an empty file in it (e.g., .keep).
-  tmplContents <- map (templateDir </>) . filter (`notElem` ["..", "."])
-                    <$> getDirectoryContentsRecursiveE templateDir
+-- * Expanded trees
 
-  tmplFiles <- filterM doesFileExist tmplContents
+-- | A directory tree with variable expansion.
+data ExpandedTree
+  = EDir FilePath FilePath Value [ExpandedTree]
+  | EFile FilePath FilePath Value
+  deriving (Show)
 
-  -- Copy files to new locations, expanding their name and contents as
-  -- mustache templates.
-  forM_ tmplFiles $ \fp -> do
+-- | Given a template in a 'Tree' and a JSON replacement, calculate the
+-- 'ExpandedTree's that it would expand to.
+--
+-- Because a file or directory name can mention a value that is mapped to an
+-- array in JSON, and the result may be more than one tree.
+expandTree :: Tree -> Value -> [ExpandedTree]
+expandTree (File name) v =
+  [ EFile (takeFileName name) new v'
+  | (_, new, v') <- expandName (takeFileName name) v
+  ]
 
-    -- New file name in target directory, treating file
-    -- name as mustache template.
-    let fullPath = targetDir </> newFP
-          where
-            -- If file name has mustache markers, expand, otherwise use
-            -- relative file path
-            newFP = either (const relFP)
-                           (unpack . (`renderMustache` subst))
-                           fpAsTemplateE
+expandTree (Dir name xs) v =
+  [ EDir (takeFileName name) new v'
+      (concatMap (`expandTree` v') xs)
+  | (_, new, v') <- expandName (takeFileName name) v
+  ]
 
-            -- Local file name within template dir
-            relFP = makeRelative templateDir fp
+-- | Given a filepath and a JSON replacement, calculate the FilePath
+-- that it would expand to.
+expandName :: FilePath -> Value -> [(FilePath, FilePath, Value)]
+expandName path v = res
+  where
+    res = case findArray path v of
+            Nothing -> [(path, render path v, v)]
+            Just (k, xs) ->
+              concatMap (\x ->
+                expandName (removeTag k path) (promoteValue k x v)) xs
 
-            -- Apply mustache substitutions to file name
-            fpAsTemplateE = compileMustacheText "fp" (pack relFP)
+-- | Write an expanded tree from a source template directory to a target
+-- directory.
+writeTree :: FilePath -> FilePath -> ExpandedTree -> IO ()
+writeTree src dst (EDir old new _ xs) = do
+  let src' = src </> old
+      dst' = dst </> new
+  createDirectoryIfMissingE True dst'
+  mapM_ (writeTree src' dst') xs
 
-    -- File contents, treated as a mustache template.
-    contents <- encodeUtf8 <$> (`renderMustache` subst)
-                           <$> compileMustacheFileE fp
+writeTree src dst (EFile old new v) = do
+  let src' = src </> old
+      dst' = dst </> new
+  contents <- encodeUtf8 <$>
+                (renderMustache <$> compileMustacheFileE src' <*> pure v)
+  createDirectoryIfMissingE True (takeDirectory dst')
+  writeFileE dst' contents
 
-    -- Create target directory if necessary
-    let dirName = fst $ splitFileName fullPath
-    createDirectoryIfMissingE True dirName
+-- | Expand value in filepath using mustache template.
+--
+-- Does not expand arrays (and filepaths cannot iterate over arrays anyway).
+render :: FilePath -> Value -> FilePath
+render path v =
+  either (const path)
+         (unpack . (`renderMustache` v))
+         (compileMustacheText "fp" (pack path))
 
-    -- Write expanded contents to expanded file path
-    -- Capture exceptions here
-    writeFileE fullPath contents
+-- | Remove a tag from a filepath.
+removeTag :: Key -> FilePath -> FilePath
+removeTag k =
+  unpack . replace ("{{#" <> fromStrict (toText k) <> "}}") "" . pack
+
+-- | Promote a value up in JSON
+promoteValue :: Key -> Value -> Value -> Value
+promoteValue k (Object x) (Object o) =
+  Object $ KeyMap.union x (KeyMap.delete k o)
+promoteValue k x (Object o) =
+  Object $ KeyMap.insert k x (KeyMap.delete k o)
+promoteValue _ _ v = v
+
+-- | Find a key mentioned in a filepath.
+findArray :: FilePath -> Value -> Maybe (Key, [Value])
+findArray path (Object o) =
+  listToMaybe
+    [ (k, V.toList xs)
+    | (k, Array xs) <- KeyMap.toList o
+    -- , ("{{#" <> unpack (fromStrict (toText k)) <> "}}") `isInfixOf` path
+    , ("{{#" <> toString k <> "}}") `isInfixOf` path
+    ]
+findArray _ _ = Nothing
+
+-- * Directory trees
+
+-- | Plain directory tree.
+data Tree
+  = Dir FilePath [Tree]
+  | File FilePath
+  deriving (Show)
+
+-- | Read a directory name and return the file tree in that path.
+getTree :: FilePath -> IO Tree
+getTree dir = Dir dir <$> do
+  names <- filter (`notElem` [".", ".."]) <$> listDirectory dir
+  forM names $ \name -> do
+    let path = dir </> name
+    b <- doesDirectoryExist path
+    if b
+      then getTree path
+      else pure $ File path
 
 -- | Exception detected during the template expansion process.
 newtype CopyTemplateException = CopyTemplateException String
@@ -189,3 +264,10 @@ showMessage (Message s)     = s
 keepHead :: [String] -> String
 keepHead (a:_) = a
 keepHead _     = ""
+
+--   let subst1 = removeKeys [ "package_extra_depend", "monitors", "impl_extra_header", "testingApps", "target_extra_dependencies", "copilot", "testingVariables", "variables" ] subst
+--
+--       removeKeys :: [Key] -> Value -> Value
+--       removeKeys keys (Object o) =
+--         Object $ foldr KeyMap.delete o keys
+--       removeKeys _ v = v
