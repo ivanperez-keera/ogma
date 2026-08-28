@@ -40,6 +40,7 @@ import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
 -- External imports: auxiliary
+import Data.Either.Extra      ( mapLeft )
 import System.Directory.Extra ( copyTemplate )
 
 import qualified Command.Standalone
@@ -48,9 +49,9 @@ import qualified Command.Standalone
 import Command.Result (Result (..))
 
 -- Internal imports
-import Command.Common                 (InputFile (..), cannotCopyTemplate,
+import Command.Common                 (InputFile (..), cannotCopyTemplateF,
                                        checkArguments, combineInputFiles,
-                                       locateTemplateDir, makeLeftE,
+                                       locateTemplateDir,
                                        openVarDBFilesWithDefault,
                                        parseInputFile,
                                        parseRequirementsListFile,
@@ -81,7 +82,7 @@ command options = processResult $ do
     let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplateF) $ E.try $
       copyTemplate templateDir subst targetDir
 
   where
