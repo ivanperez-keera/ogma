@@ -24,26 +24,23 @@ module System.Directory.Extra
   where
 
 -- External imports
-import           Control.Exception         ( Exception, IOException, catch,
-                                             throwIO )
-import           Control.Monad             ( filterM, forM_ )
-import           Data.Aeson                ( Value (..) )
-import qualified Data.ByteString.Lazy      as B
-import           Data.List                 ( isInfixOf )
-import           Data.Text.Lazy            ( pack, unpack )
-import           Data.Text.Lazy.Encoding   ( encodeUtf8 )
-import           Distribution.Simple.Utils ( getDirectoryContentsRecursive )
-import           System.Directory          ( createDirectoryIfMissing,
-                                             doesFileExist )
-import           System.FilePath           ( makeRelative, splitFileName,
-                                             (</>) )
-import           Text.Microstache          ( MustacheException (..), Template,
-                                             compileMustacheFile,
-                                             compileMustacheText,
-                                             renderMustache )
-import           Text.Parsec.Error         ( Message (..), errorMessages,
-                                             errorPos )
-import           Text.Parsec.Pos           ( sourceColumn, sourceLine )
+import           Control.Exception       ( Exception, IOException, catch,
+                                           throwIO )
+import           Control.Monad           ( forM )
+import           Data.Aeson              ( Value (..) )
+import qualified Data.ByteString.Lazy    as B
+import           Data.List               ( isInfixOf )
+import           Data.Text.Lazy          ( pack, unpack )
+import           Data.Text.Lazy.Encoding ( encodeUtf8 )
+import           System.Directory        ( createDirectoryIfMissing,
+                                           doesDirectoryExist, listDirectory )
+import           System.FilePath         ( makeRelative, splitFileName, (</>) )
+import           Text.Microstache        ( MustacheException (..), Template,
+                                           compileMustacheFile,
+                                           compileMustacheText, renderMustache )
+import           Text.Parsec.Error       ( Message (..), errorMessages,
+                                           errorPos )
+import           Text.Parsec.Pos         ( sourceColumn, sourceLine )
 
 {- HLINT ignore "Redundant <$>" -}
 -- | Copy a template directory into a target location, expanding variables
@@ -51,33 +48,18 @@ import           Text.Parsec.Pos           ( sourceColumn, sourceLine )
 -- filepaths themselves.
 copyTemplate :: FilePath -> Value -> FilePath -> IO ()
 copyTemplate templateDir subst targetDir = do
+  -- Get all files and directories in the template dir.
+  tree <- getDirectoryContentsRecursiveE templateDir
+  writeTree templateDir targetDir subst tree
 
-  -- Get all files (not directories) in the template dir. To keep a directory,
-  -- create an empty file in it (e.g., .keep).
-  tmplContents <- map (templateDir </>) . filter (`notElem` ["..", "."])
-                    <$> getDirectoryContentsRecursiveE templateDir
+-- Copy files to new locations, expanding their name and contents as
+-- mustache templates. To keep a directory, create an empty file in it
+-- (e.g., .keep).
+writeTree :: FilePath -> FilePath -> Value -> FileTree -> IO ()
+writeTree templateDir targetDir subst (Dir _ xs) =
+  mapM_ (writeTree templateDir targetDir subst) xs
 
-  tmplFiles <- filterM doesFileExist tmplContents
-
-  -- Copy files to new locations, expanding their name and contents as
-  -- mustache templates.
-  forM_ tmplFiles $ \fp -> do
-
-    -- New file name in target directory, treating file
-    -- name as mustache template.
-    let fullPath = targetDir </> newFP
-          where
-            -- If file name has mustache markers, expand, otherwise use
-            -- relative file path
-            newFP = either (const relFP)
-                           (unpack . (`renderMustache` subst))
-                           fpAsTemplateE
-
-            -- Local file name within template dir
-            relFP = makeRelative templateDir fp
-
-            -- Apply mustache substitutions to file name
-            fpAsTemplateE = compileMustacheText "fp" (pack relFP)
+writeTree templateDir targetDir subst (File fp) = do
 
     -- File contents, treated as a mustache template.
     contents <- encodeUtf8 <$> (`renderMustache` subst)
@@ -91,6 +73,23 @@ copyTemplate templateDir subst targetDir = do
     -- Capture exceptions here
     writeFileE fullPath contents
 
+  where
+    -- New file name in target directory, treating file
+    -- name as mustache template.
+    fullPath = targetDir </> newFP
+
+    -- If file name has mustache markers, expand, otherwise use
+    -- relative file path
+    newFP = either (const relFP)
+                   (unpack . (`renderMustache` subst))
+                   fpAsTemplateE
+
+    -- Local file name within template dir
+    relFP = makeRelative templateDir fp
+
+    -- Apply mustache substitutions to file name
+    fpAsTemplateE = compileMustacheText "fp" (pack relFP)
+
 -- | Exception detected during the template expansion process.
 newtype CopyTemplateException = CopyTemplateException String
 
@@ -101,11 +100,11 @@ instance Exception CopyTemplateException
 
 -- | Wrap 'getDirectoryContentsRecursive' and throw any 'IOException' as a
 -- 'CopyTemplateException'.
-getDirectoryContentsRecursiveE :: FilePath -> IO [FilePath]
+getDirectoryContentsRecursiveE :: FilePath -> IO FileTree
 getDirectoryContentsRecursiveE s =
-    catch (getDirectoryContentsRecursive s) handler
+    catch (getFileTreeRecursive s) handler
   where
-    handler :: IOException -> IO [FilePath]
+    handler :: IOException -> IO FileTree
     handler e = throwIO (CopyTemplateException (show e))
 
 -- | Wrap 'createDirectoryIfMissing' and throw any 'IOException' as a
@@ -190,3 +189,24 @@ showMessage (Message s)     = s
 keepHead :: [String] -> String
 keepHead (a:_) = a
 keepHead _     = ""
+
+-- * Auxiliary
+
+-- ** Directory trees
+
+-- | Plain directory tree.
+data FileTree
+  = Dir FilePath [FileTree]
+  | File FilePath
+
+-- | Return the file tree in a file path.
+getFileTreeRecursive :: FilePath -> IO FileTree
+getFileTreeRecursive path = do
+ isDir <- doesDirectoryExist path
+ if isDir
+   then Dir path <$> do
+     names <- filter (`notElem` [".", ".."]) <$> listDirectory path
+     forM names $ \name -> do
+       let path' = path </> name
+       getFileTreeRecursive path'
+   else pure $ File path
