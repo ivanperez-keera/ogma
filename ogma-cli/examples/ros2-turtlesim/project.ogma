@@ -12,6 +12,7 @@
   "projectHandlerFile": null,
   "projectCommandPropVia": null,
   "projectTemplateDir": null,
+  "projectTargetDir": null,
   "projectTargetDir": "cwd:turtlesim-demo",
   "projectExtraJSONFile": "extra-vars-turtlesim.json"
 }
