@@ -12,6 +12,7 @@
 * Address HLint suggestions (#540).
 * Attempt to recover from failure during Haskell tool setup in CI jobs (#558).
 * Make file paths in example project files relative to project path (#567).
+* Add missing argument to `docker run` in Turtlesim tutorial (#571).
 
 ## [1.15.0] - 2026-07-21
 
