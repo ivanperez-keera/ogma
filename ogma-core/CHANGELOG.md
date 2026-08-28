@@ -14,6 +14,7 @@
 * Allow for inputs to be deeply nested fields in ROS 2 template (#547).
 * Adjust ROS 2 `Dockerfile` to run `rosdep init` only when needed (#561).
 * Fix incorrect creation of two instances of ROS 2 monitoring node (#564).
+* Increase detail in template expansion error messages (#390).
 
 ## [1.15.0] - 2026-07-21
 

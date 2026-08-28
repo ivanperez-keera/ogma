@@ -41,10 +41,10 @@ import GHC.Generics         (Generic)
 import System.Directory.Extra (copyTemplate)
 
 -- Internal imports
-import Command.Common                 (InputFile (..), cannotCopyTemplate,
+import Command.Common                 (InputFile (..), cannotCopyTemplateF,
                                        combineInputFiles, locateTemplateDir,
-                                       makeLeftE, parseInputFile,
-                                       parseTemplateVarsFile, processResult)
+                                       parseInputFile, parseTemplateVarsFile,
+                                       processResult)
 import Command.Errors                 (ErrorCode, ErrorTriplet (..))
 import Command.Result                 (Result (..))
 import Data.Aeson.Extra               (mergeObjects)
@@ -78,7 +78,7 @@ command options = processResult $ do
     let subst = mergeObjects (toJSON appData) templateVars
 
     -- Expand template
-    ExceptT $ fmap (makeLeftE cannotCopyTemplate) $ E.try $
+    ExceptT $ fmap (mapLeft cannotCopyTemplateF) $ E.try $
       copyTemplate templateDir subst targetDir
 
   where

@@ -32,8 +32,7 @@ module Command.Common
     , specExtractExternalVariables
     , specExtractHandlers
     , processResult
-    , cannotCopyTemplate
-    , makeLeftE
+    , cannotCopyTemplateF
     , locateTemplateDir
     )
   where
@@ -47,8 +46,9 @@ import           Data.Aeson             (Value (Null, Object), eitherDecode,
 import           System.FilePath        ((</>))
 
 -- External imports: auxiliary
-import Data.ByteString.Extra as B (safeReadFile)
-import Data.String.Extra     (sanitizeLCIdentifier, sanitizeUCIdentifier)
+import Data.ByteString.Extra  as B (safeReadFile)
+import Data.String.Extra      (sanitizeLCIdentifier, sanitizeUCIdentifier)
+import System.Directory.Extra (CopyTemplateException(..))
 
 -- External imports: ogma
 import Data.OgmaSpec (Requirement (..), Spec (..), externalVariableName,
@@ -313,14 +313,12 @@ cannotReadObjectTemplateVars file =
 
 -- | Exception handler to deal with the case of files that cannot be
 -- copied/generated due lack of space or permissions or some I/O error.
-cannotCopyTemplate :: ErrorTriplet
-cannotCopyTemplate =
-    ErrorTriplet ecCannotCopyTemplate msg LocationNothing
+cannotCopyTemplateF :: CopyTemplateException -> ErrorTriplet
+cannotCopyTemplateF e =
+    ErrorTriplet ecCannotCopyTemplate (msg ++ show e) LocationNothing
   where
     msg =
-      "Generation failed during copy/write operation. Check that"
-      ++ " there's free space in the disk and that you have the necessary"
-      ++ " permissions to write in the destination directory."
+      "Generation failed during copy/write operation: "
 
 -- ** Error codes
 
