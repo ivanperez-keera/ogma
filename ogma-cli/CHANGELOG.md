@@ -1,6 +1,6 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-08-24
+## [1.X.Y] - 2026-08-28
 
 * Remove unnecessary line breaks (#520).
 * Update cFS examples to avoid MID collisions (#522).
@@ -11,6 +11,7 @@
 * Disable secure mode for package repo in Cabal config in CI jobs (#537).
 * Address HLint suggestions (#540).
 * Attempt to recover from failure during Haskell tool setup in CI jobs (#558).
+* Make file paths in example project files relative to project path (#567).
 
 ## [1.15.0] - 2026-07-21
 
