@@ -13,6 +13,7 @@
 * Attempt to recover from failure during Haskell tool setup in CI jobs (#558).
 * Make file paths in example project files relative to project path (#567).
 * Add missing argument to `docker run` in Turtlesim tutorial (#571).
+* Fix container name in call to `docker exec` in Turtlesim example (#573).
 
 ## [1.15.0] - 2026-07-21
 
