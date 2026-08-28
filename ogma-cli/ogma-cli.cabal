@@ -137,6 +137,8 @@ executable ogma
     CLI.CommandROSApp
     CLI.CommandSearch
     CLI.CommandStandalone
+    CLI.CommandTemplate
+    CLI.CommandTemplateCreate
     CLI.CommandTop
     CLI.Result
 
