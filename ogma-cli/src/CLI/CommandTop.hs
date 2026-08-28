@@ -83,6 +83,7 @@ import qualified CLI.CommandReport
 import qualified CLI.CommandROSApp
 import qualified CLI.CommandSearch
 import qualified CLI.CommandStandalone
+import qualified CLI.CommandTemplate
 
 -- * Command
 
@@ -102,6 +103,7 @@ data CommandOpts =
   | CommandOptsSearch               CLI.CommandSearch.CommandOpts
   | CommandOptsStandalone           CLI.CommandStandalone.CommandOpts
   | CommandOptsReport               CLI.CommandReport.CommandOpts
+  | CommandOptsTemplate             CLI.CommandTemplate.CommandOpts
 
 -- * CLI
 
@@ -123,6 +125,7 @@ commandOptsParser = subparser
   <> subcommandStandalone
   <> subcommandDiagram
   <> subcommandReport
+  <> subcommandTemplate
   )
 
 -- | Modifier for the overview subcommand, linking the subcommand options and
@@ -218,6 +221,15 @@ subcommandReport =
     (CommandOptsReport <$> CLI.CommandReport.commandOptsParser)
     CLI.CommandReport.commandDesc
 
+-- | Modifier for the template subcommand, linking the subcommand options and
+-- description to the command @template@ at top level.
+subcommandTemplate :: Mod CommandFields CommandOpts
+subcommandTemplate =
+  subcommand
+    "template"
+    (CommandOptsTemplate <$> CLI.CommandTemplate.commandOptsParser)
+    CLI.CommandTemplate.commandDesc
+
 -- * Command dispatcher
 
 -- | Command dispatcher that obtains the parameters from the command line and
@@ -260,6 +272,8 @@ command (CommandOptsDiagram c) =
   id <$> CLI.CommandDiagram.command c
 command (CommandOptsReport c) =
   id <$> CLI.CommandReport.command c
+command (CommandOptsTemplate c) =
+  id <$> CLI.CommandTemplate.command c
 
 -- We indicate to HLint that the use of (id <$>) above should not trigger a
 -- warning. Conceptually, there is a transformation taking place, but no change
