@@ -3,6 +3,7 @@
 ## [1.X.Y] - 2026-09-23
 
 * Bump upper version constraint on `aeson` (#609).
+* Add template creation command.
 
 ## [1.16.0] - 2026-09-21
 
