@@ -15,6 +15,7 @@
 * Adjust ROS 2 `Dockerfile` to run `rosdep init` only when needed (#561).
 * Fix incorrect creation of two instances of ROS 2 monitoring node (#564).
 * Increase detail in template expansion error messages (#390).
+* Use path prefixes to specify path resolution context in project files (#567).
 
 ## [1.15.0] - 2026-07-21
 
