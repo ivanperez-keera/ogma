@@ -2,7 +2,7 @@
 FROM {{.}}
 {{/BASE_DOCKER_IMAGE}}
 {{^BASE_DOCKER_IMAGE}}
-FROM osrf/space-ros:jazzy-2026.04.0
+FROM osrf/space-ros:jazzy-2026.07.0
 {{/BASE_DOCKER_IMAGE}}
 
 ARG USER=spaceros-user
