@@ -192,7 +192,7 @@ will print messages from the Copilot monitoring node detecting the violation.
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ivanperez-keera/ogma/gh-pages-turtlesim/images/examples-ros2-turtlesim-terminal.png" alt="Running Ogma-generated ROS application" width="250px">
+  <img src="https://raw.githubusercontent.com/ivanperez-keera/ogma/gh-pages-turtlesim/images/examples-ros2-turtlesim-terminal.png" alt="Running Ogma-generated ROS application" width="500px">
   <br />
   <i>Ogma-generated ROS 2 application monitoring changes to input data and producing notifications.</i>
 </p>
