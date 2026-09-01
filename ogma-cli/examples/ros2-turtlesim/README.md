@@ -186,13 +186,13 @@ the turtle is moved close to the left or right edges of the screen, Terminal 4
 will print messages from the Copilot monitoring node detecting the violation.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ivanperez-keera/ogma/gh-pages-turtlesim/images/examples-ros2-turtlesim-gui.png" alt="Turtlesim">
+  <img src="https://raw.githubusercontent.com/ivanperez-keera/ogma/gh-pages-turtlesim/images/examples-ros2-turtlesim-gui.png" alt="Turtlesim" width="250px">
   <br />
   <i>Turtlesim moving around the screen. Credits: OSRF. Reproduced with permission.</i>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ivanperez-keera/ogma/gh-pages-turtlesim/images/examples-ros2-turtlesim-terminal.png" alt="Running Ogma-generated ROS application">
+  <img src="https://raw.githubusercontent.com/ivanperez-keera/ogma/gh-pages-turtlesim/images/examples-ros2-turtlesim-terminal.png" alt="Running Ogma-generated ROS application" width="250px">
   <br />
   <i>Ogma-generated ROS 2 application monitoring changes to input data and producing notifications.</i>
 </p>
