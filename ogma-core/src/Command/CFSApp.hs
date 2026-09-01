@@ -41,8 +41,9 @@ import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT (..), liftEither,
                                           throwError )
 import           Data.Aeson             ( ToJSON (..), Value )
-import           Data.List              ( nub )
-import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
+import           Data.Function          ( on )
+import           Data.List              ( nub, groupBy, sortOn )
+import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList, listToMaybe )
 import           GHC.Generics           ( Generic )
 
 -- External imports: auxiliary
@@ -185,19 +186,61 @@ commandLogic :: VariableDB
              -> Maybe Command.Standalone.AppData
              -> AppData
 commandLogic varDB varNames handlers copilotM =
-    AppData vars ids' infos' datas handlers copilotM
+    AppData vars ids' infos' datas' handlers copilotM
   where
 
     -- This is a Data.List.unzip4
     (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
     ids' = nub ids
     infos' = nub infos
+    datas' = structureMsgDatas datas
+
 
     f n o@(oVars, oIds, oInfos, oDatas) =
       case variableMap varDB n of
         Nothing -> o
         Just (vars, ids, infos, datas) ->
           (vars : oVars, ids : oIds, infos : oInfos, datas : oDatas)
+
+-- | Group PlainMsgData coming from the same message.
+structureMsgDatas :: [ PlainMsgData ] -> [ MsgData ]
+structureMsgDatas plains = map processGroup grouped
+  where
+    sorted  = sortOn plainMsgDataDesc plains
+    grouped = groupBy ((==) `on` plainMsgDataDesc) sorted
+
+-- Process a group of PlainMsgData sharing the same message description.
+processGroup :: [PlainMsgData] -> MsgData
+processGroup [] =
+  -- Should not happen, groupBy doesn't produce empty groups.
+  error "Empty group"
+processGroup group@(firstElem:_) =
+    MsgData
+      { msgDataDesc     = plainMsgDataDesc firstElem
+      , msgDataActive   = any plainMsgDataActive group
+      , msgDataType     = groupType group
+      , msgDataContents = map toContents group
+      }
+  where
+
+    -- | Type of the message based on the types mentioned by the subfields.
+    -- TODO: Should it be an error to have two elements with different
+    -- plainMsgDataVarType?
+    groupType :: [PlainMsgData] -> String
+    groupType group' =
+        fromMaybe (plainMsgDataVarType $ head group') firstFromType
+      where
+        allFromTypes  = mapMaybe plainMsgDataFromType group'
+        firstFromType = listToMaybe allFromTypes
+
+    -- | Convert a plain message data into a structure field message data.
+    toContents :: PlainMsgData -> MsgDataContents
+    toContents p = MsgDataContents
+        { msgDataFromType  = plainMsgDataFromType p
+        , msgDataFromField = plainMsgDataFromField p
+        , msgDataVarName   = plainMsgDataVarName p
+        , msgDataVarType   = plainMsgDataVarType p
+        }
 
 -- ** Argument processing
 
@@ -236,7 +279,7 @@ data CommandOptions = CommandOptions
 -- and subscriptions for a given variable name and variable database.
 variableMap :: VariableDB
             -> String
-            -> Maybe (VarDecl, MsgInfoId, MsgInfo, MsgData)
+            -> Maybe (VarDecl, MsgInfoId, MsgInfo, PlainMsgData)
 variableMap varDB varName = do
   inputDef  <- findInput varDB varName
   mid       <- connectionTopic <$> findConnection inputDef "cfs"
@@ -259,7 +302,7 @@ variableMap varDB varName = do
   return ( VarDecl varName typeVar'
          , mid
          , MsgInfo mid mn extra
-         , MsgData mn typeMsgFromType typeMsgFromField varName typeVar' active
+         , PlainMsgData mn typeMsgFromType typeMsgFromField varName typeVar' active
          )
 
 -- | Return the monitor information needed to generate declarations and
@@ -296,19 +339,40 @@ data MsgInfo = MsgInfo
 
 instance ToJSON MsgInfo
 
+-- TODO: Re-define this data structure to have a list of fields, each with a
+-- type.
+
 -- | Information on the data provided by a message with a given description,
 -- and the type of the data it carries.
 data MsgData = MsgData
-    { msgDataDesc      :: String
-    , msgDataFromType  :: Maybe String
+    { msgDataDesc     :: String
+    , msgDataActive   :: Bool
+    , msgDataType     :: String
+    , msgDataContents :: [MsgDataContents]
+    }
+  deriving (Generic, Show)
+
+instance ToJSON MsgData
+
+data MsgDataContents = MsgDataContents
+    { msgDataFromType  :: Maybe String
     , msgDataFromField :: Maybe String
     , msgDataVarName   :: String
     , msgDataVarType   :: String
-    , msgDataActive    :: Bool
     }
-  deriving (Generic)
+  deriving (Generic, Show)
 
-instance ToJSON MsgData
+instance ToJSON MsgDataContents
+
+data PlainMsgData = PlainMsgData
+    { plainMsgDataDesc      :: String
+    , plainMsgDataFromType  :: Maybe String
+    , plainMsgDataFromField :: Maybe String
+    , plainMsgDataVarName   :: String
+    , plainMsgDataVarType   :: String
+    , plainMsgDataActive    :: Bool
+    }
+  deriving Show
 
 -- | The message ID to subscribe to.
 data Trigger = Trigger
