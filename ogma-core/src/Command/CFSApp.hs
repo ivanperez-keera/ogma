@@ -185,12 +185,13 @@ commandLogic :: VariableDB
              -> Maybe Command.Standalone.AppData
              -> AppData
 commandLogic varDB varNames handlers copilotM =
-    AppData vars ids' infos datas handlers copilotM
+    AppData vars ids' infos' datas handlers copilotM
   where
 
     -- This is a Data.List.unzip4
     (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
     ids' = nub ids
+    infos' = nub infos
 
     f n o@(oVars, oIds, oInfos, oDatas) =
       case variableMap varDB n of
@@ -291,7 +292,7 @@ data MsgInfo = MsgInfo
     , msgInfoDesc  :: String
     , msgInfoExtra :: Value
     }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance ToJSON MsgInfo
 
