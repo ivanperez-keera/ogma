@@ -41,6 +41,7 @@ import qualified Control.Exception      as E
 import           Control.Monad.Except   ( ExceptT (..), liftEither,
                                           throwError )
 import           Data.Aeson             ( ToJSON (..), Value )
+import           Data.List              ( nub )
 import           Data.Maybe             ( fromMaybe, mapMaybe, maybeToList )
 import           GHC.Generics           ( Generic )
 
@@ -184,11 +185,12 @@ commandLogic :: VariableDB
              -> Maybe Command.Standalone.AppData
              -> AppData
 commandLogic varDB varNames handlers copilotM =
-    AppData vars ids infos datas handlers copilotM
+    AppData vars ids' infos datas handlers copilotM
   where
 
     -- This is a Data.List.unzip4
     (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
+    ids' = nub ids
 
     f n o@(oVars, oIds, oInfos, oDatas) =
       case variableMap varDB n of
