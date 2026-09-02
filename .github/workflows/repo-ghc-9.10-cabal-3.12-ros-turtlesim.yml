@@ -43,6 +43,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get update
         sudo apt-get install -y libbz2-dev libexpat-dev
         cabal install --lib copilot copilot-c99 copilot-language copilot-theorem \
           copilot-libraries copilot-interpreter
