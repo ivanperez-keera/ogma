@@ -1,6 +1,6 @@
 # Revision history for ogma-cli
 
-## [1.X.Y] - 2026-08-28
+## [1.X.Y] - 2026-09-02
 
 * Remove unnecessary line breaks (#520).
 * Update cFS examples to avoid MID collisions (#522).
@@ -14,6 +14,7 @@
 * Make file paths in example project files relative to project path (#567).
 * Add missing argument to `docker run` in Turtlesim tutorial (#571).
 * Fix container name in call to `docker exec` in Turtlesim example (#573).
+* Update package index before installing dependencies in CI jobs (#577).
 
 ## [1.15.0] - 2026-07-21
 
