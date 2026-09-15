@@ -115,6 +115,7 @@ library
     Command.ROSApp
     Command.Search
     Command.Standalone
+    Command.TemplateCreate
 
     Data.Location
     Data.Project
