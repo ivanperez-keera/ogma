@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 -- Copyright 2020 United States Government as represented by the Administrator
 -- of the National Aeronautics and Space Administration. All Rights Reserved.
 --
@@ -30,13 +29,14 @@ module CLI.CommandTemplate
     )
   where
 
+-- Internal imports
+import qualified CLI.CommandTemplateCreate
+
 -- * Command
 
--- | Options to generate an overview from the input specification(s).
-data CommandOpts = CommandOpts
-  { overviewProject    :: Maybe String
-  , overviewInputFiles :: [TemplateFile]
-  }
+-- | Options to manipulate templates.
+data CommandOpts =
+  CommandOptsTemplateCreate CLI.CommandTemplateCreate.CommandOpts
 
 -- * CLI
 
@@ -57,5 +57,5 @@ subcommandTemplateCreate:: Mod CommandFields CommandOpts
 subcommandTemplateCreate =
   subcommand
     "create"
-    (CommandOptsTemplateCreate<$> CLI.CommandTemplateCreate.commandOptsParser)
+    (CommandOptsTemplateCreate <$> CLI.CommandTemplateCreate.commandOptsParser)
     CLI.CommandTemplateCreate.commandDesc
