@@ -27,10 +27,14 @@ module System.Directory.Extra
 import           Control.Exception       ( Exception, IOException, catch,
                                            throwIO )
 import           Control.Monad           ( forM )
-import           Data.Aeson              ( Value (..) )
+import           Data.Aeson              ( Key, Value (..) )
+import           Data.Aeson.Key          ( toString, toText )
+import qualified Data.Aeson.KeyMap       as KeyMap
 import qualified Data.ByteString.Lazy    as B
+import           Data.Foldable           ( toList )
 import           Data.List               ( isInfixOf )
-import           Data.Text.Lazy          ( pack, unpack )
+import           Data.Maybe              ( listToMaybe )
+import           Data.Text.Lazy          ( fromStrict, pack, replace, unpack )
 import           Data.Text.Lazy.Encoding ( encodeUtf8 )
 import           System.Directory        ( createDirectoryIfMissing,
                                            doesDirectoryExist, listDirectory )
@@ -50,8 +54,8 @@ copyTemplate :: FilePath -> Value -> FilePath -> IO ()
 copyTemplate templateDir subst targetDir = do
   -- Get all files and directories in the template dir.
   tree <- getDirectoryContentsRecursiveE templateDir
-  let expansionTree = expandTree tree subst
-  writeExpansionTree templateDir targetDir expansionTree
+  let expansionTrees = expandTree tree subst
+  mapM_ (writeExpansionTree templateDir targetDir) expansionTrees
 
 -- * Expansion trees
 
@@ -62,18 +66,34 @@ data ExpansionTree
 
 -- | Given a template in a 'FileTree' and a JSON replacement, calculate the
 -- 'ExpansionTree's that it would expand to.
-expandTree :: FileTree -> Value -> ExpansionTree
+--
+-- A file or directory name can mention an array variable in JSON, so the
+-- result may be more than one tree.
+expandTree :: FileTree -> Value -> [ExpansionTree]
 expandTree (File name) value =
-    EFile basename new value
+    [ EFile basename new value'
+    | (new, value') <- expandName basename value
+    ]
   where
     basename = takeFileName name
-    new      = renderMustacheS basename value
 
 expandTree (Dir name xs) value =
-    EDir basename new value (map (`expandTree` value) xs)
+    [ EDir basename new value' (concatMap (`expandTree` value') xs)
+    | (new, value') <- expandName basename value
+    ]
   where
     basename = takeFileName name
-    new      = renderMustacheS basename value
+
+-- | Given a 'FilePath' and a JSON replacement, calculate the 'FilePath' that
+-- it would expand to, as well as the JSON replacement value to use to render
+-- the contents of or files in that filepath.
+expandName :: FilePath -> Value -> [(FilePath, Value)]
+expandName path value =
+  case findArrayVariable path value of
+    Nothing -> [(renderMustacheS path value, value)]
+    Just (k, xs) ->
+      concatMap (\x ->
+        expandName (removeTag k path) (promoteValue k x value)) xs
 
 -- | Write an expansion tree from a source template directory to a target
 -- directory.
@@ -223,3 +243,29 @@ renderMustacheS string v =
   either (const string)
          (unpack . (`renderMustache` v))
          (compileMustacheText "fp" (pack string))
+
+-- | Find the first key at the top level of a JSON value that is mentioned, as
+-- a Mustache array variable, in a string.
+findArrayVariable :: String -> Value -> Maybe (Key, [Value])
+findArrayVariable string (Object o) =
+  listToMaybe
+    [ (k, toList xs)
+    | (k, Array xs) <- KeyMap.toList o
+    , ("{{#" <> toString k <> "}}") `isInfixOf` string
+    ]
+findArrayVariable _ _ = Nothing
+
+-- | Remove a tag from a filepath.
+removeTag :: Key -> FilePath -> FilePath
+removeTag k =
+  unpack . replace ("{{#" <> fromStrict (toText k) <> "}}") "" . pack
+
+-- ** JSON
+
+-- | Promote a value up in JSON.
+promoteValue :: Key -> Value -> Value -> Value
+promoteValue k (Object x) (Object o) =
+  Object $ KeyMap.union x (KeyMap.delete k o)
+promoteValue k x (Object o) =
+  Object $ KeyMap.insert k x (KeyMap.delete k o)
+promoteValue _ _ v = v
