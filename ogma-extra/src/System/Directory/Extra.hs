@@ -34,7 +34,7 @@ import           Data.Text.Lazy          ( pack, unpack )
 import           Data.Text.Lazy.Encoding ( encodeUtf8 )
 import           System.Directory        ( createDirectoryIfMissing,
                                            doesDirectoryExist, listDirectory )
-import           System.FilePath         ( makeRelative, splitFileName, (</>) )
+import           System.FilePath         ( takeDirectory, takeFileName, (</>) )
 import           Text.Microstache        ( MustacheException (..), Template,
                                            compileMustacheFile,
                                            compileMustacheText, renderMustache )
@@ -50,45 +50,47 @@ copyTemplate :: FilePath -> Value -> FilePath -> IO ()
 copyTemplate templateDir subst targetDir = do
   -- Get all files and directories in the template dir.
   tree <- getDirectoryContentsRecursiveE templateDir
-  writeTree templateDir targetDir subst tree
+  let expansionTree = expandTree tree subst
+  writeExpansionTree templateDir targetDir expansionTree
 
--- Copy files to new locations, expanding their name and contents as
--- mustache templates. To keep a directory, create an empty file in it
--- (e.g., .keep).
-writeTree :: FilePath -> FilePath -> Value -> FileTree -> IO ()
-writeTree templateDir targetDir subst (Dir _ xs) =
-  mapM_ (writeTree templateDir targetDir subst) xs
+-- * Expansion trees
 
-writeTree templateDir targetDir subst (File fp) = do
+-- | A directory tree with variable expansion.
+data ExpansionTree
+  = EDir  FilePath FilePath Value [ExpansionTree]
+  | EFile FilePath FilePath Value
 
-    -- File contents, treated as a mustache template.
-    contents <- encodeUtf8 <$> (`renderMustache` subst)
-                           <$> compileMustacheFileE fp
-
-    -- Create target directory if necessary
-    let dirName = fst $ splitFileName fullPath
-    createDirectoryIfMissingE True dirName
-
-    -- Write expanded contents to expanded file path
-    -- Capture exceptions here
-    writeFileE fullPath contents
-
+-- | Given a template in a 'FileTree' and a JSON replacement, calculate the
+-- 'ExpansionTree's that it would expand to.
+expandTree :: FileTree -> Value -> ExpansionTree
+expandTree (File name) value =
+    EFile basename new value
   where
-    -- New file name in target directory, treating file
-    -- name as mustache template.
-    fullPath = targetDir </> newFP
+    basename = takeFileName name
+    new      = renderMustacheS basename value
 
-    -- If file name has mustache markers, expand, otherwise use
-    -- relative file path
-    newFP = either (const relFP)
-                   (unpack . (`renderMustache` subst))
-                   fpAsTemplateE
+expandTree (Dir name xs) value =
+    EDir basename new value (map (`expandTree` value) xs)
+  where
+    basename = takeFileName name
+    new      = renderMustacheS basename value
 
-    -- Local file name within template dir
-    relFP = makeRelative templateDir fp
+-- | Write an expansion tree from a source template directory to a target
+-- directory.
+writeExpansionTree :: FilePath -> FilePath -> ExpansionTree -> IO ()
+writeExpansionTree src dst (EDir old new _ xs) = do
+  let src' = src </> old
+      dst' = dst </> new
+  createDirectoryIfMissingE True dst'
+  mapM_ (writeExpansionTree src' dst') xs
 
-    -- Apply mustache substitutions to file name
-    fpAsTemplateE = compileMustacheText "fp" (pack relFP)
+writeExpansionTree src dst (EFile old new v) = do
+  let src' = src </> old
+      dst' = dst </> new
+  contents <- encodeUtf8 <$>
+                (renderMustache <$> compileMustacheFileE src' <*> pure v)
+  createDirectoryIfMissingE True (takeDirectory dst')
+  writeFileE dst' contents
 
 -- | Exception detected during the template expansion process.
 newtype CopyTemplateException = CopyTemplateException String
@@ -210,3 +212,14 @@ getFileTreeRecursive path = do
        let path' = path </> name
        getFileTreeRecursive path'
    else pure $ File path
+
+-- ** Mustache
+
+-- | Expand value in filepath using mustache template.
+--
+-- Does not expand arrays (and filepaths cannot iterate over arrays anyway).
+renderMustacheS :: String -> Value -> String
+renderMustacheS string v =
+  either (const string)
+         (unpack . (`renderMustache` v))
+         (compileMustacheText "fp" (pack string))
