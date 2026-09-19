@@ -8,7 +8,9 @@
       {
         "id":      "TestOgma",
         "formula": "input_value <= 0",
-        "text":    "input_value shall always be lower than or equal to zero"
+        "text":    "input_value shall always be lower than or equal to zero",
+        "result_type":    "int32_t",
+        "result_formula": "input_value + 1"
       }
     ]
   }
