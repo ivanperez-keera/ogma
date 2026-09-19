@@ -28,6 +28,16 @@
 {{varDeclType}} {{varDeclName}};
 {{/variables}}
 
+{{#triggers}}
+{{#triggerType}}
+typedef struct COPILOT_Response_{{triggerName}}_Tlm {
+    CFE_MSG_TelemetryHeader_t TelemetryHeader;
+    {{.}}                     Payload;
+} COPILOT_Response_{{triggerName}}_Tlm_t;
+COPILOT_Response_{{triggerName}}_Tlm_t {{triggerName}}_output;
+{{/triggerType}}
+{{/triggers}}
+
 /*
 ** global data
 */
@@ -152,6 +162,15 @@ CFE_Status_t COPILOT_AppInit(void)
         }
     }
 
+
+    {{#triggers}}
+    {{#triggerType}}
+    CFE_MSG_Init(CFE_MSG_PTR({{triggerName}}_output.TelemetryHeader),
+                 CFE_SB_ValueToMsgId(COPILOT_{{triggerNameUC}}_TLM_MID),
+                 sizeof({{triggerName}}_output));
+    {{/triggerType}}
+    {{/triggers}}
+
     CFE_EVS_SendEvent (COPILOT_STARTUP_INF_EID, CFE_EVS_EventType_INFORMATION,
                "COPILOT App Initialized. Version %d.%d.%d.%d",
                 COPILOT_CFS_MAJOR_VERSION,
@@ -245,11 +264,14 @@ void COPILOT_Process{{msgDataDesc}}(void)
  */
 {{#triggerType}}
 void {{triggerName}}({{.}} arg) {
+    {{triggerName}}_output.Payload = arg;
+    CFE_SB_TransmitMsg(CFE_MSG_PTR({{triggerName}}_output.TelemetryHeader), true);
+}
 {{/triggerType}}
 {{^triggerType}}
 void {{triggerName}}(void) {
-{{/triggerType}}
     CFE_EVS_SendEvent(COPILOT_COMMANDCPVIOL_INF_EID, CFE_EVS_EventType_ERROR,
         "COPILOT: violation: {{triggerName}}");
 }
+{{/triggerType}}
 {{/triggers}}
