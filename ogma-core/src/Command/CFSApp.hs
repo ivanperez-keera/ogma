@@ -40,6 +40,7 @@ import           Control.Applicative  ( (<|>) )
 import qualified Control.Exception    as E
 import           Control.Monad.Except ( ExceptT (..), liftEither, throwError )
 import           Data.Aeson           ( ToJSON (..), Value )
+import           Data.Char            ( toUpper )
 import           Data.Function        ( on )
 import           Data.List            ( groupBy, nub, sortOn )
 import           Data.Maybe           ( fromMaybe, listToMaybe, mapMaybe,
@@ -315,10 +316,15 @@ monitorMap :: VariableDB
            -> (String, Maybe String)
            -> Maybe Trigger
 monitorMap varDB (monitorName, Nothing) =
-  Just $ Trigger monitorName Nothing Nothing
+    Just $ Trigger monitorName monitorNameUC Nothing Nothing
+  where
+    monitorNameUC = map toUpper monitorName
+
 monitorMap varDB (monitorName, Just ty) = do
-  let tyCFS = typeFromType <$> findTypeByType varDB "cfs" "C" ty
-  return $ Trigger monitorName (Just ty) tyCFS
+    let tyCFS = typeFromType <$> findTypeByType varDB "cfs" "C" ty
+    return $ Trigger monitorName monitorNameUC (Just ty) tyCFS
+  where
+    monitorNameUC = map toUpper monitorName
 
 -- | The declaration of a variable in C, with a given type and name.
 data VarDecl = VarDecl
@@ -381,6 +387,7 @@ data PlainMsgData = PlainMsgData
 -- | The message ID to subscribe to.
 data Trigger = Trigger
     { triggerName    :: String
+    , triggerNameUC  :: String
     , triggerType    :: Maybe String
     , triggerMsgType :: Maybe String
     }
