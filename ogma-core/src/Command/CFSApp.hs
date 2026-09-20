@@ -216,9 +216,7 @@ structureMsgDatas plains = map processGroup grouped
 -- PRE: The list is not empty and all values share the same message
 -- description.
 processGroup :: [PlainMsgData] -> MsgData
-processGroup [] =
-  -- Should not happen, groupBy doesn't produce empty groups.
-  error "Empty group"
+processGroup [] = error "processGroup: Empty group"
 processGroup group@(firstElem:_) =
     MsgData
       { msgDataDesc     = plainMsgDataDesc firstElem
