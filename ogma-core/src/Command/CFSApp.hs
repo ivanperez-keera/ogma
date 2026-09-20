@@ -210,6 +210,7 @@ structureMsgDatas plains = map processGroup grouped
   where
     sorted  = sortOn plainMsgDataDesc plains
     grouped = groupBy ((==) `on` plainMsgDataDesc) sorted
+    -- Should this be the type. Or maybe both.
 
 -- | Process a group of PlainMsgData sharing the same message description.
 --
