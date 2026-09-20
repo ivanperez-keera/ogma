@@ -376,7 +376,6 @@ data PlainMsgData = PlainMsgData
     , plainMsgDataVarType   :: String
     , plainMsgDataActive    :: Bool
     }
-  deriving Show
 
 -- | The message ID to subscribe to.
 data Trigger = Trigger
