@@ -342,11 +342,8 @@ data MsgInfo = MsgInfo
 
 instance ToJSON MsgInfo
 
--- TODO: Re-define this data structure to have a list of fields, each with a
--- type.
-
--- | Information on the data provided by a message with a given description,
--- and the type of the data it carries.
+-- | Structured information on the data provided by a message with a given
+-- description, and the type of the data it carries.
 data MsgData = MsgData
     { msgDataDesc     :: String
     , msgDataActive   :: Bool
