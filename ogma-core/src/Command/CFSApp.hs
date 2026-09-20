@@ -211,7 +211,10 @@ structureMsgDatas plains = map processGroup grouped
     sorted  = sortOn plainMsgDataDesc plains
     grouped = groupBy ((==) `on` plainMsgDataDesc) sorted
 
--- Process a group of PlainMsgData sharing the same message description.
+-- | Process a group of PlainMsgData sharing the same message description.
+--
+-- PRE: The list is not empty and all values share the same message
+-- description.
 processGroup :: [PlainMsgData] -> MsgData
 processGroup [] =
   -- Should not happen, groupBy doesn't produce empty groups.
