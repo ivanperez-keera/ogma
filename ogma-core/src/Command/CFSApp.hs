@@ -354,6 +354,8 @@ data MsgData = MsgData
 
 instance ToJSON MsgData
 
+-- | Information on the data of a field of a message, the type of data it
+-- carries, and how it maps to an existing variable.
 data MsgDataContents = MsgDataContents
     { msgDataFromType  :: Maybe String
     , msgDataFromField :: Maybe String
