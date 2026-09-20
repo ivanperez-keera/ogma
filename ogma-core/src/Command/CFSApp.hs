@@ -366,6 +366,8 @@ data MsgDataContents = MsgDataContents
 
 instance ToJSON MsgDataContents
 
+-- | Information on the data provided by a message with a given description,
+-- and the type of the data it carries.
 data PlainMsgData = PlainMsgData
     { plainMsgDataDesc      :: String
     , plainMsgDataFromType  :: Maybe String
