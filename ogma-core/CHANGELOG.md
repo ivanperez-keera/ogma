@@ -5,6 +5,7 @@
 * Bump upper version constraint on `aeson`, `QuickCheck` (#609).
 * Remove duplicate line from copyright header (#611).
 * Remove extraneous horizontal space from imports (#620).
+* Add template creation command.
 
 ## [1.16.0] - 2026-09-21
 
@@ -29,7 +30,6 @@
 * Remove unused imports (#590).
 * Remove unused pragma (#600).
 * De-duplicate cFS application data (#602).
-* Fix `Command.Common.mergeSpecs` to avoid dropping externs (#551).
 
 ## [1.15.0] - 2026-07-21
 
