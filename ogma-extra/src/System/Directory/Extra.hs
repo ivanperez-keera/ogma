@@ -28,10 +28,14 @@ import           Control.Exception         ( Exception, IOException, catch,
                                              throwIO )
 import           Control.Monad             ( filterM, forM_ )
 import           Data.Aeson                ( Value (..) )
+import qualified Data.Aeson.Key            as K
+import qualified Data.Aeson.KeyMap         as KM
 import qualified Data.ByteString.Lazy      as B
 import           Data.List                 ( isInfixOf )
+import qualified Data.Text                 as T
 import           Data.Text.Lazy            ( pack, unpack )
 import           Data.Text.Lazy.Encoding   ( encodeUtf8 )
+import qualified Data.Vector               as V
 import           Distribution.Simple.Utils ( getDirectoryContentsRecursive )
 import           System.Directory          ( createDirectoryIfMissing,
                                              doesFileExist )
@@ -52,6 +56,8 @@ import           Text.Parsec.Pos           ( sourceColumn, sourceLine )
 copyTemplate :: FilePath -> Value -> FilePath -> IO ()
 copyTemplate templateDir subst targetDir = do
 
+  let subst' = addValueVariants subst
+
   -- Get all files (not directories) in the template dir. To keep a directory,
   -- create an empty file in it (e.g., .keep).
   tmplContents <- map (templateDir </>) . filter (`notElem` ["..", "."])
@@ -70,7 +76,7 @@ copyTemplate templateDir subst targetDir = do
             -- If file name has mustache markers, expand, otherwise use
             -- relative file path
             newFP = either (const relFP)
-                           (unpack . (`renderMustache` subst))
+                           (unpack . (`renderMustache` subst'))
                            fpAsTemplateE
 
             -- Local file name within template dir
@@ -80,7 +86,7 @@ copyTemplate templateDir subst targetDir = do
             fpAsTemplateE = compileMustacheText "fp" (pack relFP)
 
     -- File contents, treated as a mustache template.
-    contents <- encodeUtf8 <$> (`renderMustache` subst)
+    contents <- encodeUtf8 <$> (`renderMustache` subst')
                            <$> compileMustacheFileE fp
 
     -- Create target directory if necessary
@@ -190,3 +196,26 @@ showMessage (Message s)     = s
 keepHead :: [String] -> String
 keepHead (a:_) = a
 keepHead _     = ""
+
+-- | Add variants for the values in a JSON structure.
+addValueVariants :: Value -> Value
+addValueVariants (Object obj) = Object
+                              $ KM.fromList
+                              $ concatMap withVariants
+                              $ KM.toList obj
+  where
+    withVariants (key, value) = (key, addValueVariants value)
+                              : valueVariants key value
+
+addValueVariants (Array xs)   = Array (addValueVariants <$> xs)
+addValueVariants value        = value
+
+-- | Variants automatically expanded in templates.
+valueVariants :: K.Key -> Value -> [(K.Key, Value)]
+valueVariants key (String s) =
+  [ (K.fromText (K.toText key <> "__toUpper"), String (T.toUpper s))
+  , (K.fromText (K.toText key <> "__toLower"), String (T.toLower s))
+  ]
+valueVariants key (Array xs) =
+  [ (K.fromText (K.toText key <> "__length"), String (T.pack $ show $ V.length xs)) ]
+valueVariants _   _ = []
