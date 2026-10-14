@@ -261,20 +261,24 @@ parseJSONSpec parseExpr jsonFormat filepath value = runExceptT $ do
 
         let msgType = "Requirement result type"
             ty :: Maybe (Either String String)
-            ty = (\e -> valueToString msgType =<<
-                          listToEither msgType (executeJSONPath e valueR)
-                 )
-             <$> jfiRequirementResultType jsonFormatInternal
+            ty = do
+              re <- jfiRequirementResultType jsonFormatInternal
+              let re' = listToEitherMaybe msgType (executeJSONPath re valueR)
+              case re' of
+                Right (Just x) -> return $ valueToString msgType x
+                Right Nothing  -> Nothing
+                Left  e        -> return $ Left e
         reqResType <- except $ maybeEither ty
 
         let msgRExpr = "Requirement result expression"
             resultExpr :: Maybe (Either String String)
-            resultExpr = (\e -> valueToString msgRExpr =<<
-                                  listToEither
-                                    msgRExpr
-                                    (executeJSONPath e valueR)
-                         )
-                     <$> jfiRequirementResultExpr jsonFormatInternal
+            resultExpr = do
+              re <- jfiRequirementResultExpr jsonFormatInternal
+              let re' = listToEitherMaybe msgRExpr (executeJSONPath re valueR)
+              case re' of
+                Right (Just x) -> return $ valueToString msgExpr x
+                Right Nothing  -> Nothing
+                Left  e        -> return $ Left e
 
         reqResExpr  <- except $ maybeEither resultExpr
         reqResExpr' <- ExceptT $ case reqResExpr of
@@ -302,6 +306,12 @@ listToEither :: String -> [a] -> Either String a
 listToEither _   [x] = Right x
 listToEither msg []  = Left $ "Failed to find a value for " ++ msg
 listToEither msg _   = Left $ "Unexpectedly found multiple values for " ++ msg
+
+listToEitherMaybe :: String -> [a] -> Either String (Maybe a)
+listToEitherMaybe _   [x] = Right $ Just x
+listToEitherMaybe msg []  = Right Nothing
+listToEitherMaybe msg _   = Left $ "Unexpectedly found multiple values for " ++ msg
+
 
 -- | Parse a JSONPath expression, returning its element components.
 parseJSONPath :: T.Text -> Either String [JSONPathElement]
