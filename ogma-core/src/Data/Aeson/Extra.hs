@@ -21,14 +21,15 @@ module Data.Aeson.Extra
   where
 
 -- External imports
-import Data.Aeson        (Value (Null, Object))
-import Data.Aeson.KeyMap (union)
+import Data.Aeson        (Value (Array, Null, Object))
+import Data.Aeson.KeyMap (unionWith)
 
 -- | Merge two JSON values.
 --
 -- Fails if the values are not objects or null.
 mergeObjects :: Value -> Value -> Value
-mergeObjects (Object m1) (Object m2) = Object (m1 `union` m2)
+mergeObjects (Object m1) (Object m2) = Object $ unionWith mergeObjects m1 m2
+mergeObjects (Array a)   (Array b)   = Array $ a <> b
 mergeObjects obj         Null        = obj
 mergeObjects Null        obj         = obj
-mergeObjects _           _           = error "The values passed are not objects"
+mergeObjects a           _           = a
