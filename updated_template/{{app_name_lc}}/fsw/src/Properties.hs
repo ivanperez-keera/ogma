@@ -1,15 +1,19 @@
 {{#copilot}}
 import           Copilot.Compile.C99
-import           Copilot.Language          hiding (prop)
+import           Copilot.Language              hiding (prop)
 import           Copilot.Language.Prelude
-import           Copilot.Library.LTL       (next)
-import           Copilot.Library.MTL       hiding (since, alwaysBeen, trigger)
-import           Copilot.Library.PTLTL     (since, previous, alwaysBeen)
-import qualified Copilot.Library.PTLTL     as PTLTL
-import qualified Copilot.Library.MTL       as MTL
-import           Language.Copilot          (reify)
-import           Prelude                   hiding ((&&), (||), (++), (<=), (>=), (<), (>), (==), (/=), not)
+import           Copilot.Library.LTL           (next)
+import           Copilot.Library.MTL           hiding (since, alwaysBeen, trigger)
+import           Copilot.Library.PTLTL         (since, previous, alwaysBeen)
+import qualified Copilot.Library.PTLTL         as PTLTL
+import qualified Copilot.Library.MTL           as MTL
+import           Copilot.Library.StateMachines (stateMachine)
+import           Language.Copilot              (reify)
+import           Prelude                       hiding ((&&), (||), (++), (<=), (>=), (<), (>), (==), (/=), not)
 
+{{#copilot_extra_defs}}
+{{{.}}}
+{{/copilot_extra_defs}}
 {{{copilot.externs}}}
 {{{copilot.internals}}}
 {{{copilot.reqs}}}
