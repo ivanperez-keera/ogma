@@ -51,17 +51,22 @@ import qualified Command.CFSApp
 data CommandOpts = CommandOpts
   { cFSAppProject       :: Maybe String
   , cFSAppConditionExpr :: Maybe String
-  , cFSAppInputFiles    :: [String]
+  , cFSAppInputFiles    :: [CFSAppFile]
   , cFSAppTarget        :: String
   , cFSAppTemplateDir   :: Maybe String
   , cFSAppVarNames      :: Maybe String
   , cFSAppVarDB         :: Maybe String
   , cFSAppHandlers      :: Maybe String
-  , cFSAppFormat        :: String
-  , cFSAppPropFormat    :: String
-  , cFSAppPropVia       :: Maybe String
   , cFSAppDiagramMode   :: String
   , cFSAppTemplateVars  :: Maybe String
+  }
+
+-- | Options associated to a specific input file.
+data CFSAppFile = CFSAppFile
+  { cFSAppFilePath       :: FilePath
+  , cFSAppFileFormat     :: String
+  , cFSAppFilePropFormat :: String
+  , cFSAppFilePropVia    :: Maybe String
   }
 
 -- | Create <https://cfs.gsfc.nasa.gov/ NASA core Flight System> (cFS)
@@ -87,9 +92,6 @@ command c
         , Command.CFSApp.commandVariables     = cFSAppVarNames c
         , Command.CFSApp.commandVariableDB    = cFSAppVarDB c
         , Command.CFSApp.commandHandlers      = cFSAppHandlers c
-        , Command.CFSApp.commandFormat        = cFSAppFormat c
-        , Command.CFSApp.commandPropFormat    = cFSAppPropFormat c
-        , Command.CFSApp.commandPropVia       = cFSAppPropVia c
         , Command.CFSApp.commandDiagramMode   = cFSAppDiagramMode c
         , Command.CFSApp.commandExtraVars     = cFSAppTemplateVars c
         }
@@ -105,7 +107,7 @@ commandProjectOptions projectFile c = do
       { Command.CFSApp.commandConditionExpr = cFSAppConditionExpr c
 
       , Command.CFSApp.commandInputFiles = concat
-          [ map (\(f, _, _) -> f) $ projectInputFiles project
+          [ projectInputFiles project
           , cFSAppInputFiles c
           ]
 
@@ -124,16 +126,16 @@ commandProjectOptions projectFile c = do
       , Command.CFSApp.commandHandlers =
           projectHandlerFile project <|> cFSAppHandlers c
 
-      , Command.CFSApp.commandFormat = case projectInputFiles project of
-          []            -> cFSAppFormat c
-          ((_, f, _):_) -> f
+      -- , Command.CFSApp.commandFormat = case projectInputFiles project of
+      --     []            -> cFSAppFormat c
+      --     ((_, f, _):_) -> f
 
-      , Command.CFSApp.commandPropFormat = case projectInputFiles project of
-          []            -> cFSAppPropFormat c
-          ((_, _, f):_) -> f
+      -- , Command.CFSApp.commandPropFormat = case projectInputFiles project of
+      --     []            -> cFSAppPropFormat c
+      --     ((_, _, f):_) -> f
 
-      , Command.CFSApp.commandPropVia =
-          projectCommandPropVia project <|> cFSAppPropVia c
+      -- , Command.CFSApp.commandPropVia =
+      --     projectCommandPropVia project <|> cFSAppPropVia c
 
       , Command.CFSApp.commandDiagramMode = cFSAppDiagramMode c
 
