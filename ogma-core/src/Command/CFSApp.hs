@@ -250,7 +250,7 @@ processGroup group@(firstElem:_) =
 -- applications.
 data CommandOptions = CommandOptions
   { commandConditionExpr :: Maybe String   -- ^ Trigger condition.
-  , commandInputFiles    :: [FilePath]     -- ^ Input specification files.
+  , commandInputFiles    :: [CommandInputFile] -- ^ Input specification files.
   , commandTargetDir     :: FilePath       -- ^ Target directory where the
                                            -- application should be created.
   , commandTemplateDir   :: Maybe FilePath -- ^ Directory where the template is
@@ -266,15 +266,24 @@ data CommandOptions = CommandOptions
                                            -- handlers used in the Copilot
                                            -- specification. The handlers are
                                            -- assumed to receive no arguments.
-  , commandFormat        :: String         -- ^ Format of the input file.
-  , commandPropFormat    :: String         -- ^ Format used for input
-                                           -- properties.
-  , commandPropVia       :: Maybe String   -- ^ Use external command to
-                                           -- pre-process system properties.
+  -- , commandFormat        :: String         -- ^ Format of the input file.
+  -- , commandPropFormat    :: String         -- ^ Format used for input
+  --                                          -- properties.
+  -- , commandPropVia       :: Maybe String   -- ^ Use external command to
+  --                                          -- pre-process system properties.
   , commandDiagramMode   :: String         -- ^ Diagram mode.
   , commandExtraVars     :: Maybe FilePath -- ^ File containing additional
                                            -- variables to make available to
                                            -- the template.
+  }
+
+data CommandInputFile = CommandInputFile
+  { commandFileName   :: FilePath
+  , commandFormat     :: String         -- ^ Format of the input file.
+  , commandPropFormat :: String         -- ^ Format used for input
+                                           -- properties.
+  , commandPropVia    :: Maybe String   -- ^ Use external command to
+                                         -- pre-process system properties.
   }
 
 -- | Return the variable information needed to generate declarations
