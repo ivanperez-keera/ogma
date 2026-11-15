@@ -51,14 +51,16 @@ import qualified Command.CFSApp
 data CommandOpts = CommandOpts
   { cFSAppProject       :: Maybe String
   , cFSAppConditionExpr :: Maybe String
-  , cFSAppInputFiles    :: [CFSAppFile]
   , cFSAppTarget        :: String
   , cFSAppTemplateDir   :: Maybe String
   , cFSAppVarNames      :: Maybe String
   , cFSAppVarDB         :: Maybe String
   , cFSAppHandlers      :: Maybe String
+  , cFSAppPropFormat    :: String
+  , cFSAppPropVia       :: Maybe String
   , cFSAppDiagramMode   :: String
   , cFSAppTemplateVars  :: Maybe String
+  , cFSAppInputFiles    :: [CFSAppFile]
   }
 
 -- | Options associated to a specific input file.
@@ -66,7 +68,7 @@ data CFSAppFile = CFSAppFile
   { cFSAppFilePath       :: FilePath
   , cFSAppFileFormat     :: String
   , cFSAppFilePropFormat :: String
-  , cFSAppFilePropVia    :: Maybe String
+  -- , cFSAppFilePropVia    :: Maybe String
   }
 
 -- | Create <https://cfs.gsfc.nasa.gov/ NASA core Flight System> (cFS)
@@ -86,7 +88,7 @@ command c
   = Command.CFSApp.command $
       Command.CFSApp.CommandOptions
         { Command.CFSApp.commandConditionExpr = cFSAppConditionExpr c
-        , Command.CFSApp.commandInputFiles    = cFSAppInputFiles c
+        , Command.CFSApp.commandInputFiles    = map transformCFSAppFile $ cFSAppInputFiles c
         , Command.CFSApp.commandTargetDir     = cFSAppTarget c
         , Command.CFSApp.commandTemplateDir   = cFSAppTemplateDir c
         , Command.CFSApp.commandVariables     = cFSAppVarNames c
@@ -107,8 +109,8 @@ commandProjectOptions projectFile c = do
       { Command.CFSApp.commandConditionExpr = cFSAppConditionExpr c
 
       , Command.CFSApp.commandInputFiles = concat
-          [ projectInputFiles project
-          , cFSAppInputFiles c
+          [ map (transformProjectInputFile project) $ projectInputFiles project
+          , map transformCFSAppFile $ cFSAppInputFiles c
           ]
 
       , Command.CFSApp.commandTargetDir =
@@ -130,12 +132,10 @@ commandProjectOptions projectFile c = do
       --     []            -> cFSAppFormat c
       --     ((_, f, _):_) -> f
 
-      -- , Command.CFSApp.commandPropFormat = case projectInputFiles project of
-      --     []            -> cFSAppPropFormat c
-      --     ((_, _, f):_) -> f
+      , Command.CFSApp.commandPropFormat = cFSAppPropFormat c
 
-      -- , Command.CFSApp.commandPropVia =
-      --     projectCommandPropVia project <|> cFSAppPropVia c
+      , Command.CFSApp.commandPropVia =
+          projectCommandPropVia project <|> cFSAppPropVia c
 
       , Command.CFSApp.commandDiagramMode = cFSAppDiagramMode c
 
@@ -143,6 +143,14 @@ commandProjectOptions projectFile c = do
           projectExtraJSONFile project <|> cFSAppTemplateVars c
 
       }
+
+transformCFSAppFile :: CFSAppFile -> Command.CFSApp.CommandInputFile
+transformCFSAppFile = undefined
+
+transformProjectInputFile :: Project
+                          -> (FilePath, String, String)
+                          -> Command.CFSApp.CommandInputFile
+transformProjectInputFile = undefined
 
 -- * CLI
 
@@ -168,13 +176,13 @@ commandOptsParser = CommandOpts
             <> help strCFSAppConditionExprArgDesc
             )
         )
-  <*> many
-        ( strOption
-            (  long "input-file"
-            <> metavar "FILENAME"
-            <> help strCFSAppFileNameArgDesc
-            )
-        )
+  -- <*> many
+  --       ( strOption
+  --           (  long "input-file"
+  --           <> metavar "FILENAME"
+  --           <> help strCFSAppFileNameArgDesc
+  --           )
+  --       )
   <*> strOption
         (  long "target-dir"
         <> metavar "DIR"
@@ -210,14 +218,14 @@ commandOptsParser = CommandOpts
             <> help strCFSAppHandlerListArgDesc
             )
         )
-  <*> strOption
-        (  long "input-format"
-        <> short 'f'
-        <> metavar "FORMAT_NAME"
-        <> help strCFSAppFormatDesc
-        <> showDefault
-        <> value "default"
-        )
+  -- <*> strOption
+  --       (  long "input-format"
+  --       <> short 'f'
+  --       <> metavar "FORMAT_NAME"
+  --       <> help strCFSAppFormatDesc
+  --       <> showDefault
+  --       <> value "default"
+  --       )
   <*> strOption
         (  long "prop-format"
         <> short 'p'
@@ -247,6 +255,40 @@ commandOptsParser = CommandOpts
             <> help strCFSAppTemplateVarsArgDesc
             )
         )
+  <*> many cFSAppFileOptsParser
+
+-- | Subparser for information on one input file to be used with the @cFSApp@
+-- command.
+cFSAppFileOptsParser :: Parser CFSAppFile
+cFSAppFileOptsParser = CFSAppFile
+  <$> strOption
+        (  long "input-file"
+        <> metavar "FILENAME"
+        <> help strCFSAppFileNameArgDesc
+        )
+  <*> strOption
+        (  long "input-format"
+        <> short 'f'
+        <> metavar "FORMAT_NAME"
+        <> help strCFSAppFormatDesc
+        <> showDefault
+        <> value "default"
+        )
+  <*> strOption
+        (  long "prop-format"
+        <> short 'p'
+        <> metavar "FORMAT_NAME"
+        <> help strCFSAppPropFormatDesc
+        <> showDefault
+        <> value "smv"
+        )
+  -- <*> optional
+  --       ( strOption
+  --           (  long "parse-prop-via"
+  --           <> metavar "COMMAND"
+  --           <> help strOverviewPropViaDesc
+  --           )
+  --       )
 
 -- | Argument project to cFS app generation command.
 strCFSAppProjectArgDesc :: String
