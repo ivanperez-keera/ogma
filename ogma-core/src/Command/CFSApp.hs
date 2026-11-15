@@ -31,6 +31,7 @@
 module Command.CFSApp
     ( command
     , CommandOptions(..)
+    , CommandInputFile(..)
     , ErrorCode
     )
   where
@@ -150,7 +151,6 @@ command' options (ExprPair exprT) = do
     varNameFile    = commandVariables options
     varDBFile      = maybeToList $ commandVariableDB options
     handlersFile   = commandHandlers options
-    formatName     = commandFormat options
     propFormatName = commandPropFormat options
     propVia        = commandPropVia options
 
@@ -158,10 +158,15 @@ command' options (ExprPair exprT) = do
       readInputExpr e propFormatName propVia exprT
 
     readInputFile' f =
-      parseInputFile f formatName propFormatName propVia exprT
+      let formatName = commandInputFileFormat f
+          fileName   = commandInputFileName f
+          via        = commandInputFilePropVia f <|> propVia
+          -- (ExprPair exprT') = exprPair (commandInputFilePropFormat f)
+      in parseInputFile fileName formatName propFormatName propVia exprT
 
     processSpec spec' expr' fp' =
-      Command.Standalone.commandLogic expr' fp' "copilot" [] exprT spec'
+      let fp'' = map commandInputFileName fp'
+      in Command.Standalone.commandLogic expr' fp'' "copilot" [] exprT spec'
 
     defaultVarNames spec = case spec of
       Just (InputFileSpec spec') -> specExtractExternalVariables (Just spec')
@@ -267,10 +272,10 @@ data CommandOptions = CommandOptions
                                            -- specification. The handlers are
                                            -- assumed to receive no arguments.
   -- , commandFormat        :: String         -- ^ Format of the input file.
-  -- , commandPropFormat    :: String         -- ^ Format used for input
-  --                                          -- properties.
-  -- , commandPropVia       :: Maybe String   -- ^ Use external command to
-  --                                          -- pre-process system properties.
+  , commandPropFormat    :: String         -- ^ Format used for input
+                                           -- properties.
+  , commandPropVia       :: Maybe String   -- ^ Use external command to
+                                           -- pre-process system properties.
   , commandDiagramMode   :: String         -- ^ Diagram mode.
   , commandExtraVars     :: Maybe FilePath -- ^ File containing additional
                                            -- variables to make available to
@@ -278,12 +283,13 @@ data CommandOptions = CommandOptions
   }
 
 data CommandInputFile = CommandInputFile
-  { commandFileName   :: FilePath
-  , commandFormat     :: String         -- ^ Format of the input file.
-  , commandPropFormat :: String         -- ^ Format used for input
-                                           -- properties.
-  , commandPropVia    :: Maybe String   -- ^ Use external command to
-                                         -- pre-process system properties.
+  { commandInputFileName       :: FilePath
+  , commandInputFileFormat     :: String         -- ^ Format of the input file.
+  , commandInputFilePropFormat :: String         -- ^ Format used for input
+                                                 -- properties.
+  , commandInputFilePropVia    :: Maybe String   -- ^ Use external command to
+                                                 -- pre-process system
+                                                 -- properties.
   }
 
 -- | Return the variable information needed to generate declarations
