@@ -41,4 +41,4 @@ strByteStringFileNotFound fp = "File not found: " ++ fp
 
 -- | Cannot-open-file message.
 strByteStringCannotOpenFile :: FilePath -> String
-strByteStringCannotOpenFile fp = "Error opening file " ++ fp
+strByteStringCannotOpenFile fp = "Error opening file: " ++ fp
