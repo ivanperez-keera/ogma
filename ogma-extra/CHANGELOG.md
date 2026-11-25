@@ -1,5 +1,9 @@
 # Revision history for ogma-extra
 
+## [1.X.Y] - 2026-11-24
+
+* Standardize error message in `Data.ByteString.Extra` (#637).
+
 ## [1.17.0] - 2026-11-21
 * Version bump (1.17.0) (#632).
 * Bump upper version constraint on `aeson`, `QuickCheck` (#609).
